@@ -1,22 +1,15 @@
 const CACHE_NAME = 'clube-prime-v3';
-const BASE = self.location.pathname.replace('/sw.js', '');
-const ASSETS = [
-  BASE + '/',
-  BASE + '/index.html',
-  BASE + '/manifest.json',
-  BASE + '/icon-192.png',
-  BASE + '/icon-512.png'
-];
+const ASSETS = ['/', '/index.html', '/admin.html', '/manifest.json'];
 
-self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS).catch(() => {}))
+self.addEventListener('install', e => {
+  e.waitUntil(
+    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
   );
   self.skipWaiting();
 });
 
-self.addEventListener('activate', event => {
-  event.waitUntil(
+self.addEventListener('activate', e => {
+  e.waitUntil(
     caches.keys().then(keys =>
       Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
     )
@@ -24,25 +17,22 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
-self.addEventListener('fetch', event => {
-  const url = new URL(event.request.url);
-  
-  // Ignorar requisições externas (Supabase, APIs, fontes, etc.)
-  if (url.origin !== self.location.origin) return;
-  
-  // Ignorar requisições não-GET
-  if (event.request.method !== 'GET') return;
+self.addEventListener('fetch', e => {
+  // Ignorar requisições externas (Supabase, OneSignal, etc)
+  if (!e.request.url.startsWith(self.location.origin)) return;
+  e.respondWith(
+    caches.match(e.request).then(cached => cached || fetch(e.request))
+  );
+});
 
-  event.respondWith(
-    caches.match(event.request).then(cached => {
-      const network = fetch(event.request).then(response => {
-        if (response && response.status === 200) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-        }
-        return response;
-      }).catch(() => cached);
-      return cached || network;
+// Push notifications (OneSignal vai sobrescrever isso automaticamente)
+self.addEventListener('push', e => {
+  const data = e.data ? e.data.json() : {};
+  e.waitUntil(
+    self.registration.showNotification(data.title || 'Clube Prime', {
+      body: data.body || '',
+      icon: '/icon-192.png',
+      badge: '/icon-96.png'
     })
   );
 });

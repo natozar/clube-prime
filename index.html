@@ -307,7 +307,7 @@ body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
     <div style="font-size:11px;color:var(--gray);margin-top:8px">de cada compra dos seus indicados, <strong style="color:var(--gold)">para sempre</strong></div>
   </div>
   <button class="share-btn" onclick="compartilhar()">🔗 Compartilhar meu link de convite</button>
-  <div class="share-url" id="share-url-text">natozar.github.io/clube-prime/?ref=CR847</div>
+  <div class="share-url" id="share-url-text">carnesrodrigues.com.br/?ref=CR847</div>
   <div style="display:flex;gap:8px;margin:0 16px 16px">
     <button class="btn bo" style="flex:1;padding:10px" onclick="copiarLink()">📋 Copiar link</button>
     <button class="btn bo" style="flex:1;padding:10px" onclick="compartilharWhats()">💬 WhatsApp</button>
@@ -625,8 +625,8 @@ document.getElementById('dismiss-btn').addEventListener('click',()=>{banner.clas
 // ── SERVICE WORKER ────────────────────────────────────────
 if('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    // GitHub Pages usa subpasta /clube-prime/
-    const swPath = location.pathname.includes('/clube-prime') ? '/clube-prime/sw.js' : '/sw.js';
+    // GitHub Pages usa subpasta /
+    const swPath = location.pathname.includes('/clube-prime') ? '/sw.js' : '/sw.js';
     navigator.serviceWorker.register(swPath).catch(()=>{});
   });
 }
