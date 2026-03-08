@@ -1,4 +1,4 @@
-const CACHE_NAME = 'clube-prime-v2';
+const CACHE_NAME = 'clube-prime-v3';
 const BASE = self.location.pathname.replace('/sw.js', '');
 const ASSETS = [
   BASE + '/',
@@ -25,6 +25,14 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
+  const url = new URL(event.request.url);
+  
+  // Ignorar requisições externas (Supabase, APIs, fontes, etc.)
+  if (url.origin !== self.location.origin) return;
+  
+  // Ignorar requisições não-GET
+  if (event.request.method !== 'GET') return;
+
   event.respondWith(
     caches.match(event.request).then(cached => {
       const network = fetch(event.request).then(response => {
