@@ -591,7 +591,50 @@ if(!isStandalone&&!(dismissed&&Date.now()-parseInt(dismissed)<86400000)){
   else{window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e;setTimeout(()=>banner.classList.add('show'),2000)});document.getElementById('install-btn').addEventListener('click',async()=>{if(dp){banner.classList.remove('show');dp.prompt();await dp.userChoice;dp=null}});}
 }
 document.getElementById('dismiss-btn').addEventListener('click',()=>{banner.classList.remove('show');localStorage.setItem('pwa-d',Date.now())});
-if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));
+// ── SERVICE WORKER ────────────────────────────────────────
+if('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    // GitHub Pages usa subpasta /clube-prime/
+    const swPath = location.pathname.includes('/clube-prime') ? '/clube-prime/sw.js' : '/sw.js';
+    navigator.serviceWorker.register(swPath).catch(()=>{});
+  });
+}
+
+// ── PWA INSTALL POPUP ─────────────────────────────────────
+let deferredPrompt = null;
+const pwaBanner = document.getElementById('pwa-banner');
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  // Não mostrou antes ou passou mais de 3 dias
+  const last = localStorage.getItem('pwa-dismissed');
+  const threeDays = 3 * 24 * 60 * 60 * 1000;
+  if (!last || Date.now() - parseInt(last) > threeDays) {
+    setTimeout(() => pwaBanner.classList.add('show'), 2500);
+  }
+});
+
+document.getElementById('install-btn').addEventListener('click', async () => {
+  if (deferredPrompt) {
+    pwaBanner.classList.remove('show');
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    if (outcome === 'accepted') localStorage.setItem('pwa-installed', '1');
+  }
+});
+
+document.getElementById('dismiss-btn').addEventListener('click', () => {
+  pwaBanner.classList.remove('show');
+  localStorage.setItem('pwa-dismissed', Date.now());
+});
+
+// Esconder banner se já instalado
+window.addEventListener('appinstalled', () => {
+  pwaBanner.classList.remove('show');
+  localStorage.setItem('pwa-installed', '1');
+});
 
 // ── SUPABASE ──────────────────────────────────────────────
 const SUPA_URL = 'https://mrourzdxrahpysscckkxm.supabase.co';
