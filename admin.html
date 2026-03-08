@@ -309,15 +309,37 @@ const SH = { apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}`, 'Content-Typ
 // Listar todos os clientes
 async function listarClientes() {
   try {
-    const r = await fetch(`${SUPA_URL}/rest/v1/clientes?select=*,pontos(saldo)&order=created_at.desc`, { headers: SH });
-    return await r.json();
-  } catch(e) { return []; }
+    const r = await fetch(`${SUPA_URL}/rest/v1/clientes?select=*&order=created_at.desc&limit=50`, { headers: SH });
+    const lista = await r.json();
+    const el = document.getElementById('clientes-lista');
+    const rankEl = document.getElementById('ranking-lista');
+    const alertEl = document.getElementById('alertas-lista');
+    if(el) {
+      el.innerHTML = !lista.length ? '<p style="opacity:.5;padding:8px">Nenhum cliente cadastrado</p>'
+        : lista.map(c=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #333">
+          <div><div style="font-weight:600">${c.nome}</div><div style="opacity:.6;font-size:12px">${c.codigo} · ${c.telefone}</div></div>
+          <div style="font-size:12px;opacity:.7">${new Date(c.created_at).toLocaleDateString('pt-BR')}</div></div>`).join('');
+    }
+    if(rankEl) {
+      rankEl.innerHTML = lista.slice(0,10).map((c,i)=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #333">
+        <span style="opacity:.5;margin-right:8px">${i+1}º</span><span>${c.nome}</span><span style="opacity:.6;font-size:12px">${c.codigo}</span></div>`).join('')
+        || '<p style="opacity:.5;padding:8px">Sem dados</p>';
+    }
+    if(alertEl) {
+      const hoje = new Date();
+      const venc = lista.filter(c => c.created_at && Math.floor((hoje - new Date(c.created_at)) / 86400000) >= 80);
+      alertEl.innerHTML = venc.length ? venc.map(c=>`<div style="padding:8px 0;border-bottom:1px solid #333">
+        <span style="color:#f90">⚠️</span> ${c.nome} — pontos próximos do vencimento</div>`).join('')
+        : '<p style="opacity:.5;padding:8px">Nenhum alerta no momento</p>';
+    }
+    return lista;
+  } catch(e) { console.error('listarClientes',e); return []; }
 }
 
 // Buscar cliente pelo código do cartão (ex: CR-00847)
 async function buscarClientePorCodigo(codigo) {
   try {
-    const r = await fetch(`${SUPA_URL}/rest/v1/clientes?codigo=eq.${codigo}&select=*,pontos(*)`, { headers: SH });
+    const r = await fetch(`${SUPA_URL}/rest/v1/clientes?codigo=eq.${codigo}&select=*`, { headers: SH });
     const d = await r.json();
     return d[0] || null;
   } catch(e) { return null; }
@@ -349,8 +371,24 @@ async function registrarCompra(clienteId, valorReais) {
 async function listarResgatesPendentes() {
   try {
     const r = await fetch(`${SUPA_URL}/rest/v1/resgates?status=eq.pendente&select=*,clientes(nome,codigo)&order=created_at.desc`, { headers: SH });
-    return await r.json();
-  } catch(e) { return []; }
+    const lista = await r.json();
+    const el = document.getElementById('resgates-lista');
+    if(!el) return lista;
+    if(!lista.length){ el.innerHTML='<p style="opacity:.5;padding:8px">Nenhum resgate pendente</p>'; return lista; }
+    el.innerHTML = lista.map(r=>`
+      <div style="padding:10px 0;border-bottom:1px solid #333">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+          <strong>${r.clientes?.nome || '—'}</strong>
+          <span style="opacity:.6;font-size:12px">${new Date(r.created_at).toLocaleDateString('pt-BR')}</span>
+        </div>
+        <div style="opacity:.7;font-size:13px;margin-bottom:8px">${r.recompensa} · ${r.pontos_usados} pts</div>
+        <div style="display:flex;gap:8px">
+          <button onclick="atualizarResgate(${r.id},'aprovado',${r.cliente_id},${r.pontos_usados})" style="background:#27ae60;color:#fff;border:none;padding:6px 14px;border-radius:6px;cursor:pointer">✓ Aprovar</button>
+          <button onclick="atualizarResgate(${r.id},'recusado',${r.cliente_id},0)" style="background:#c0392b;color:#fff;border:none;padding:6px 14px;border-radius:6px;cursor:pointer">✗ Recusar</button>
+        </div>
+      </div>`).join('');
+    return lista;
+  } catch(e) { console.error('listarResgatesPendentes',e); return []; }
 }
 
 // Aprovar ou recusar resgate
@@ -489,6 +527,23 @@ function A(n,btn){
   document.querySelectorAll('.an').forEach(b=>b.classList.remove('active'));
   document.getElementById('screen-'+n).classList.add('active');
   btn.classList.add('active');
+  if(n==='painel') { listarClientes(); listarResgatesPendentes(); listarAniversariantes(); }
+}
+async function listarAniversariantes() {
+  try {
+    const hoje = new Date();
+    const mes = String(hoje.getMonth()+1).padStart(2,'0');
+    const r = await fetch(`${SUPA_URL}/rest/v1/clientes?select=nome,nacimento&nacimento=like.*-${mes}-*&order=nome`, { headers: SH });
+    const lista = await r.json();
+    const el = document.getElementById('aniversariantes-lista');
+    if(!el) return;
+    if(!lista.length){ el.innerHTML='<p style="opacity:.5;padding:8px">Nenhum aniversariante este mês</p>'; return; }
+    el.innerHTML = lista.map(c=>{
+      const dia = c.nacimento?.split('-')[2] || '??';
+      return `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #333">
+        <span>${c.nome}</span><span style="opacity:.6">dia ${dia}</span></div>`;
+    }).join('');
+  } catch(e){ console.error('listarAniversariantes',e); }
 }
 document.querySelectorAll('.mo').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open')}));
 document.querySelectorAll('.tog').forEach(t=>t.addEventListener('click',()=>t.classList.toggle('on')));
