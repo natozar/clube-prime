@@ -186,8 +186,8 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom))}
     <div class="pw">
       <div style="padding:0 16px">
         <div class="kpi-row">
-          <div class="kpi"><div class="kpi-l">Membros</div><div class="kpi-v">127</div><div class="kpi-u">+12 mês</div></div>
-          <div class="kpi"><div class="kpi-l">Compras</div><div class="kpi-v" style="font-size:18px">R$18k</div><div class="kpi-u">+23%</div></div>
+          <div class="kpi"><div class="kpi-l">Membros</div><div class="kpi-v">0</div><div class="kpi-u">—</div></div>
+          <div class="kpi"><div class="kpi-l">Compras</div><div class="kpi-v" style="font-size:18px">R$0</div><div class="kpi-u">—</div></div>
           <div class="kpi"><div class="kpi-l">Indicações</div><div class="kpi-v">43</div><div class="kpi-s">links ativos</div></div>
           <div class="kpi"><div class="kpi-l">Via indicação</div><div class="kpi-v">17</div><div class="kpi-s">novos/mês</div></div>
         </div>
@@ -211,7 +211,7 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom))}
     <div class="pw">
       <div style="padding:0 16px">
         <div class="kpi-row">
-          <div class="kpi"><div class="kpi-l">Membros</div><div class="kpi-v">127</div><div class="kpi-u">+12</div></div>
+          <div class="kpi"><div class="kpi-l">Membros</div><div class="kpi-v">0</div><div class="kpi-u">+12</div></div>
           <div class="kpi"><div class="kpi-l">Pendentes</div><div class="kpi-v" style="color:var(--red)">8</div><div class="kpi-s">resgates</div></div>
           <div class="kpi"><div class="kpi-l">Bloqueados</div><div class="kpi-v">2</div><div class="kpi-s">suspensos</div></div>
           <div class="kpi"><div class="kpi-l">Pontos</div><div class="kpi-v" style="font-size:18px">184k</div><div class="kpi-s">circulação</div></div>
@@ -220,26 +220,12 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom))}
       <div class="sec-card">
         <div class="sec-title">👤 Clientes <button class="btn bg bsm" onclick="document.getElementById('mo-new').classList.add('open')">+ Novo</button></div>
         <div class="search-bar"><input class="si" placeholder="Buscar cliente..."><select class="fsel" style="width:110px"><option>Todos</option><option>Ativos</option><option>Bloqueados</option></select></div>
-        <div class="tl-item"><div class="av">MF</div><div class="tl-info"><div class="tl-title">Maria Fernanda L.</div><div class="tl-meta">#MF-00312 · jan/2024 · 8 indicados</div></div><div style="text-align:right"><div class="bpts">4.120</div><div style="margin-top:5px;display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end"><button class="btn bo bsm" onclick="enviarConvite('MF-00312','Maria Fernanda')">🔗</button><button class="btn bo bsm">Edit</button><button class="btn bd bsm">Blq</button></div></div></div>
-        <div class="tl-item"><div class="av">CR</div><div class="tl-info"><div class="tl-title">Carlos Rodrigues</div><div class="tl-meta">#CR-00847 · jan/2024 · 5 indicados</div><div style="margin-top:4px"><div style="height:3px;background:rgba(255,255,255,.08);border-radius:2px;width:100%"><div style="height:100%;width:57%;background:linear-gradient(90deg,var(--gold-dark),var(--gold));border-radius:2px"></div></div><div style="font-size:8px;color:var(--gray);margin-top:2px">2.840 / 5.000 pts</div></div></div><div style="text-align:right"><div class="bpts">2.840</div><div style="margin-top:5px;display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end"><button class="btn bo bsm" onclick="enviarConvite('CR-00847','Carlos')">🔗</button><button class="btn bo bsm">Edit</button><button class="btn bd bsm">Blq</button></div></div></div>
-        <div class="tl-item"><div class="av" style="background:var(--dark3);border:1px solid rgba(201,168,76,.3);color:var(--gold)">AC</div><div class="tl-info"><div class="tl-title">Ana Costa</div><div class="tl-meta">#AC-01024 · mar/2025 · novo</div></div><div style="text-align:right"><div class="bpts">185</div><div style="margin-top:5px;display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end"><button class="btn bo bsm" onclick="enviarConvite('AC-01024','Ana')">🔗</button><button class="btn bo bsm">Edit</button><button class="btn bd bsm">Blq</button></div></div></div>
+        <div id="clientes-lista"><div style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Nenhum cliente cadastrado ainda</div></div>>
       </div>
       <div class="sec-card">
-        <div class="sec-title">⏳ Resgates Pendentes <span style="background:var(--red);color:#fff;border-radius:10px;padding:1px 7px;font-size:9px">8</span></div>
-        <div class="tl-item"><div class="tl-icon">💰</div><div class="tl-info"><div class="tl-title">Maria Fernanda — Desconto R$50</div><div class="tl-meta">500 pts · hoje, 10:14</div></div><div class="brow"><button class="btn bg bsm">✓</button><button class="btn bd bsm">✗</button></div></div>
-        <div class="tl-item"><div class="tl-icon">🥩</div><div class="tl-info"><div class="tl-title">Carlos — Brinde corte especial</div><div class="tl-meta">800 pts · ontem</div></div><div class="brow"><button class="btn bg bsm">✓</button><button class="btn bd bsm">✗</button></div></div>
-        <div id="aniversariantes-lista" style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Nenhum aniversariante este mês</div>
-      
-      </div>
-
-      <div class="sec-card">
-        <div class="sec-title">📄 Relatórios</div>
-        <div class="brow">
-          <button class="btn bo bsm">📊 Clientes Excel</button>
-          <button class="btn bo bsm">🔗 Indicações Excel</button>
-          <button class="btn bo bsm">🎁 Resgates PDF</button>
-        </div>
-      </div>
+        <div class="sec-title">⏳ Resgates Pendentes <span id="badge-resgates" style="background:var(--red);color:#fff;border-radius:10px;padding:1px 7px;font-size:9px;display:none">0</span></div>
+        <div id="resgates-lista" style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Nenhum resgate pendente</div>
+      </div> </div>
     </div>
   </div>
 
@@ -404,7 +390,7 @@ function pinDel(){if(pinEntry.length>0){pinEntry=pinEntry.slice(0,-1);document.g
 let valor='';
 function kp(k){
   if(k==='⌫'){valor=valor.slice(0,-1);}
-  else if(k==='OK'){if(valor)alert('✓ R$'+valor+' registrado!\n+'+valor+' pontos para Carlos Rodrigues');valor='';}
+  else if(k==='OK'){if(valor)alert('✓ R$'+valor+' registrado!\n+'+valor+' pontos adicionados!');valor='';}
   else if(valor.length<6){valor+=k;}
   document.getElementById('valor-display').textContent=valor||'___';
   document.getElementById('pts-preview').textContent=valor?'Esta compra gera +'+valor+' pontos':'';
