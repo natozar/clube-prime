@@ -210,6 +210,10 @@ body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
       <div class="fl"><label class="flabel">Nome completo *</label><input class="fi" id="inp-nome" placeholder="Ex: Carlos Rodrigues"></div>
       <div class="fl"><label class="flabel">WhatsApp *</label><input class="fi" id="inp-tel" type="tel" placeholder="(16) 99999-0000"></div>
       <div class="fl"><label class="flabel">Data de nascimento *</label><input class="fi" id="inp-nasc" type="date"></div>
+      <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:14px">
+        <input type="checkbox" id="chk-termos" style="margin-top:3px;accent-color:#C9A84C;width:16px;height:16px;flex-shrink:0">
+        <label for="chk-termos" style="font-size:11px;color:#888;line-height:1.5">Li e concordo com os <a href="termos.html" target="_blank" style="color:#C9A84C">Termos de Uso e Política de Privacidade</a>. Autorizo o uso dos meus dados para operação do Clube Prime conforme a LGPD.</label>
+      </div>
       <button class="cad-btn" onclick="goApp()">Entrar no Clube Prime →</button>
       <div class="cad-link">Já é membro? <a onclick="acessarCartao()">Acessar meu cartão</a></div>
     </div>
@@ -459,6 +463,11 @@ function preencherTela(cliente, saldo) {
 }
 
 async function goApp() {
+  const chk = document.getElementById('chk-termos');
+  if (chk && !chk.checked) {
+    alert('Por favor, aceite os Termos de Uso e Política de Privacidade para continuar.');
+    return;
+  }
   const nome = document.getElementById('inp-nome').value.trim();
   const tel  = document.getElementById('inp-tel').value.trim();
   const nasc = document.getElementById('inp-nasc').value;

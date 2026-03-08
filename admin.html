@@ -160,8 +160,8 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom))}
       <div style="font-size:10px;color:var(--gray);margin-top:6px">Toque para simular leitura</div>
     </div>
     <div class="client-found" id="client-found" style="display:none">
-      <div class="cli-av">CR</div>
-      <div style="flex:1"><div style="font-size:14px;font-weight:600;color:var(--white)">Carlos Rodrigues</div><div style="font-size:10px;color:var(--gray);margin-top:2px">Membro desde jan/2024 · 18 compras</div><div style="font-family:'Cormorant Garamond',serif;font-size:17px;color:var(--gold);margin-top:3px;font-weight:700">2.840 pontos</div></div>
+      <div class="cli-av" id="cli-av-iniciais">--</div>
+      <div style="flex:1"><div style="font-size:14px;font-weight:600;color:var(--white)" id="cli-nome">—</div><div style="font-size:10px;color:var(--gray);margin-top:2px" id="cli-meta">—</div><div style="font-family:'Cormorant Garamond',serif;font-size:17px;color:var(--gold);margin-top:3px;font-weight:700" id="cli-pontos">0 pontos</div></div>
       <div style="font-size:9px;color:var(--green);letter-spacing:1px">✓ ATIVO</div>
     </div>
     <div style="padding:0 16px 12px;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gold-dark)">Valor da compra</div>
@@ -194,16 +194,13 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom))}
       </div>
       <div class="sec-card">
         <div class="sec-title">🏆 Ranking Indicadores</div>
-        <div class="tl-item"><div class="av" style="background:var(--gold);color:var(--black);font-size:14px">🥇</div><div class="tl-info"><div class="tl-title">Maria Fernanda L.</div><div class="tl-meta">8 indicados · 3 ativos</div></div><div class="tl-pts pb">+640pts</div></div>
-        <div class="tl-item"><div class="av" style="background:#C0C0C0;color:var(--black);font-size:14px">🥈</div><div class="tl-info"><div class="tl-title">Carlos Rodrigues</div><div class="tl-meta">5 indicados · 4 ativos</div></div><div class="tl-pts pb">+284pts</div></div>
-        <div class="tl-item"><div class="av" style="background:#CD7F32;color:var(--black);font-size:14px">🥉</div><div class="tl-info"><div class="tl-title">Paula Silveira</div><div class="tl-meta">4 indicados · 4 ativos</div></div><div class="tl-pts pb">+210pts</div></div>
-        <div class="tl-item"><div class="av sm">JM</div><div class="tl-info"><div class="tl-title">João Mendes</div><div class="tl-meta">3 indicados · 2 ativos</div></div><div class="tl-pts pb">+96pts</div></div>
+        <div id="ranking-lista" style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Carregando...</div>
+      </div>
       </div>
       <div class="sec-card">
         <div class="sec-title">🔔 Alertas</div>
-        <div class="tl-item"><div class="tl-icon" style="background:rgba(201,168,76,.1);border-color:rgba(201,168,76,.3)">🆕</div><div class="tl-info"><div class="tl-title">Ana Costa se cadastrou via link de Maria F.</div><div class="tl-meta">há 12 min</div></div></div>
-        <div class="tl-item"><div class="tl-icon" style="background:rgba(201,168,76,.1);border-color:rgba(201,168,76,.3)">⭐</div><div class="tl-info"><div class="tl-title">Carlos R. está próximo de resgate</div><div class="tl-meta">há 34 min</div></div></div>
-        <div class="tl-item"><div class="tl-icon">😴</div><div class="tl-info"><div class="tl-title">João Mendes não compra há 18 dias</div><div class="tl-meta">ontem</div></div></div>
+        <div id="alertas-lista" style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Nenhum alerta</div>
+      </div>
       </div>
     </div>
   </div>
@@ -231,34 +228,8 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom))}
         <div class="sec-title">⏳ Resgates Pendentes <span style="background:var(--red);color:#fff;border-radius:10px;padding:1px 7px;font-size:9px">8</span></div>
         <div class="tl-item"><div class="tl-icon">💰</div><div class="tl-info"><div class="tl-title">Maria Fernanda — Desconto R$50</div><div class="tl-meta">500 pts · hoje, 10:14</div></div><div class="brow"><button class="btn bg bsm">✓</button><button class="btn bd bsm">✗</button></div></div>
         <div class="tl-item"><div class="tl-icon">🥩</div><div class="tl-info"><div class="tl-title">Carlos — Brinde corte especial</div><div class="tl-meta">800 pts · ontem</div></div><div class="brow"><button class="btn bg bsm">✓</button><button class="btn bd bsm">✗</button></div></div>
-        <div class="tl-item"><div class="tl-icon">💰</div><div class="tl-info"><div class="tl-title">Paula — Desconto R$30</div><div class="tl-meta">300 pts · 12/mar</div></div><div class="brow"><button class="btn bg bsm">✓</button><button class="btn bd bsm">✗</button></div></div>
-      </div>
-      <div class="sec-card">
-        <div class="sec-title">⚙️ Regras</div>
-        <div class="rg" style="margin-bottom:14px"><div class="rh"><span class="rl">R$ por ponto</span><span class="rv" id="rv1">R$1 = 1pt</span></div><input type="range" class="rs" min="1" max="10" value="1" oninput="document.getElementById('rv1').textContent='R$'+this.value+' = 1pt'"></div>
-        <div class="rg" style="margin-bottom:14px"><div class="rh"><span class="rl">% bônus indicação</span><span class="rv" id="rv2">2%</span></div><input type="range" class="rs" min="1" max="20" value="2" oninput="document.getElementById('rv2').textContent=this.value+'%'"></div>
-        <div class="toggle-row"><div class="ti"><div class="tt">Bônus permanente de indicação</div><div class="td">Indicador recebe % para sempre</div></div><div class="tog on"><div class="tog-d"></div></div></div>
-        <div class="toggle-row"><div class="ti"><div class="tt">Notificação por WhatsApp</div><div class="td">Avisar ao pontuar/resgatar</div></div><div class="tog"><div class="tog-d"></div></div></div>
-        <div style="margin-top:14px" class="brow"><button class="btn bg">Salvar</button><button class="btn bo">Restaurar</button></div>
-      </div>
-      <div class="sec-card">
-        <div class="sec-title">🎁 Histórico de Resgates</div>
-        <table class="tbl">
-          <thead><tr><th>Cliente</th><th>Recompensa</th><th>Pts</th><th>Data</th><th>Status</th></tr></thead>
-          <tbody>
-            <tr><td>Maria F.</td><td style="color:var(--gray)">Desconto R$50</td><td><span class="bpts">500</span></td><td style="color:var(--gray)">hoje</td><td><span class="b bdone">Aprovado</span></td></tr>
-            <tr><td>Carlos R.</td><td style="color:var(--gray)">Brinde especial</td><td><span class="bpts">800</span></td><td style="color:var(--gray)">ontem</td><td><span class="b bpend">Pendente</span></td></tr>
-            <tr><td>Paula S.</td><td style="color:var(--gray)">Desconto R$30</td><td><span class="bpts">300</span></td><td style="color:var(--gray)">12/mar</td><td><span class="b bdone">Aprovado</span></td></tr>
-            <tr><td>João M.</td><td style="color:var(--gray)">Desconto R$30</td><td><span class="bpts">300</span></td><td style="color:var(--gray)">08/mar</td><td><span class="b bblk">Recusado</span></td></tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="sec-card">
-        <div class="sec-title">🎂 Aniversariantes do Mês</div>
-        <div class="tl-item"><div class="av">MF</div><div class="tl-info"><div class="tl-title">Maria Fernanda L.</div><div class="tl-meta">15 de março · 4.120 pts</div></div><button class="btn bo bsm" onclick="parabens('Maria Fernanda')">🎉 Parabenizar</button></div>
-        <div class="tl-item"><div class="av">JP</div><div class="tl-info"><div class="tl-title">João Pereira</div><div class="tl-meta">22 de março · 980 pts</div></div><button class="btn bo bsm" onclick="parabens('João')">🎉 Parabenizar</button></div>
-        <div class="tl-item"><div class="av">LS</div><div class="tl-info"><div class="tl-title">Lucia Santos</div><div class="tl-meta">28 de março · 1.640 pts</div></div><button class="btn bo bsm" onclick="parabens('Lucia')">🎉 Parabenizar</button></div>
+        <div id="aniversariantes-lista" style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Nenhum aniversariante este mês</div>
+      
       </div>
 
       <div class="sec-card">
