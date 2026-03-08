@@ -253,9 +253,7 @@ body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
   </div>
   <div class="sec-label">— últimas compras</div>
   <div style="padding:0 16px 16px">
-    <div class="tl-item"><div class="tl-icon">🥩</div><div class="tl-info"><div class="tl-title">Picanha temperada 1,2kg</div><div class="tl-meta">hoje, 14:32</div></div><div class="tl-pts pi">+185</div></div>
-    <div class="tl-item"><div class="tl-icon">🎁</div><div class="tl-info"><div class="tl-title">Bônus indicação — João F.</div><div class="tl-meta">ontem</div></div><div class="tl-pts pb">+24</div></div>
-    <div class="tl-item"><div class="tl-icon">🥩</div><div class="tl-info"><div class="tl-title">Kit milanesas premium</div><div class="tl-meta">12/mar</div></div><div class="tl-pts pi">+240</div></div>
+    <div id="extrato-lista" style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Carregando extrato...</div>
   </div>
 </div>
 
@@ -274,25 +272,28 @@ body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
   </div>
   <div class="sec-card">
     <div class="sec-title">📋 Extrato de Pontos</div>
-    <div class="tl-item"><div class="tl-icon">🥩</div><div class="tl-info"><div class="tl-title">Picanha temperada 1,2kg</div><div class="tl-meta">Compra · hoje</div></div><div class="tl-pts pi">+185</div></div>
-    <div class="tl-item"><div class="tl-icon">🥩</div><div class="tl-info"><div class="tl-title">Kit milanesas premium</div><div class="tl-meta">Compra · 12/mar</div></div><div class="tl-pts pi">+240</div></div>
-    <div class="tl-item"><div class="tl-icon">🥩</div><div class="tl-info"><div class="tl-title">Costela bovina 2kg</div><div class="tl-meta">Compra · 08/mar</div></div><div class="tl-pts pi">+190</div></div>
-    <div class="tl-item"><div class="tl-icon">🎁</div><div class="tl-info"><div class="tl-title">Resgate — Desconto R$30</div><div class="tl-meta">Aprovado · 01/mar</div></div><div class="tl-pts po">−300</div></div>
-    <div class="tl-item"><div class="tl-icon">🥩</div><div class="tl-info"><div class="tl-title">Fraldinha + linguiça</div><div class="tl-meta">Compra · 25/fev</div></div><div class="tl-pts pi">+320</div></div>
+    <div id="extrato-lista" style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Nenhuma transação ainda</div>
   </div>
   <div class="sec-card">
     <div class="sec-title">🎁 Resgatar</div>
-    <div class="rg-card"><div class="rg-icon">💰</div><div class="rg-info"><div class="rg-title">Desconto R$ 30</div><div class="rg-desc">Qualquer produto</div></div><div style="text-align:right"><div class="rg-pts">300pts</div><div class="rg-req" style="color:var(--green)">disponível ✓</div><button class="btn bg bsm" style="margin-top:5px">Resgatar</button></div></div>
-    <div class="rg-card"><div class="rg-icon">💰</div><div class="rg-info"><div class="rg-title">Desconto R$ 50</div><div class="rg-desc">Acima de R$150</div></div><div style="text-align:right"><div class="rg-pts">500pts</div><div class="rg-req" style="color:var(--green)">disponível ✓</div><button class="btn bg bsm" style="margin-top:5px">Resgatar</button></div></div>
-    <div class="rg-card"><div class="rg-icon">🥩</div><div class="rg-info"><div class="rg-title">Brinde especial</div><div class="rg-desc">Surpresa do açougueiro</div></div><div style="text-align:right"><div class="rg-pts">800pts</div><div class="rg-req" style="color:var(--green)">disponível ✓</div><button class="btn bg bsm" style="margin-top:5px">Resgatar</button></div></div>
-    <div class="rg-card" style="opacity:.5"><div class="rg-icon">🎉</div><div class="rg-info"><div class="rg-title">Kit churrasco</div><div class="rg-desc">3 cortes + carvão</div></div><div style="text-align:right"><div class="rg-pts">3.000pts</div><div class="rg-req" style="color:var(--red)">faltam 160</div><button class="btn bo bsm" style="margin-top:5px" disabled>Resgatar</button></div></div>
+    <div class="rg-card" id="card-resgate">
+      <div class="rg-icon">💰</div>
+      <div class="rg-info">
+        <div class="rg-title">Desconto R$ 50</div>
+        <div class="rg-desc">Válido por 90 dias após geração</div>
+      </div>
+      <div style="text-align:right">
+        <div class="rg-pts">5.000pts</div>
+        <div class="rg-req" id="resgate-status" style="color:var(--gray)">carregando...</div>
+        <button class="btn bg bsm" id="btn-resgatar" style="margin-top:5px;display:none" onclick="solicitarResgate()">Resgatar</button>
+      </div>
+    </div>
   </div>
   <div class="sec-card">
     <div class="sec-title">📋 Histórico de Resgates</div>
-    <table class="tbl"><thead><tr><th>Recompensa</th><th>Pts</th><th>Data</th><th>Status</th></tr></thead>
-    <tbody>
-      <tr><td>Desconto R$30</td><td><span class="bpts">300</span></td><td style="color:var(--gray)">01/mar</td><td><span class="b bdone">Aprovado</span></td></tr>
-      <tr><td>Desconto R$50</td><td><span class="bpts">500</span></td><td style="color:var(--gray)">hoje</td><td><span class="b bpend">Pendente</span></td></tr>
+    <table class="tbl"><thead><tr><th>Cupom</th><th>Pts</th><th>Data</th><th>Status</th></tr></thead>
+    <tbody id="historico-resgates-body">
+      <tr><td colspan="4" style="text-align:center;color:var(--gray);padding:12px;font-size:11px">Nenhum resgate ainda</td></tr>
     </tbody></table>
   </div>
 </div>
@@ -457,6 +458,8 @@ function preencherTela(cliente, saldo) {
   atualizarLinkConvite();
   verificar5k(pts);
   gerarQRCode(cliente.codigo);
+  carregarExtrato(cliente.id);
+  atualizarStatusResgate(pts);
   document.getElementById('screen-cad').classList.remove('active');
   document.getElementById('screen-cartao').classList.add('active');
   document.getElementById('bnav').style.display = 'flex';
@@ -705,6 +708,44 @@ async function atualizarCliente(id, dados) {
 }
 
 // Buscar transações do cliente
+// Carregar extrato na tela de pontos
+async function carregarExtrato(clienteId) {
+  const lista = document.getElementById('extrato-lista');
+  if (!lista) return;
+  const trans = await buscarTransacoes(clienteId);
+  if (!trans || trans.length === 0) {
+    lista.innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Nenhuma transação ainda</div>';
+    return;
+  }
+  lista.innerHTML = trans.map(t => {
+    const isCompra = t.tipo === 'compra';
+    const icon = isCompra ? '🥩' : '🎁';
+    const pts = isCompra ? '+' + t.pontos : '−' + t.pontos;
+    const cls = isCompra ? 'pi' : 'po';
+    const data = new Date(t.created_at).toLocaleDateString('pt-BR', {day:'2-digit', month:'short'});
+    const desc = isCompra ? 'Compra · R$' + t.valor_reais.toFixed(0) : 'Resgate';
+    return `<div class="tl-item"><div class="tl-icon">${icon}</div><div class="tl-info"><div class="tl-title">${desc}</div><div class="tl-meta">${data}</div></div><div class="tl-pts ${cls}">${pts}</div></div>`;
+  }).join('');
+}
+
+// Atualizar status do botão de resgate
+function atualizarStatusResgate(pts) {
+  const status = document.getElementById('resgate-status');
+  const btn = document.getElementById('btn-resgatar');
+  if (!status || !btn) return;
+  const META = 5000;
+  if (pts >= META) {
+    status.textContent = 'disponível ✓';
+    status.style.color = 'var(--green)';
+    btn.style.display = 'block';
+  } else {
+    const faltam = META - pts;
+    status.textContent = 'faltam ' + faltam.toLocaleString('pt-BR') + ' pts';
+    status.style.color = 'var(--red)';
+    btn.style.display = 'none';
+  }
+}
+
 async function buscarTransacoes(clienteId) {
   try {
     const r = await fetch(`${SUPA_URL}/rest/v1/transacoes?cliente_id=eq.${clienteId}&order=created_at.desc&limit=20`, { headers: SH });
