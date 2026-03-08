@@ -300,8 +300,12 @@ body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
     <div style="font-family:'Cormorant Garamond',serif;font-size:44px;color:var(--gold-light);font-weight:700;line-height:1">2%</div>
     <div style="font-size:11px;color:var(--gray);margin-top:8px">de cada compra dos seus indicados, <strong style="color:var(--gold)">para sempre</strong></div>
   </div>
-  <button class="share-btn" onclick="compartilhar()">🔗 Compartilhar meu link</button>
-  <div class="share-url">clube-prime.netlify.app/?ref=CR847</div>
+  <button class="share-btn" onclick="compartilhar()">🔗 Compartilhar meu link de convite</button>
+  <div class="share-url" id="share-url-text">natozar.github.io/clube-prime/?ref=CR847</div>
+  <div style="display:flex;gap:8px;margin:0 16px 16px">
+    <button class="btn bo" style="flex:1;padding:10px" onclick="copiarLink()">📋 Copiar link</button>
+    <button class="btn bo" style="flex:1;padding:10px" onclick="compartilharWhats()">💬 WhatsApp</button>
+  </div>
   <div class="sec-card">
     <div class="sec-title">👥 Minha Rede</div>
     <div class="net-me"><div class="av">CR</div><div class="av-info"><div class="av-name">Carlos Rodrigues (você)</div><div class="av-meta">5 indicados · 2% permanente</div></div><div class="av-pts">+284pts</div></div>
@@ -370,6 +374,25 @@ body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
   </div>
 </div>
 
+<!-- MODAL 5000 PONTOS -->
+<div class="mo" id="mo-5k">
+  <div class="md" style="text-align:center">
+    <div class="md-handle"></div>
+    <div style="font-size:48px;margin-bottom:10px">🎉</div>
+    <div class="md-title" style="color:var(--gold-light);justify-content:center;display:flex">Você chegou aos 5.000 pontos!</div>
+    <div class="md-text">Parabéns! Você acumulou <strong style="color:var(--gold)">5.000 pontos Prime</strong>.<br>Um cupom de desconto foi gerado automaticamente.<br><br><span style="font-size:10px;color:var(--gray)">⏰ Válido por 90 dias — não perca!</span></div>
+    <div style="background:rgba(201,168,76,.08);border:2px dashed rgba(201,168,76,.4);border-radius:12px;padding:16px;margin-bottom:18px">
+      <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gray);margin-bottom:6px">seu cupom</div>
+      <div style="font-family:'Fira Code',monospace;font-size:22px;color:var(--gold-light);font-weight:700;letter-spacing:4px" id="cupom-code">PRIME50</div>
+      <div style="font-size:10px;color:var(--gray);margin-top:4px">R$ 50 de desconto na próxima compra</div>
+    </div>
+    <div class="md-actions" style="justify-content:center;flex-direction:column;gap:8px">
+      <button class="btn bg" style="width:100%" onclick="compartilharCupom()">📲 Compartilhar cupom</button>
+      <button class="btn bo" style="width:100%" onclick="document.getElementById('mo-5k').classList.remove('open')">Fechar</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL EXCLUSÃO -->
 <div class="mo" id="mo-del">
   <div class="md"><div class="md-handle"></div><div class="md-title" style="color:var(--red)">Excluir Conta</div><div class="md-text">Você perderá <strong style="color:var(--gold)">2.840 pontos</strong> permanentemente.</div><div class="md-actions"><button class="btn bo" onclick="document.getElementById('mo-del').classList.remove('open')">Cancelar</button><button class="btn bd">Confirmar</button></div></div>
@@ -402,10 +425,57 @@ function S(n,btn){
   document.getElementById('screen-'+n).classList.add('active');
   btn.classList.add('active');
 }
+// ID e código do cliente (em produção vem do banco)
+let clienteId = null;
+let clienteCodigo = 'CR847';
+let clienteNome = 'Carlos';
+
+function getLinkConvite() {
+  return window.location.origin + window.location.pathname.replace('index.html','') + '?ref=' + clienteCodigo;
+}
+
 function compartilhar(){
-  const url=window.location.origin+'/?ref=CR847';
-  if(navigator.share)navigator.share({title:'Clube Prime',text:'Entre no Clube Prime do Empório Família Rodrigues pelo meu link!',url});
+  const url = getLinkConvite();
+  if(navigator.share) navigator.share({title:'Clube Prime',text:'Entre no Clube Prime do Empório Família Rodrigues pelo meu link!',url});
   else navigator.clipboard.writeText(url).then(()=>alert('Link copiado!'));
+}
+
+function copiarLink(){
+  const url = getLinkConvite();
+  navigator.clipboard.writeText(url).then(()=>{
+    const btn = event.target;
+    btn.textContent = '✓ Copiado!';
+    setTimeout(()=>btn.textContent='📋 Copiar link', 2000);
+  });
+}
+
+function compartilharWhats(){
+  const url = getLinkConvite();
+  const msg = encodeURIComponent('Oi! Entrei no Clube Prime do Empório Família Rodrigues e você também pode! Use meu link para se cadastrar e ganhar pontos: ' + url);
+  window.open('https://wa.me/?text=' + msg, '_blank');
+}
+
+function compartilharCupom(){
+  const msg = 'Meu cupom do Clube Prime: *PRIME50* — R$50 de desconto na próxima compra no Empório Família Rodrigues! 🥩';
+  if(navigator.share) navigator.share({title:'Cupom Clube Prime', text:msg});
+  else navigator.clipboard.writeText(msg).then(()=>alert('Cupom copiado!'));
+}
+
+// Verificar se atingiu 5.000 pontos e mostrar alerta
+function verificar5k(saldo) {
+  const ja_viu = localStorage.getItem('5k-alerta-' + clienteCodigo);
+  if(saldo >= 5000 && !ja_viu) {
+    setTimeout(()=>{
+      document.getElementById('mo-5k').classList.add('open');
+      localStorage.setItem('5k-alerta-' + clienteCodigo, '1');
+    }, 1500);
+  }
+}
+
+// Atualizar link de convite na tela
+function atualizarLinkConvite() {
+  const el = document.getElementById('share-url-text');
+  if(el) el.textContent = getLinkConvite();
 }
 document.querySelectorAll('.mo').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open')}));
 let dp=null;

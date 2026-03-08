@@ -223,9 +223,9 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom))}
       <div class="sec-card">
         <div class="sec-title">👤 Clientes <button class="btn bg bsm" onclick="document.getElementById('mo-new').classList.add('open')">+ Novo</button></div>
         <div class="search-bar"><input class="si" placeholder="Buscar cliente..."><select class="fsel" style="width:110px"><option>Todos</option><option>Ativos</option><option>Bloqueados</option></select></div>
-        <div class="tl-item"><div class="av">MF</div><div class="tl-info"><div class="tl-title">Maria Fernanda L.</div><div class="tl-meta">#MF-00312 · jan/2024 · 8 indicados</div></div><div style="text-align:right"><div class="bpts">4.120</div><div style="margin-top:5px" class="brow" style="justify-content:flex-end"><button class="btn bo bsm">Edit</button><button class="btn bd bsm">Blq</button></div></div></div>
-        <div class="tl-item"><div class="av">CR</div><div class="tl-info"><div class="tl-title">Carlos Rodrigues</div><div class="tl-meta">#CR-00847 · jan/2024 · 5 indicados</div></div><div style="text-align:right"><div class="bpts">2.840</div><div style="margin-top:5px" class="brow"><button class="btn bo bsm">Edit</button><button class="btn bd bsm">Blq</button></div></div></div>
-        <div class="tl-item"><div class="av" style="background:var(--dark3);border:1px solid rgba(201,168,76,.3);color:var(--gold)">AC</div><div class="tl-info"><div class="tl-title">Ana Costa</div><div class="tl-meta">#AC-01024 · mar/2025 · novo</div></div><div style="text-align:right"><div class="bpts">185</div><div style="margin-top:5px" class="brow"><button class="btn bo bsm">Edit</button><button class="btn bd bsm">Blq</button></div></div></div>
+        <div class="tl-item"><div class="av">MF</div><div class="tl-info"><div class="tl-title">Maria Fernanda L.</div><div class="tl-meta">#MF-00312 · jan/2024 · 8 indicados</div></div><div style="text-align:right"><div class="bpts">4.120</div><div style="margin-top:5px;display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end"><button class="btn bo bsm" onclick="enviarConvite('MF-00312','Maria Fernanda')">🔗</button><button class="btn bo bsm">Edit</button><button class="btn bd bsm">Blq</button></div></div></div>
+        <div class="tl-item"><div class="av">CR</div><div class="tl-info"><div class="tl-title">Carlos Rodrigues</div><div class="tl-meta">#CR-00847 · jan/2024 · 5 indicados</div><div style="margin-top:4px"><div style="height:3px;background:rgba(255,255,255,.08);border-radius:2px;width:100%"><div style="height:100%;width:57%;background:linear-gradient(90deg,var(--gold-dark),var(--gold));border-radius:2px"></div></div><div style="font-size:8px;color:var(--gray);margin-top:2px">2.840 / 5.000 pts</div></div></div><div style="text-align:right"><div class="bpts">2.840</div><div style="margin-top:5px;display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end"><button class="btn bo bsm" onclick="enviarConvite('CR-00847','Carlos')">🔗</button><button class="btn bo bsm">Edit</button><button class="btn bd bsm">Blq</button></div></div></div>
+        <div class="tl-item"><div class="av" style="background:var(--dark3);border:1px solid rgba(201,168,76,.3);color:var(--gold)">AC</div><div class="tl-info"><div class="tl-title">Ana Costa</div><div class="tl-meta">#AC-01024 · mar/2025 · novo</div></div><div style="text-align:right"><div class="bpts">185</div><div style="margin-top:5px;display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end"><button class="btn bo bsm" onclick="enviarConvite('AC-01024','Ana')">🔗</button><button class="btn bo bsm">Edit</button><button class="btn bd bsm">Blq</button></div></div></div>
       </div>
       <div class="sec-card">
         <div class="sec-title">⏳ Resgates Pendentes <span style="background:var(--red);color:#fff;border-radius:10px;padding:1px 7px;font-size:9px">8</span></div>
@@ -241,6 +241,26 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom))}
         <div class="toggle-row"><div class="ti"><div class="tt">Notificação por WhatsApp</div><div class="td">Avisar ao pontuar/resgatar</div></div><div class="tog"><div class="tog-d"></div></div></div>
         <div style="margin-top:14px" class="brow"><button class="btn bg">Salvar</button><button class="btn bo">Restaurar</button></div>
       </div>
+      <div class="sec-card">
+        <div class="sec-title">🎁 Histórico de Resgates</div>
+        <table class="tbl">
+          <thead><tr><th>Cliente</th><th>Recompensa</th><th>Pts</th><th>Data</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>Maria F.</td><td style="color:var(--gray)">Desconto R$50</td><td><span class="bpts">500</span></td><td style="color:var(--gray)">hoje</td><td><span class="b bdone">Aprovado</span></td></tr>
+            <tr><td>Carlos R.</td><td style="color:var(--gray)">Brinde especial</td><td><span class="bpts">800</span></td><td style="color:var(--gray)">ontem</td><td><span class="b bpend">Pendente</span></td></tr>
+            <tr><td>Paula S.</td><td style="color:var(--gray)">Desconto R$30</td><td><span class="bpts">300</span></td><td style="color:var(--gray)">12/mar</td><td><span class="b bdone">Aprovado</span></td></tr>
+            <tr><td>João M.</td><td style="color:var(--gray)">Desconto R$30</td><td><span class="bpts">300</span></td><td style="color:var(--gray)">08/mar</td><td><span class="b bblk">Recusado</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="sec-card">
+        <div class="sec-title">🎂 Aniversariantes do Mês</div>
+        <div class="tl-item"><div class="av">MF</div><div class="tl-info"><div class="tl-title">Maria Fernanda L.</div><div class="tl-meta">15 de março · 4.120 pts</div></div><button class="btn bo bsm" onclick="parabens('Maria Fernanda')">🎉 Parabenizar</button></div>
+        <div class="tl-item"><div class="av">JP</div><div class="tl-info"><div class="tl-title">João Pereira</div><div class="tl-meta">22 de março · 980 pts</div></div><button class="btn bo bsm" onclick="parabens('João')">🎉 Parabenizar</button></div>
+        <div class="tl-item"><div class="av">LS</div><div class="tl-info"><div class="tl-title">Lucia Santos</div><div class="tl-meta">28 de março · 1.640 pts</div></div><button class="btn bo bsm" onclick="parabens('Lucia')">🎉 Parabenizar</button></div>
+      </div>
+
       <div class="sec-card">
         <div class="sec-title">📄 Relatórios</div>
         <div class="brow">
@@ -446,6 +466,29 @@ async function admCep(){
     document.getElementById('adm-uf').value=d.uf||'';
   }catch(e){alert('Erro ao buscar CEP');}
 }
+// Enviar convite personalizado pelo WhatsApp
+function enviarConvite(codigo, nome) {
+  const base = 'https://natozar.github.io/clube-prime/';
+  const link = base + '?ref=' + codigo;
+  const msg = encodeURIComponent(
+    'Olá ' + nome + '! 👋\n\nVocê está convidado para o *Clube Prime* do Empório Família Rodrigues! 🥩\n\n' +
+    'Cadastre-se pelo seu link exclusivo e comece a acumular pontos em cada compra:\n' +
+    link + '\n\nAté logo! 😊'
+  );
+  window.open('https://wa.me/?text=' + msg, '_blank');
+}
+
+// Parabenizar aniversariante pelo WhatsApp
+function parabens(nome) {
+  const msg = encodeURIComponent(
+    '🎂 Feliz Aniversário, ' + nome + '!\n\n' +
+    'O Empório Família Rodrigues deseja um dia incrível! 🥩🎉\n\n' +
+    'Como presente, você ganhou *pontos em dobro* na sua próxima compra este mês!\n\n' +
+    'Equipe Clube Prime'
+  );
+  window.open('https://wa.me/?text=' + msg, '_blank');
+}
+
 // CEP mask admin
 const admCepInput=document.getElementById('adm-cep');
 if(admCepInput)admCepInput.addEventListener('input',function(){
