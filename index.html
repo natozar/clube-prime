@@ -478,7 +478,7 @@ async function goApp() {
         if (d[0]) indicado_por = d[0].id;
       }
 
-      cliente = await cadastrarCliente({ nome, telefone: tel, nascimento: nasc || null, codigo, indicado_por, status: 'ativo' });
+      cliente = await cadastrarCliente({ nome, telefone: tel, nacimento: nasc || null, codigo, indicado_por, status: 'ativo' });
 
       if (cliente) {
         preencherTela(cliente, 0);
