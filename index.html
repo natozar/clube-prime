@@ -210,7 +210,7 @@ body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
       <div class="fl"><label class="flabel">WhatsApp *</label><input class="fi" id="inp-tel" type="tel" placeholder="(16) 99999-0000"></div>
       <div class="fl"><label class="flabel">Data de nascimento *</label><input class="fi" id="inp-nasc" type="date"></div>
       <button class="cad-btn" onclick="goApp()">Entrar no Clube Prime →</button>
-      <div class="cad-link">Já é membro? <a onclick="goApp()">Acessar meu cartão</a></div>
+      <div class="cad-link">Já é membro? <a onclick="acessarCartao()">Acessar meu cartão</a></div>
     </div>
   </div>
 </div>
@@ -411,14 +411,117 @@ const params=new URLSearchParams(window.location.search);
 const ref=params.get('ref');
 if(ref){document.getElementById('ref-banner').style.display='block';document.getElementById('ref-name').textContent='um amigo';}
 
-function goApp(){
-  const nome=document.getElementById('inp-nome').value||'Carlos Rodrigues';
-  document.getElementById('display-nome').textContent=nome;
-  document.getElementById('card-nome').textContent=nome.split(' ')[0]+' '+nome.split(' ').slice(-1)[0].charAt(0)+'.';
+// Gerar código único do cartão
+function gerarCodigo(nome) {
+  const iniciais = nome.trim().split(' ').filter(Boolean).map(p=>p[0].toUpperCase()).slice(0,2).join('');
+  const num = String(Math.floor(1000 + Math.random() * 9000));
+  return iniciais + '-' + num;
+}
+
+// Detectar indicação pela URL
+const refCodigo = new URLSearchParams(window.location.search).get('ref');
+
+// Preencher tela com dados do cliente
+function preencherTela(cliente, saldo) {
+  clienteId = cliente.id;
+  clienteCodigo = cliente.codigo;
+  clienteNome = cliente.nome.split(' ')[0];
+  document.getElementById('display-nome').textContent = cliente.nome;
+  document.getElementById('card-nome').textContent = cliente.nome.split(' ')[0] + ' ' + (cliente.nome.split(' ').slice(-1)[0]||'')[0] + '.';
+  const pts = saldo || 0;
+  document.querySelectorAll('.pts-val, #saldo-pts').forEach(el => el.textContent = pts.toLocaleString('pt-BR'));
+  // Barra de progresso
+  const pct = Math.min(100, (pts / 5000) * 100);
+  document.querySelectorAll('.prog-bar').forEach(el => el.style.width = pct + '%');
+  document.querySelectorAll('.prog-label').forEach(el => el.textContent = pts + ' / 5.000 pts');
+  atualizarLinkConvite();
+  verificar5k(pts);
   document.getElementById('screen-cad').classList.remove('active');
   document.getElementById('screen-cartao').classList.add('active');
-  document.getElementById('bnav').style.display='flex';
+  document.getElementById('bnav').style.display = 'flex';
 }
+
+async function goApp() {
+  const nome = document.getElementById('inp-nome').value.trim();
+  const tel  = document.getElementById('inp-tel').value.trim();
+  const nasc = document.getElementById('inp-nasc').value;
+
+  if (!nome || !tel) {
+    alert('Preencha nome e WhatsApp para continuar!');
+    return;
+  }
+
+  const btn = document.querySelector('.cad-btn');
+  btn.textContent = 'Aguarde...';
+  btn.disabled = true;
+
+  try {
+    // 1. Verificar se já é cadastrado pelo telefone
+    let cliente = await buscarCliente(tel);
+
+    if (cliente) {
+      // Já cadastrado — buscar saldo
+      const r = await fetch(`${SUPA_URL}/rest/v1/pontos?cliente_id=eq.${cliente.id}`, { headers: SH });
+      const pts = await r.json();
+      preencherTela(cliente, pts[0]?.saldo || 0);
+      localStorage.setItem('clube_cliente_id', cliente.id);
+      localStorage.setItem('clube_cliente_tel', tel);
+    } else {
+      // Novo cadastro
+      const codigo = gerarCodigo(nome);
+      let indicado_por = null;
+
+      // Buscar quem indicou
+      if (refCodigo) {
+        const r = await fetch(`${SUPA_URL}/rest/v1/clientes?codigo=eq.${refCodigo}&select=id`, { headers: SH });
+        const d = await r.json();
+        if (d[0]) indicado_por = d[0].id;
+      }
+
+      cliente = await cadastrarCliente({ nome, telefone: tel, nascimento: nasc || null, codigo, indicado_por, status: 'ativo' });
+
+      if (cliente) {
+        preencherTela(cliente, 0);
+        localStorage.setItem('clube_cliente_id', cliente.id);
+        localStorage.setItem('clube_cliente_tel', tel);
+      } else {
+        alert('Erro ao cadastrar. Tente novamente.');
+      }
+    }
+  } catch(e) {
+    console.error(e);
+    alert('Erro de conexão. Verifique sua internet.');
+  } finally {
+    btn.textContent = 'Entrar no Clube Prime →';
+    btn.disabled = false;
+  }
+}
+
+// Auto-login se já cadastrado
+window.addEventListener('load', async () => {
+  const tel = localStorage.getItem('clube_cliente_tel');
+  if (tel) {
+    const cliente = await buscarCliente(tel);
+    if (cliente) {
+      const r = await fetch(`${SUPA_URL}/rest/v1/pontos?cliente_id=eq.${cliente.id}`, { headers: SH });
+      const pts = await r.json();
+      preencherTela(cliente, pts[0]?.saldo || 0);
+    }
+  }
+});
+async function acessarCartao() {
+  const tel = document.getElementById('inp-tel').value.trim();
+  if (!tel) { alert('Digite seu WhatsApp para acessar seu cartão!'); return; }
+  const cliente = await buscarCliente(tel);
+  if (cliente) {
+    const r = await fetch(`${SUPA_URL}/rest/v1/pontos?cliente_id=eq.${cliente.id}`, { headers: SH });
+    const pts = await r.json();
+    preencherTela(cliente, pts[0]?.saldo || 0);
+  } else {
+    alert('Número não encontrado. Faça seu cadastro!');
+  }
+}
+
 function S(n,btn){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.bn').forEach(b=>b.classList.remove('active'));
