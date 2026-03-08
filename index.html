@@ -170,6 +170,7 @@ body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
 .pp-step{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.08)}
 .pp-step.done{background:var(--gold)}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
 
@@ -230,7 +231,7 @@ body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
     <div class="card-divider"></div>
     <div class="card-mid">
       <div><div style="font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--gray)">saldo de pontos</div><div style="font-family:'Cormorant Garamond',serif;font-size:38px;color:var(--gold-light);font-weight:700;line-height:1">2.840</div><div style="font-size:9px;color:var(--gold-dark);letter-spacing:1px">pts acumulados</div></div>
-      <div class="qr-box"><svg width="50" height="50" viewBox="0 0 52 52"><rect x="0" y="0" width="18" height="18" fill="none" stroke="#000" stroke-width="2"/><rect x="4" y="4" width="10" height="10" fill="#000"/><rect x="34" y="0" width="18" height="18" fill="none" stroke="#000" stroke-width="2"/><rect x="38" y="4" width="10" height="10" fill="#000"/><rect x="0" y="34" width="18" height="18" fill="none" stroke="#000" stroke-width="2"/><rect x="4" y="38" width="10" height="10" fill="#000"/><rect x="22" y="2" width="4" height="4" fill="#000"/><rect x="28" y="2" width="4" height="4" fill="#000"/><rect x="22" y="8" width="4" height="4" fill="#000"/><rect x="2" y="22" width="4" height="4" fill="#000"/><rect x="8" y="22" width="4" height="4" fill="#000"/><rect x="22" y="22" width="4" height="4" fill="#000"/><rect x="28" y="22" width="4" height="4" fill="#000"/><rect x="34" y="22" width="4" height="4" fill="#000"/><rect x="40" y="22" width="4" height="4" fill="#000"/><rect x="22" y="28" width="4" height="4" fill="#000"/><rect x="34" y="28" width="4" height="4" fill="#000"/><rect x="22" y="34" width="4" height="4" fill="#000"/><rect x="28" y="34" width="4" height="4" fill="#000"/><rect x="40" y="34" width="4" height="4" fill="#000"/><rect x="22" y="40" width="4" height="4" fill="#000"/><rect x="34" y="40" width="4" height="4" fill="#000"/><rect x="28" y="46" width="4" height="4" fill="#000"/></svg></div>
+      <div class="qr-box" id="qr-box"><canvas id="qr-canvas" width="50" height="50"></canvas></div>
     </div>
     <div class="card-bot">
       <div><div style="font-size:12px;font-weight:600;color:var(--white);letter-spacing:1px;text-transform:uppercase" id="card-nome">Carlos R.</div><div style="font-size:9px;color:var(--gray);margin-top:2px">#CR-00847</div></div>
@@ -422,6 +423,21 @@ function gerarCodigo(nome) {
 const refCodigo = new URLSearchParams(window.location.search).get('ref');
 
 // Preencher tela com dados do cliente
+function gerarQRCode(codigo) {
+  const box = document.getElementById('qr-box');
+  if (!box) return;
+  box.innerHTML = '';
+  const url = window.location.origin + window.location.pathname + '?scan=' + codigo;
+  new QRCode(box, {
+    text: url,
+    width: 50,
+    height: 50,
+    colorDark: '#000000',
+    colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.M
+  });
+}
+
 function preencherTela(cliente, saldo) {
   clienteId = cliente.id;
   clienteCodigo = cliente.codigo;
@@ -436,6 +452,7 @@ function preencherTela(cliente, saldo) {
   document.querySelectorAll('.prog-label').forEach(el => el.textContent = pts + ' / 5.000 pts');
   atualizarLinkConvite();
   verificar5k(pts);
+  gerarQRCode(cliente.codigo);
   document.getElementById('screen-cad').classList.remove('active');
   document.getElementById('screen-cartao').classList.add('active');
   document.getElementById('bnav').style.display = 'flex';
