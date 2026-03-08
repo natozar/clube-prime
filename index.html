@@ -415,6 +415,75 @@ if(!isStandalone&&!(dismissed&&Date.now()-parseInt(dismissed)<86400000)){
 }
 document.getElementById('dismiss-btn').addEventListener('click',()=>{banner.classList.remove('show');localStorage.setItem('pwa-d',Date.now())});
 if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));
+
+// ── SUPABASE ──────────────────────────────────────────────
+const SUPA_URL = 'https://mrourzdxrahpysscckkxm.supabase.co';
+const SUPA_KEY = 'sb_publishable_MaAKSd8Jdws1U0oaPaEytA_c0P-V0Cp';
+const SH = { apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}`, 'Content-Type': 'application/json' };
+
+// Buscar cliente pelo telefone
+async function buscarCliente(telefone) {
+  try {
+    const r = await fetch(`${SUPA_URL}/rest/v1/clientes?telefone=eq.${encodeURIComponent(telefone)}&select=*,pontos(*)`, { headers: SH });
+    const d = await r.json();
+    return d[0] || null;
+  } catch(e) { return null; }
+}
+
+// Cadastrar novo cliente
+async function cadastrarCliente(dados) {
+  try {
+    const r = await fetch(`${SUPA_URL}/rest/v1/clientes`, {
+      method: 'POST', headers: { ...SH, Prefer: 'return=representation' },
+      body: JSON.stringify(dados)
+    });
+    const d = await r.json();
+    const cliente = d[0];
+    // Criar saldo de pontos zerado
+    await fetch(`${SUPA_URL}/rest/v1/pontos`, {
+      method: 'POST', headers: SH,
+      body: JSON.stringify({ cliente_id: cliente.id, saldo: 0, total_ganho: 0, total_usado: 0 })
+    });
+    return cliente;
+  } catch(e) { return null; }
+}
+
+// Atualizar perfil do cliente
+async function atualizarCliente(id, dados) {
+  try {
+    await fetch(`${SUPA_URL}/rest/v1/clientes?id=eq.${id}`, {
+      method: 'PATCH', headers: SH, body: JSON.stringify(dados)
+    });
+    return true;
+  } catch(e) { return false; }
+}
+
+// Buscar transações do cliente
+async function buscarTransacoes(clienteId) {
+  try {
+    const r = await fetch(`${SUPA_URL}/rest/v1/transacoes?cliente_id=eq.${clienteId}&order=created_at.desc&limit=20`, { headers: SH });
+    return await r.json();
+  } catch(e) { return []; }
+}
+
+// Buscar resgates do cliente
+async function buscarResgates(clienteId) {
+  try {
+    const r = await fetch(`${SUPA_URL}/rest/v1/resgates?cliente_id=eq.${clienteId}&order=created_at.desc`, { headers: SH });
+    return await r.json();
+  } catch(e) { return []; }
+}
+
+// Solicitar resgate
+async function solicitarResgate(clienteId, recompensa, pontos) {
+  try {
+    await fetch(`${SUPA_URL}/rest/v1/resgates`, {
+      method: 'POST', headers: SH,
+      body: JSON.stringify({ cliente_id: clienteId, recompensa, pontos_usados: pontos, status: 'pendente' })
+    });
+    return true;
+  } catch(e) { return false; }
+}
 // CPF mask
 const cpfInput=document.getElementById('inp-cpf');
 if(cpfInput)cpfInput.addEventListener('input',function(){

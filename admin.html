@@ -304,6 +304,95 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom))}
 <script>
 // PIN
 const PIN='1974'; // PIN padrão — trocar em produção
+
+// ── SUPABASE ──────────────────────────────────────────────
+const SUPA_URL = 'https://mrourzdxrahpysscckkxm.supabase.co';
+const SUPA_KEY = 'sb_publishable_MaAKSd8Jdws1U0oaPaEytA_c0P-V0Cp';
+const SH = { apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}`, 'Content-Type': 'application/json' };
+
+// Listar todos os clientes
+async function listarClientes() {
+  try {
+    const r = await fetch(`${SUPA_URL}/rest/v1/clientes?select=*,pontos(saldo)&order=created_at.desc`, { headers: SH });
+    return await r.json();
+  } catch(e) { return []; }
+}
+
+// Buscar cliente pelo código do cartão (ex: CR-00847)
+async function buscarClientePorCodigo(codigo) {
+  try {
+    const r = await fetch(`${SUPA_URL}/rest/v1/clientes?codigo=eq.${codigo}&select=*,pontos(*)`, { headers: SH });
+    const d = await r.json();
+    return d[0] || null;
+  } catch(e) { return null; }
+}
+
+// Registrar compra e pontuar cliente
+async function registrarCompra(clienteId, valorReais, descricao) {
+  try {
+    const pts = Math.floor(valorReais);
+    // 1. Inserir transação
+    await fetch(`${SUPA_URL}/rest/v1/transacoes`, {
+      method: 'POST', headers: SH,
+      body: JSON.stringify({ cliente_id: clienteId, tipo: 'compra', descricao, valor_reais: valorReais, pontos: pts })
+    });
+    // 2. Buscar saldo atual
+    const r = await fetch(`${SUPA_URL}/rest/v1/pontos?cliente_id=eq.${clienteId}`, { headers: SH });
+    const pontos = await r.json();
+    const atual = pontos[0];
+    // 3. Atualizar saldo
+    await fetch(`${SUPA_URL}/rest/v1/pontos?cliente_id=eq.${clienteId}`, {
+      method: 'PATCH', headers: SH,
+      body: JSON.stringify({ saldo: atual.saldo + pts, total_ganho: atual.total_ganho + pts })
+    });
+    return pts;
+  } catch(e) { return null; }
+}
+
+// Listar resgates pendentes
+async function listarResgatesPendentes() {
+  try {
+    const r = await fetch(`${SUPA_URL}/rest/v1/resgates?status=eq.pendente&select=*,clientes(nome,codigo)&order=created_at.desc`, { headers: SH });
+    return await r.json();
+  } catch(e) { return []; }
+}
+
+// Aprovar ou recusar resgate
+async function atualizarResgate(id, status, clienteId, pontos) {
+  try {
+    await fetch(`${SUPA_URL}/rest/v1/resgates?id=eq.${id}`, {
+      method: 'PATCH', headers: SH,
+      body: JSON.stringify({ status, aprovado_em: new Date().toISOString() })
+    });
+    if(status === 'aprovado') {
+      const r = await fetch(`${SUPA_URL}/rest/v1/pontos?cliente_id=eq.${clienteId}`, { headers: SH });
+      const d = await r.json();
+      const atual = d[0];
+      await fetch(`${SUPA_URL}/rest/v1/pontos?cliente_id=eq.${clienteId}`, {
+        method: 'PATCH', headers: SH,
+        body: JSON.stringify({ saldo: atual.saldo - pontos, total_usado: atual.total_usado + pontos })
+      });
+    }
+    return true;
+  } catch(e) { return false; }
+}
+
+// Cadastrar novo cliente pelo admin
+async function cadastrarClienteAdmin(dados) {
+  try {
+    const r = await fetch(`${SUPA_URL}/rest/v1/clientes`, {
+      method: 'POST', headers: { ...SH, Prefer: 'return=representation' },
+      body: JSON.stringify(dados)
+    });
+    const d = await r.json();
+    const cliente = d[0];
+    await fetch(`${SUPA_URL}/rest/v1/pontos`, {
+      method: 'POST', headers: SH,
+      body: JSON.stringify({ cliente_id: cliente.id, saldo: 0, total_ganho: 0, total_usado: 0 })
+    });
+    return cliente;
+  } catch(e) { return null; }
+}
 let pinEntry='';
 function pinKey(n){
   if(pinEntry.length>=4)return;
