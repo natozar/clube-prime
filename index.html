@@ -644,7 +644,7 @@ const SH = { apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}`, 'Content-Typ
 // Buscar cliente pelo telefone
 async function buscarCliente(telefone) {
   try {
-    const r = await fetch(`${SUPA_URL}/rest/v1/clientes?telefone=eq.${encodeURIComponent(telefone)}&select=*,pontos(*)`, { headers: SH });
+    const r = await fetch(`${SUPA_URL}/rest/v1/clientes?telefone=eq.${encodeURIComponent(telefone)}&select=*`, { headers: SH });
     const d = await r.json();
     return d[0] || null;
   } catch(e) { return null; }
