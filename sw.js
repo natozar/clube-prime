@@ -1,21 +1,20 @@
-const CACHE_NAME = 'clube-prime-v1';
+const CACHE_NAME = 'clube-prime-v2';
+const BASE = self.location.pathname.replace('/sw.js', '');
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icon-192.png',
-  '/icon-512.png'
+  BASE + '/',
+  BASE + '/index.html',
+  BASE + '/manifest.json',
+  BASE + '/icon-192.png',
+  BASE + '/icon-512.png'
 ];
 
-// Instala e faz cache dos assets principais
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
+    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS).catch(() => {}))
   );
   self.skipWaiting();
 });
 
-// Limpa caches antigos
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
@@ -25,7 +24,6 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
-// Cache-first: serve do cache, atualiza em background
 self.addEventListener('fetch', event => {
   event.respondWith(
     caches.match(event.request).then(cached => {
