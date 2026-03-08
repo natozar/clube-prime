@@ -133,6 +133,7 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom))}
 <!-- PIN SCREEN -->
 <div id="pin-screen" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:24px">
   <div class="logo pin-logo"></div>
+  <div id="pin-step">
   <div class="pin-title">Área Restrita</div>
   <div class="pin-sub">Digite o PIN de acesso</div>
   <div class="pin-display">
@@ -140,12 +141,29 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom))}
     <div class="pin-dot" id="d2"></div><div class="pin-dot" id="d3"></div>
   </div>
   <div class="pin-keypad">
-    <div class="pin-key" onclick="pinKey('1')">1</div><div class="pin-key" onclick="pinKey('2')">2</div><div class="pin-key" onclick="pinKey('3')">3</div>
+    <div class="pin-key" onclick="pinKey('1')">1</div><div class="pin-key" onclick="pinKey('2')">0</div><div class="pin-key" onclick="pinKey('3')">3</div>
     <div class="pin-key" onclick="pinKey('4')">4</div><div class="pin-key" onclick="pinKey('5')">5</div><div class="pin-key" onclick="pinKey('6')">6</div>
-    <div class="pin-key" onclick="pinKey('7')">7</div><div class="pin-key" onclick="pinKey('8')">8</div><div class="pin-key" onclick="pinKey('9')">9</div>
+    <div class="pin-key" onclick="pinKey('7')">7</div><div class="pin-key" onclick="pinKey('8')">0</div><div class="pin-key" onclick="pinKey('9')">9</div>
     <div></div><div class="pin-key" onclick="pinKey('0')">0</div><div class="pin-key" onclick="pinDel()" style="font-size:18px">⌫</div>
   </div>
   <div class="pin-error" id="pin-error"></div>
+</div>
+
+<!-- STEP 2: Senha secreta -->
+<div id="senha-step" style="display:none;padding:32px 24px;text-align:center">
+  <div style="font-size:13px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:24px">🔐 Verificação</div>
+  <div style="font-size:12px;color:var(--gray);margin-bottom:16px">Digite a senha de acesso</div>
+  <input id="inp-senha" type="password" autocomplete="off"
+    style="width:100%;max-width:280px;background:var(--dark2);border:1px solid rgba(201,168,76,.3);border-radius:10px;padding:12px 16px;color:var(--white);font-size:16px;text-align:center;outline:none;letter-spacing:4px"
+    placeholder="••••••••"
+    onkeydown="if(event.key==='Enter')verificarSenha()">
+  <div style="margin-top:16px">
+    <button onclick="verificarSenha()" style="background:var(--gold);color:#000;border:none;border-radius:10px;padding:12px 32px;font-size:13px;font-weight:700;letter-spacing:1px;cursor:pointer">CONFIRMAR</button>
+  </div>
+  <div class="pin-error" id="senha-error" style="margin-top:12px"></div>
+  <div style="margin-top:16px">
+    <a onclick="voltarPin()" style="color:var(--gray);font-size:11px;cursor:pointer">← Voltar ao PIN</a>
+  </div>
 </div>
 
 <!-- ADMIN APP (oculto até PIN correto) -->
@@ -188,8 +206,8 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom))}
         <div class="kpi-row">
           <div class="kpi"><div class="kpi-l">Membros</div><div class="kpi-v">0</div><div class="kpi-u">—</div></div>
           <div class="kpi"><div class="kpi-l">Compras</div><div class="kpi-v" style="font-size:18px">R$0</div><div class="kpi-u">—</div></div>
-          <div class="kpi"><div class="kpi-l">Indicações</div><div class="kpi-v">43</div><div class="kpi-s">links ativos</div></div>
-          <div class="kpi"><div class="kpi-l">Via indicação</div><div class="kpi-v">17</div><div class="kpi-s">novos/mês</div></div>
+          <div class="kpi"><div class="kpi-l">Indicações</div><div class="kpi-v">0</div><div class="kpi-s">—</div></div>
+          <div class="kpi"><div class="kpi-l">Via indicação</div><div class="kpi-v">0</div><div class="kpi-s">—</div></div>
         </div>
       </div>
       <div class="sec-card">
@@ -211,10 +229,10 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom))}
     <div class="pw">
       <div style="padding:0 16px">
         <div class="kpi-row">
-          <div class="kpi"><div class="kpi-l">Membros</div><div class="kpi-v">0</div><div class="kpi-u">+12</div></div>
+          <div class="kpi"><div class="kpi-l">Membros</div><div class="kpi-v">0</div><div class="kpi-u">—</div></div>
           <div class="kpi"><div class="kpi-l">Pendentes</div><div class="kpi-v" style="color:var(--red)">8</div><div class="kpi-s">resgates</div></div>
           <div class="kpi"><div class="kpi-l">Bloqueados</div><div class="kpi-v">2</div><div class="kpi-s">suspensos</div></div>
-          <div class="kpi"><div class="kpi-l">Pontos</div><div class="kpi-v" style="font-size:18px">184k</div><div class="kpi-s">circulação</div></div>
+          <div class="kpi"><div class="kpi-l">Pontos</div><div class="kpi-v" style="font-size:18px">0</div><div class="kpi-s">pts em circulação</div></div>
         </div>
       </div>
       <div class="sec-card">
@@ -280,7 +298,8 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom))}
 
 <script>
 // PIN
-const PIN='1974'; // PIN padrão — trocar em produção
+const PIN='1974';         // PIN numérico — 4 dígitos
+const SENHA='emporio2025'; // Senha secreta — trocar antes de lançar
 
 // ── SUPABASE ──────────────────────────────────────────────
 const SUPA_URL = 'https://mrourzdxrahpysscckxm.supabase.co';
@@ -377,12 +396,36 @@ function pinKey(n){
   document.getElementById('d'+(pinEntry.length-1)).classList.add('filled');
   if(pinEntry.length===4){
     if(pinEntry===PIN){
-      setTimeout(()=>{document.getElementById('pin-screen').style.display='none';document.getElementById('admin-app').style.display='block';},200);
+      setTimeout(()=>{
+        document.getElementById('pin-step').style.display='none';
+        document.getElementById('senha-step').style.display='block';
+        document.getElementById('inp-senha').focus();
+      },200);
     }else{
       document.getElementById('pin-error').textContent='PIN incorreto. Tente novamente.';
       setTimeout(()=>{pinEntry='';for(let i=0;i<4;i++)document.getElementById('d'+i).classList.remove('filled');document.getElementById('pin-error').textContent=''},800);
     }
   }
+}
+function verificarSenha(){
+  const s = document.getElementById('inp-senha').value;
+  if(s === SENHA){
+    document.getElementById('pin-screen').style.display='none';
+    document.getElementById('admin-app').style.display='block';
+    carregarDadosAdmin();
+  } else {
+    const err = document.getElementById('senha-error');
+    err.textContent = 'Senha incorreta';
+    document.getElementById('inp-senha').value='';
+    setTimeout(()=>err.textContent='',2000);
+  }
+}
+function voltarPin(){
+  document.getElementById('senha-step').style.display='none';
+  document.getElementById('pin-step').style.display='block';
+  pinEntry='';
+  document.querySelectorAll('.pin-dot').forEach(d=>d.classList.remove('filled'));
+  document.getElementById('pin-error').textContent='';
 }
 function pinDel(){if(pinEntry.length>0){pinEntry=pinEntry.slice(0,-1);document.getElementById('d'+pinEntry.length).classList.remove('filled');}}
 
