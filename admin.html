@@ -305,13 +305,13 @@ async function buscarClientePorCodigo(codigo) {
 }
 
 // Registrar compra e pontuar cliente
-async function registrarCompra(clienteId, valorReais, descricao) {
+async function registrarCompra(clienteId, valorReais) {
   try {
     const pts = Math.floor(valorReais);
     // 1. Inserir transação
     await fetch(`${SUPA_URL}/rest/v1/transacoes`, {
       method: 'POST', headers: SH,
-      body: JSON.stringify({ cliente_id: clienteId, tipo: 'compra', descricao, valor_reais: valorReais, pontos: pts })
+      body: JSON.stringify({ cliente_id: clienteId, tipo: 'compra', valor_reais: valorReais, pontos: pts })
     });
     // 2. Buscar saldo atual
     const r = await fetch(`${SUPA_URL}/rest/v1/pontos?cliente_id=eq.${clienteId}`, { headers: SH });
@@ -390,14 +390,54 @@ function pinDel(){if(pinEntry.length>0){pinEntry=pinEntry.slice(0,-1);document.g
 let valor='';
 function kp(k){
   if(k==='⌫'){valor=valor.slice(0,-1);}
-  else if(k==='OK'){if(valor)alert('✓ R$'+valor+' registrado!\n+'+valor+' pontos adicionados!');valor='';}
+  else if(k==='OK'){
+    if(valor && clienteAtual) {
+      const v = parseFloat(valor);
+      registrarCompra(clienteAtual.id, v).then(resultado => {
+        if(resultado) {
+          document.getElementById('cli-pontos').textContent = resultado.novoSaldo + ' pontos';
+          alert('✓ R$' + valor + ' registrado!\n+' + Math.floor(v) + ' pontos adicionados!\nSaldo: ' + resultado.novoSaldo + ' pts');
+        } else {
+          alert('Erro ao registrar. Tente novamente.');
+        }
+      });
+      valor='';
+      document.getElementById('valor-display').textContent='___';
+      document.getElementById('pts-preview').textContent='';
+    }
+  }
   else if(valor.length<6){valor+=k;}
   document.getElementById('valor-display').textContent=valor||'___';
   document.getElementById('pts-preview').textContent=valor?'Esta compra gera +'+valor+' pontos':'';
 }
-document.getElementById('scan-area').addEventListener('click',()=>{
+// Variável global para cliente atual
+let clienteAtual = null;
+
+// Função para carregar cliente pelo código (chamada após scan ou busca manual)
+async function carregarCliente(codigo) {
+  const cliente = await buscarClientePorCodigo(codigo);
+  if (!cliente) { alert('Cliente não encontrado!'); return; }
+  clienteAtual = cliente;
+  // Buscar saldo de pontos
+  const rp = await fetch(`${SUPA_URL}/rest/v1/pontos?cliente_id=eq.${cliente.id}`, { headers: SH });
+  const pts = await rp.json();
+  const saldo = pts[0]?.saldo || 0;
+  clienteAtual.saldo = saldo;
+  // Preencher painel
+  const iniciais = cliente.nome.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+  document.getElementById('cli-av-iniciais').textContent = iniciais;
+  document.getElementById('cli-nome').textContent = cliente.nome;
+  document.getElementById('cli-meta').textContent = `#${cliente.codigo} · ${saldo} pts acumulados`;
+  document.getElementById('cli-pontos').textContent = saldo + ' pontos';
   document.getElementById('client-found').style.display='flex';
   document.getElementById('scan-area').style.display='none';
+}
+
+// Scan area — por enquanto abre prompt para digitar código manualmente
+// Quando tiver leitor QR físico, substituir por câmera
+document.getElementById('scan-area').addEventListener('click', async ()=>{
+  const codigo = prompt('Digite o código do cliente (ex: RC-1234):');
+  if (codigo) await carregarCliente(codigo.trim().toUpperCase());
 });
 
 // NAV
