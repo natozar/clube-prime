@@ -207,7 +207,7 @@ body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
     <div class="cad-form">
       <div id="ref-banner" class="ref-banner" style="display:none"><span>Você foi indicado por</span><strong id="ref-name"></strong> 🎉</div>
       <div class="cad-hint">Preencha os dados essenciais para começar. Você pode completar o perfil depois.</div>
-      <div class="fl"><label class="flabel">Nome completo *</label><input class="fi" id="inp-nome" placeholder="Ex: Carlos Rodrigues"></div>
+      <div class="fl"><label class="flabel">Nome completo *</label><input class="fi" id="inp-nome" placeholder="Seu nome completo"></div>
       <div class="fl"><label class="flabel">WhatsApp *</label><input class="fi" id="inp-tel" type="tel" placeholder="(16) 99999-0000"></div>
       <div class="fl"><label class="flabel">Data de nascimento *</label><input class="fi" id="inp-nasc" type="date"></div>
       <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:14px">
@@ -314,18 +314,19 @@ body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
   </div>
   <div class="sec-card">
     <div class="sec-title">👥 Minha Rede</div>
-    <div class="net-me"><div class="av">CR</div><div class="av-info"><div class="av-name">Carlos Rodrigues (você)</div><div class="av-meta">5 indicados · 2% permanente</div></div><div class="av-pts">+284pts</div></div>
-    <div class="net-children">
-      <div class="net-child"><div class="av sm">JF</div><div class="av-info"><div class="av-name">João Ferreira</div><div class="av-meta">12 compras · R$2.400</div></div><div style="text-align:right"><div class="av-pts">+48pts</div><div style="font-size:9px;color:var(--gray)">bônus gerado</div></div></div>
-      <div class="net-child"><div class="av sm">LM</div><div class="av-info"><div class="av-name">Lucia Mendes</div><div class="av-meta">8 compras · R$1.600</div></div><div style="text-align:right"><div class="av-pts">+32pts</div><div style="font-size:9px;color:var(--gray)">bônus gerado</div></div></div>
-      <div class="net-child"><div class="av sm">CB</div><div class="av-info"><div class="av-name">Camila Braga</div><div class="av-meta">4 compras · R$780</div></div><div style="text-align:right"><div class="av-pts">+16pts</div><div style="font-size:9px;color:var(--gray)">bônus gerado</div></div></div>
+    <div class="net-me" id="net-me-card">
+      <div class="av" id="net-me-iniciais">--</div>
+      <div class="av-info">
+        <div class="av-name" id="net-me-nome">Carregando...</div>
+        <div class="av-sub" id="net-me-sub">0 indicados · 2% permanente</div>
+      </div>
+      <div class="tl-pts pb" id="net-me-pts">+0pts</div>
     </div>
+    <div id="rede-indicados" style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Nenhum indicado ainda</div>
   </div>
   <div class="sec-card">
     <div class="sec-title">⭐ Bônus Recebidos</div>
-    <div class="tl-item"><div class="tl-icon">👥</div><div class="tl-info"><div class="tl-title">João Ferreira comprou</div><div class="tl-meta">2% de R$240 · hoje</div></div><div class="tl-pts pb">+4,8</div></div>
-    <div class="tl-item"><div class="tl-icon">👥</div><div class="tl-info"><div class="tl-title">Lucia Mendes comprou</div><div class="tl-meta">2% de R$190 · 12/mar</div></div><div class="tl-pts pb">+3,8</div></div>
-    <div class="tl-item"><div class="tl-icon">🎉</div><div class="tl-info"><div class="tl-title">Camila Braga entrou pelo seu link</div><div class="tl-meta">Nova indicada · 08/mar</div></div><div class="tl-pts pb">+0</div></div>
+    <div id="bonus-lista" style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Nenhum bônus ainda</div>
   </div>
 </div>
 
@@ -460,6 +461,7 @@ function preencherTela(cliente, saldo) {
   gerarQRCode(cliente.codigo);
   carregarExtrato(cliente.id);
   atualizarStatusResgate(pts);
+  carregarRede(cliente, pts);
   document.getElementById('screen-cad').classList.remove('active');
   document.getElementById('screen-cartao').classList.add('active');
   document.getElementById('bnav').style.display = 'flex';
@@ -744,6 +746,38 @@ function atualizarStatusResgate(pts) {
     status.style.color = 'var(--red)';
     btn.style.display = 'none';
   }
+}
+
+// Carregar aba Indicar com dados reais
+async function carregarRede(cliente, saldo) {
+  // Preencher card do próprio usuário
+  const iniciais = cliente.nome.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+  const elInic = document.getElementById('net-me-iniciais');
+  const elNome = document.getElementById('net-me-nome');
+  const elSub  = document.getElementById('net-me-sub');
+  if (elInic) elInic.textContent = iniciais;
+  if (elNome) elNome.textContent = cliente.nome + ' (você)';
+
+  // Buscar indicados
+  const r = await fetch(`${SUPA_URL}/rest/v1/clientes?indicado_por=eq.${cliente.id}&select=id,nome`, { headers: SH });
+  const indicados = await r.json();
+  if (elSub) elSub.textContent = (indicados.length) + ' indicados · 2% permanente';
+
+  const listaEl = document.getElementById('rede-indicados');
+  if (!listaEl) return;
+
+  if (!indicados || indicados.length === 0) {
+    listaEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Nenhum indicado ainda</div>';
+    document.getElementById('bonus-lista').innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Nenhum bônus ainda</div>';
+    return;
+  }
+
+  listaEl.innerHTML = indicados.map(ind => {
+    const ini = ind.nome.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+    return `<div class="tl-item"><div class="av sm">${ini}</div><div class="tl-info"><div class="tl-title">${ind.nome}</div><div class="av-sub">membro ativo</div></div></div>`;
+  }).join('');
+
+  document.getElementById('bonus-lista').innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Bônus calculados a cada compra dos indicados</div>';
 }
 
 async function buscarTransacoes(clienteId) {
