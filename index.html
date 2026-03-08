@@ -483,6 +483,10 @@ function preencherTela(cliente, saldo) {
   clienteId = cliente.id;
   clienteCodigo = cliente.codigo;
   clienteNome = cliente.nome.split(' ')[0];
+  // Salvar sempre localmente — garante que nunca perde sessão
+  localStorage.setItem('clube_cliente_dados', JSON.stringify(cliente));
+  localStorage.setItem('clube_cliente_saldo', String(saldo));
+  localStorage.setItem('clube_cliente_tel', cliente.telefone);
   document.getElementById('display-nome').textContent = cliente.nome;
   document.getElementById('card-nome').textContent = cliente.nome.split(' ')[0] + ' ' + (cliente.nome.split(' ').slice(-1)[0]||'')[0] + '.';
   const pts = saldo || 0;
@@ -569,12 +573,36 @@ async function goApp() {
 // Auto-login se já cadastrado
 window.addEventListener('load', async () => {
   const tel = localStorage.getItem('clube_cliente_tel');
-  if (tel) {
-    const cliente = await buscarCliente(tel);
-    if (cliente) {
-      const r = await fetch(`${SUPA_URL}/rest/v1/pontos?cliente_id=eq.${cliente.id}`, { headers: SH });
-      const pts = await r.json();
-      preencherTela(cliente, pts[0]?.saldo || 0);
+  const clienteLocal = localStorage.getItem('clube_cliente_dados');
+  if (tel || clienteLocal) {
+    // Mostrar tela do cliente imediatamente com dados locais (evita piscar cadastro)
+    if (clienteLocal) {
+      try {
+        const dadosLocal = JSON.parse(clienteLocal);
+        const saldoLocal = parseInt(localStorage.getItem('clube_cliente_saldo') || '0');
+        preencherTela(dadosLocal, saldoLocal);
+      } catch(e) {}
+    }
+    // Atualizar em background com dados do banco
+    if (tel) {
+      try {
+        const cliente = await buscarCliente(tel);
+        if (cliente) {
+          const r = await fetch(`${SUPA_URL}/rest/v1/pontos?cliente_id=eq.${cliente.id}`, { headers: SH });
+          const pts = await r.json();
+          const saldo = pts[0]?.saldo || 0;
+          // Salvar dados atualizados localmente
+          localStorage.setItem('clube_cliente_dados', JSON.stringify(cliente));
+          localStorage.setItem('clube_cliente_saldo', String(saldo));
+          preencherTela(cliente, saldo);
+        } else if (clienteLocal) {
+          // Banco não respondeu mas temos dados locais — manter logado
+          console.log('Usando dados locais — banco indisponível');
+        }
+      } catch(e) {
+        // Erro de rede — usar dados locais, nunca deslogar
+        console.log('Offline — usando dados locais');
+      }
     }
   }
 });
