@@ -129,6 +129,7 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom))}
 .pw{max-width:600px;margin:0 auto;padding:0 0 16px}
 /* ADMIN CLIENTES */
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 </head>
 <body>
 
@@ -176,9 +177,17 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom))}
   <div class="screen active" id="screen-op">
     <div class="ph"><div class="logo ph-logo"></div><div><div class="ph-title">Operador</div><div class="ph-sub">Clube Prime · Caixa</div></div></div>
     <div class="scan-area" id="scan-area">
-      <div style="font-size:46px;margin-bottom:10px">📷</div>
-      <div style="font-size:13px;color:var(--gold);letter-spacing:1px">Apontar câmera para o cartão</div>
-      <div style="font-size:10px;color:var(--gray);margin-top:6px">Toque para simular leitura</div>
+      <div id="qr-reader" style="display:none;width:100%;max-width:350px;margin:0 auto;border-radius:12px;overflow:hidden"></div>
+      <div id="scan-placeholder">
+        <div style="font-size:46px;margin-bottom:10px">📷</div>
+        <div style="font-size:13px;color:var(--gold);letter-spacing:1px">Toque para escanear o cartão</div>
+        <div style="font-size:10px;color:var(--gray);margin-top:6px">Ou digite o código manualmente</div>
+      </div>
+      <div style="margin-top:12px;display:flex;gap:8px;justify-content:center">
+        <button class="btn bg bsm" id="btn-scan" onclick="iniciarScanner()" style="font-size:11px">📷 Escanear QR</button>
+        <button class="btn bo bsm" onclick="digitarCodigo()" style="font-size:11px">⌨️ Digitar código</button>
+      </div>
+      <div id="scan-status" style="font-size:11px;color:var(--gold);margin-top:8px;text-align:center;display:none"></div>
     </div>
     <div class="client-found" id="client-found" style="display:none">
       <div class="cli-av" id="cli-av-iniciais">--</div>
@@ -635,12 +644,70 @@ async function carregarCliente(codigo) {
   document.getElementById('scan-area').style.display='none';
 }
 
-// Scan area — por enquanto abre prompt para digitar código manualmente
-// Quando tiver leitor QR físico, substituir por câmera
-document.getElementById('scan-area').addEventListener('click', async ()=>{
-  const codigo = prompt('Digite o código do cliente (ex: RC-1234):');
-  if (codigo) await carregarCliente(codigo.trim().toUpperCase());
-});
+// ── SCANNER QR CODE ──────────────────────────────────────
+let html5QrCode = null;
+let scannerAtivo = false;
+
+function digitarCodigo() {
+  const codigo = prompt('Digite o código do cliente (ex: TT-0001):');
+  if (codigo) carregarCliente(codigo.trim().toUpperCase());
+}
+
+async function iniciarScanner() {
+  if (scannerAtivo) { pararScanner(); return; }
+  const btnScan = document.getElementById('btn-scan');
+  const reader = document.getElementById('qr-reader');
+  const placeholder = document.getElementById('scan-placeholder');
+  const status = document.getElementById('scan-status');
+
+  try {
+    reader.style.display = 'block';
+    placeholder.style.display = 'none';
+    btnScan.textContent = '⏹ Parar';
+    status.style.display = 'block';
+    status.textContent = 'Abrindo câmera...';
+
+    html5QrCode = new Html5Qrcode('qr-reader');
+    scannerAtivo = true;
+
+    await html5QrCode.start(
+      { facingMode: 'environment' },
+      { fps: 10, qrbox: { width: 220, height: 220 } },
+      async (decodedText) => {
+        // QR lido com sucesso
+        status.textContent = '✓ Código lido: ' + decodedText;
+        pararScanner();
+        await carregarCliente(decodedText.trim().toUpperCase());
+      },
+      () => {} // erro silencioso a cada frame sem QR
+    );
+    status.textContent = 'Aponte para o QR Code do cartão';
+  } catch (err) {
+    console.error('Scanner erro:', err);
+    status.textContent = 'Erro ao abrir câmera. Use digitar código.';
+    status.style.color = 'var(--red)';
+    setTimeout(() => { status.style.color = 'var(--gold)'; }, 3000);
+    pararScanner();
+  }
+}
+
+function pararScanner() {
+  const btnScan = document.getElementById('btn-scan');
+  const reader = document.getElementById('qr-reader');
+  const placeholder = document.getElementById('scan-placeholder');
+  const status = document.getElementById('scan-status');
+
+  if (html5QrCode && scannerAtivo) {
+    html5QrCode.stop().then(() => {
+      html5QrCode.clear();
+    }).catch(() => {});
+  }
+  scannerAtivo = false;
+  reader.style.display = 'none';
+  placeholder.style.display = 'block';
+  btnScan.textContent = '📷 Escanear QR';
+  status.style.display = 'none';
+}
 
 // NAV
 function A(n,btn){
