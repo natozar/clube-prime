@@ -212,14 +212,14 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom))}
 
   <!-- TELA: PAINEL DO DONO -->
   <div class="screen" id="screen-painel">
-    <div class="ph"><div class="logo ph-logo"></div><div><div class="ph-title">Painel</div><div class="ph-sub">visão geral · março 2025</div></div></div>
+    <div class="ph"><div class="logo ph-logo"></div><div><div class="ph-title">Painel</div><div class="ph-sub">visão geral</div></div></div>
     <div class="pw">
       <div style="padding:0 16px">
         <div class="kpi-row">
-          <div class="kpi"><div class="kpi-l">Membros</div><div class="kpi-v">0</div><div class="kpi-u">—</div></div>
-          <div class="kpi"><div class="kpi-l">Compras</div><div class="kpi-v" style="font-size:18px">R$0</div><div class="kpi-u">—</div></div>
-          <div class="kpi"><div class="kpi-l">Indicações</div><div class="kpi-v">0</div><div class="kpi-s">—</div></div>
-          <div class="kpi"><div class="kpi-l">Via indicação</div><div class="kpi-v">0</div><div class="kpi-s">—</div></div>
+          <div class="kpi"><div class="kpi-l">Membros</div><div class="kpi-v" id="kpi-membros">0</div><div class="kpi-u" id="kpi-membros-sub">—</div></div>
+          <div class="kpi"><div class="kpi-l">Compras</div><div class="kpi-v" id="kpi-compras" style="font-size:18px">R$0</div><div class="kpi-u" id="kpi-compras-sub">—</div></div>
+          <div class="kpi"><div class="kpi-l">Indicações</div><div class="kpi-v" id="kpi-indicacoes">0</div><div class="kpi-s" id="kpi-indicacoes-sub">—</div></div>
+          <div class="kpi"><div class="kpi-l">Via indicação</div><div class="kpi-v" id="kpi-via-indicacao">0</div><div class="kpi-s" id="kpi-via-indicacao-sub">—</div></div>
         </div>
       </div>
       <div class="sec-card">
@@ -239,10 +239,10 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom))}
     <div class="pw">
       <div style="padding:0 16px">
         <div class="kpi-row">
-          <div class="kpi"><div class="kpi-l">Membros</div><div class="kpi-v">0</div><div class="kpi-u">—</div></div>
+          <div class="kpi"><div class="kpi-l">Membros</div><div class="kpi-v" id="kpi-admin-membros">0</div><div class="kpi-u">total</div></div>
           <div class="kpi"><div class="kpi-l">Pendentes</div><div class="kpi-v" id="kpi-pendentes" style="color:var(--red)">0</div><div class="kpi-s">resgates</div></div>
           <div class="kpi"><div class="kpi-l">Bloqueados</div><div class="kpi-v" id="kpi-bloqueados">0</div><div class="kpi-s">suspensos</div></div>
-          <div class="kpi"><div class="kpi-l">Pontos</div><div class="kpi-v" style="font-size:18px">0</div><div class="kpi-s">pts em circulação</div></div>
+          <div class="kpi"><div class="kpi-l">Pontos</div><div class="kpi-v" id="kpi-pts-circulacao" style="font-size:18px">0</div><div class="kpi-s">pts em circulação</div></div>
         </div>
       </div>
       <div class="sec-card">
@@ -466,6 +466,51 @@ async function listarClientes() {
   } catch(e) { console.error('listarClientes',e); return []; }
 }
 
+// Carregar estatísticas do dashboard (KPIs)
+async function carregarEstatisticas() {
+  try {
+    // 1. Total de membros
+    const rClientes = await fetch(`${SUPA_URL}/rest/v1/clientes?select=id,indicado_por,created_at`, { headers: SH });
+    const clientes = await rClientes.json();
+    const totalMembros = Array.isArray(clientes) ? clientes.length : 0;
+
+    // 2. Membros do mês atual
+    const agora = new Date();
+    const mesAtual = agora.getFullYear() + '-' + String(agora.getMonth()+1).padStart(2,'0');
+    const novosMes = Array.isArray(clientes) ? clientes.filter(c => c.created_at && c.created_at.startsWith(mesAtual)).length : 0;
+
+    // 3. Total de compras (transações do tipo compra)
+    const rTrans = await fetch(`${SUPA_URL}/rest/v1/transacoes?select=valor_reais,tipo,created_at&tipo=eq.compra`, { headers: SH });
+    const trans = await rTrans.json();
+    const totalCompras = Array.isArray(trans) ? trans.reduce((s,t) => s + (t.valor_reais || 0), 0) : 0;
+    const comprasMes = Array.isArray(trans) ? trans.filter(t => t.created_at && t.created_at.startsWith(mesAtual)).reduce((s,t) => s + (t.valor_reais || 0), 0) : 0;
+
+    // 4. Indicações (clientes que indicaram alguém)
+    const indicacoes = Array.isArray(clientes) ? clientes.filter(c => c.indicado_por).length : 0;
+
+    // 5. Pontos em circulação
+    const rPontos = await fetch(`${SUPA_URL}/rest/v1/pontos?select=saldo`, { headers: SH });
+    const pontos = await rPontos.json();
+    const totalPontos = Array.isArray(pontos) ? pontos.reduce((s,p) => s + (p.saldo || 0), 0) : 0;
+
+    // Atualizar KPIs do Painel
+    const el = (id) => document.getElementById(id);
+    if(el('kpi-membros')) el('kpi-membros').textContent = totalMembros;
+    if(el('kpi-membros-sub')) el('kpi-membros-sub').textContent = novosMes > 0 ? `+${novosMes} este mês` : 'total';
+    if(el('kpi-compras')) el('kpi-compras').textContent = 'R$' + totalCompras.toLocaleString('pt-BR', {minimumFractionDigits:0});
+    if(el('kpi-compras-sub')) el('kpi-compras-sub').textContent = comprasMes > 0 ? `R$${comprasMes.toLocaleString('pt-BR')} este mês` : 'total acumulado';
+    if(el('kpi-indicacoes')) el('kpi-indicacoes').textContent = indicacoes;
+    if(el('kpi-indicacoes-sub')) el('kpi-indicacoes-sub').textContent = 'membros indicados';
+    if(el('kpi-via-indicacao')) el('kpi-via-indicacao').textContent = indicacoes > 0 ? Math.round(indicacoes/totalMembros*100) + '%' : '0';
+    if(el('kpi-via-indicacao-sub')) el('kpi-via-indicacao-sub').textContent = 'do total';
+
+    // Atualizar KPIs do Admin
+    if(el('kpi-admin-membros')) el('kpi-admin-membros').textContent = totalMembros;
+    if(el('kpi-pts-circulacao')) el('kpi-pts-circulacao').textContent = totalPontos.toLocaleString('pt-BR');
+
+  } catch(e) { console.error('carregarEstatisticas:', e); }
+}
+
 // Buscar cliente pelo código do cartão (ex: CR-00847)
 async function buscarClientePorCodigo(codigo) {
   try {
@@ -583,6 +628,7 @@ async function carregarDadosAdmin() {
   await listarClientes();
   await listarResgatesPendentes();
   await listarAniversariantes();
+  await carregarEstatisticas();
 }
 function pinKey(n){
   if(pinEntry.length>=4)return;
@@ -783,7 +829,7 @@ function A(n,btn){
   document.querySelectorAll('.an').forEach(b=>b.classList.remove('active'));
   document.getElementById('screen-'+n).classList.add('active');
   btn.classList.add('active');
-  if(n==='painel') { listarClientes(); listarResgatesPendentes(); listarAniversariantes(); }
+  if(n==='painel') { listarClientes(); listarResgatesPendentes(); listarAniversariantes(); carregarEstatisticas(); }
 }
 async function listarAniversariantes() {
   try {
