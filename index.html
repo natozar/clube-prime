@@ -185,6 +185,17 @@ body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
 .pp-step.done{background:var(--gold)}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+      appId: "204a1304-2cc4-44b8-af83-f35ceaabd504",
+      serviceWorkerPath: "/OneSignalSDKWorker.js",
+      notifyButton: { enable: false },
+    });
+  });
+</script>
 </head>
 <body>
 
@@ -510,6 +521,12 @@ function preencherTela(cliente, saldo) {
   localStorage.setItem('clube_cliente_dados', JSON.stringify(cliente));
   localStorage.setItem('clube_cliente_saldo', String(saldo));
   localStorage.setItem('clube_cliente_tel', cliente.telefone);
+
+  // OneSignal — vincula este dispositivo ao ID do cliente para receber notificações
+  if (window.OneSignalDeferred) {
+    OneSignalDeferred.push(os => os.login(String(cliente.id)));
+  }
+
   document.getElementById('display-nome').textContent = cliente.nome;
   const nomes = cliente.nome.split(' ');
   const sobrenomeInicial = nomes.length > 1 ? ' ' + nomes[nomes.length - 1][0] + '.' : '';
