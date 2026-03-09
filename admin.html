@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
 <meta name="theme-color" content="#0A0A0A">
 <title>Admin — Clube Prime</title>
+<!-- OneSignal SDK -->
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 
@@ -243,7 +245,17 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom))}
       <div class="sec-card">
         <div class="sec-title">⏳ Resgates Pendentes <span id="badge-resgates" style="background:var(--red);color:#fff;border-radius:10px;padding:1px 7px;font-size:9px;display:none">0</span></div>
         <div id="resgates-lista" style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Nenhum resgate pendente</div>
-      </div> </div>
+      </div>
+
+      <div class="sec-card">
+        <div class="sec-title">🔔 Push Notifications</div>
+        <div style="font-size:11px;color:var(--gray);margin-bottom:12px">Envie uma mensagem para todos os membros do Clube Prime</div>
+        <div class="fl"><label class="flabel">Título</label><input class="fi" id="push-titulo" placeholder="Ex: Promoção especial hoje!"></div>
+        <div class="fl"><label class="flabel">Mensagem</label><textarea class="fi" id="push-msg" rows="3" placeholder="Ex: Picanha premium com 20% off só hoje. Venha conferir!" style="resize:vertical"></textarea></div>
+        <div class="fl"><label class="flabel">URL (opcional)</label><input class="fi" id="push-url" placeholder="https://carnesrodrigues.com.br/"></div>
+        <button class="btn bg" style="width:100%;margin-top:8px" onclick="dispararCampanha()">📣 Enviar para todos</button>
+        <div id="push-status" style="font-size:11px;margin-top:8px;text-align:center"></div>
+      </div>
     </div>
   </div>
 
@@ -306,6 +318,71 @@ const SUPA_URL = 'https://mrourzdxrahpysscckxm.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1yb3VyemR4cmFocHlzc2Nja3htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODMzMTUsImV4cCI6MjA4ODU1OTMxNX0.A4ueyDJgOu4cbxcHxsMTDBNHkxAOUlWFoYuv88LdnU4';
 const SH = { apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}`, 'Content-Type': 'application/json' };
 
+// ── ONESIGNAL ─────────────────────────────────────────────
+// ⚠️ Substitua pelo seu App ID em: https://app.onesignal.com → Settings → Keys & IDs
+const ONESIGNAL_APP_ID = 'SEU_APP_ID_AQUI';
+const ONESIGNAL_REST_KEY = 'SEU_REST_API_KEY_AQUI'; // Settings → Keys & IDs → REST API Key
+
+window.OneSignalDeferred = window.OneSignalDeferred || [];
+OneSignalDeferred.push(async function(OneSignal) {
+  await OneSignal.init({
+    appId: ONESIGNAL_APP_ID,
+    notifyButton: { enable: false },
+    allowLocalhostAsSecureOrigin: true,
+  });
+});
+
+// Envia push notification para um cliente específico via External User ID
+// Para funcionar: no index.html, ao cadastrar/logar, chamar:
+//   OneSignal.login(cliente.id)   ← vincula o dispositivo ao ID do cliente
+async function notificarCliente(clienteId, pontos, novoSaldo) {
+  if (!ONESIGNAL_REST_KEY || ONESIGNAL_REST_KEY === 'SEU_REST_API_KEY_AQUI') return;
+  try {
+    await fetch('https://onesignal.com/api/v1/notifications', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Basic ${ONESIGNAL_REST_KEY}`
+      },
+      body: JSON.stringify({
+        app_id: ONESIGNAL_APP_ID,
+        include_aliases: { external_id: [String(clienteId)] },
+        target_channel: 'push',
+        headings: { pt: '🥩 Clube Prime — Compra registrada!' },
+        contents: { pt: `+${pontos} pontos adicionados! Seu saldo: ${novoSaldo.toLocaleString('pt-BR')} pts` },
+        url: 'https://carnesrodrigues.com.br/',
+      })
+    });
+  } catch(e) { console.warn('OneSignal notificação falhou:', e); }
+}
+
+// Envia push para TODOS os assinantes (campanha geral)
+async function enviarCampanha(titulo, mensagem, url) {
+  if (!ONESIGNAL_REST_KEY || ONESIGNAL_REST_KEY === 'SEU_REST_API_KEY_AQUI') {
+    alert('Configure o REST API Key do OneSignal no admin.html');
+    return false;
+  }
+  try {
+    const r = await fetch('https://onesignal.com/api/v1/notifications', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Basic ${ONESIGNAL_REST_KEY}`
+      },
+      body: JSON.stringify({
+        app_id: ONESIGNAL_APP_ID,
+        included_segments: ['All'],
+        headings: { pt: titulo },
+        contents: { pt: mensagem },
+        url: url || 'https://carnesrodrigues.com.br/',
+      })
+    });
+    const d = await r.json();
+    if (d.errors) throw new Error(JSON.stringify(d.errors));
+    return true;
+  } catch(e) { console.error('enviarCampanha:', e); alert('Erro ao enviar campanha: ' + e.message); return false; }
+}
+
 // Listar todos os clientes
 async function listarClientes() {
   try {
@@ -350,21 +427,32 @@ async function registrarCompra(clienteId, valorReais) {
   try {
     const pts = Math.floor(valorReais);
     // 1. Inserir transação
-    await fetch(`${SUPA_URL}/rest/v1/transacoes`, {
+    const rt = await fetch(`${SUPA_URL}/rest/v1/transacoes`, {
       method: 'POST', headers: SH,
       body: JSON.stringify({ cliente_id: clienteId, tipo: 'compra', valor_reais: valorReais, pontos: pts })
     });
+    if (!rt.ok) { const err = await rt.json(); throw new Error(err.message || 'Erro ao inserir transação'); }
     // 2. Buscar saldo atual
     const r = await fetch(`${SUPA_URL}/rest/v1/pontos?cliente_id=eq.${clienteId}`, { headers: SH });
+    if (!r.ok) throw new Error('Erro ao buscar pontos');
     const pontos = await r.json();
+    if (!pontos[0]) throw new Error('Registro de pontos não encontrado para este cliente');
     const atual = pontos[0];
     // 3. Atualizar saldo
-    await fetch(`${SUPA_URL}/rest/v1/pontos?cliente_id=eq.${clienteId}`, {
+    const novoSaldo = atual.saldo + pts;
+    const rp = await fetch(`${SUPA_URL}/rest/v1/pontos?cliente_id=eq.${clienteId}`, {
       method: 'PATCH', headers: SH,
-      body: JSON.stringify({ saldo: atual.saldo + pts, total_ganho: atual.total_ganho + pts })
+      body: JSON.stringify({ saldo: novoSaldo, total_ganho: atual.total_ganho + pts })
     });
-    return pts;
-  } catch(e) { return null; }
+    if (!rp.ok) { const err = await rp.json(); throw new Error(err.message || 'Erro ao atualizar pontos'); }
+    // 4. Notificar cliente via OneSignal
+    notificarCliente(clienteId, pts, novoSaldo);
+    return { pts, novoSaldo };
+  } catch(e) {
+    console.error('registrarCompra:', e);
+    alert('Erro ao registrar compra: ' + e.message);
+    return null;
+  }
 }
 
 // Listar resgates pendentes
@@ -394,21 +482,25 @@ async function listarResgatesPendentes() {
 // Aprovar ou recusar resgate
 async function atualizarResgate(id, status, clienteId, pontos) {
   try {
-    await fetch(`${SUPA_URL}/rest/v1/resgates?id=eq.${id}`, {
+    const rr = await fetch(`${SUPA_URL}/rest/v1/resgates?id=eq.${id}`, {
       method: 'PATCH', headers: SH,
       body: JSON.stringify({ status, aprovado_em: new Date().toISOString() })
     });
-    if(status === 'aprovado') {
+    if (!rr.ok) throw new Error('Erro ao atualizar resgate');
+    if (status === 'aprovado') {
       const r = await fetch(`${SUPA_URL}/rest/v1/pontos?cliente_id=eq.${clienteId}`, { headers: SH });
       const d = await r.json();
       const atual = d[0];
+      if (!atual) throw new Error('Saldo do cliente não encontrado');
+      const novoSaldo = Math.max(0, atual.saldo - pontos);
       await fetch(`${SUPA_URL}/rest/v1/pontos?cliente_id=eq.${clienteId}`, {
         method: 'PATCH', headers: SH,
-        body: JSON.stringify({ saldo: atual.saldo - pontos, total_usado: atual.total_usado + pontos })
+        body: JSON.stringify({ saldo: novoSaldo, total_usado: atual.total_usado + pontos })
       });
     }
+    listarResgatesPendentes(); // Atualiza a lista após aprovar/recusar
     return true;
-  } catch(e) { return false; }
+  } catch(e) { console.error('atualizarResgate:', e); alert('Erro: ' + e.message); return false; }
 }
 
 // Cadastrar novo cliente pelo admin
@@ -419,15 +511,22 @@ async function cadastrarClienteAdmin(dados) {
       body: JSON.stringify(dados)
     });
     const d = await r.json();
-    const cliente = d[0];
-    await fetch(`${SUPA_URL}/rest/v1/pontos`, {
+    if (!r.ok) { console.error('cadastrarClienteAdmin erro:', d); throw new Error(d.message || d.details || 'Erro no cadastro'); }
+    const cliente = Array.isArray(d) ? d[0] : d;
+    if (!cliente || !cliente.id) throw new Error('Resposta inesperada do servidor');
+    const rp = await fetch(`${SUPA_URL}/rest/v1/pontos`, {
       method: 'POST', headers: SH,
       body: JSON.stringify({ cliente_id: cliente.id, saldo: 0, total_ganho: 0, total_usado: 0 })
     });
+    if (!rp.ok) console.error('Erro ao criar pontos do cliente admin:', await rp.json());
     return cliente;
-  } catch(e) { return null; }
+  } catch(e) { console.error('cadastrarClienteAdmin:', e); alert('Erro ao cadastrar: ' + e.message); return null; }
 }
-let pinEntry='';
+async function carregarDadosAdmin() {
+  await listarClientes();
+  await listarResgatesPendentes();
+  await listarAniversariantes();
+}
 function pinKey(n){
   if(pinEntry.length>=4)return;
   pinEntry+=n;
@@ -491,6 +590,28 @@ function kp(k){
   document.getElementById('valor-display').textContent=valor||'___';
   document.getElementById('pts-preview').textContent=valor?'Esta compra gera +'+valor+' pontos':'';
 }
+// Disparar campanha push pela UI admin
+async function dispararCampanha() {
+  const titulo = document.getElementById('push-titulo').value.trim();
+  const msg = document.getElementById('push-msg').value.trim();
+  const url = document.getElementById('push-url').value.trim();
+  const status = document.getElementById('push-status');
+  if (!titulo || !msg) { alert('Preencha o título e a mensagem!'); return; }
+  status.textContent = 'Enviando...';
+  status.style.color = 'var(--gold)';
+  const ok = await enviarCampanha(titulo, msg, url || undefined);
+  if (ok) {
+    status.textContent = '✓ Campanha enviada com sucesso!';
+    status.style.color = 'var(--green)';
+    document.getElementById('push-titulo').value = '';
+    document.getElementById('push-msg').value = '';
+    document.getElementById('push-url').value = '';
+  } else {
+    status.textContent = '✗ Falha ao enviar. Verifique o console.';
+    status.style.color = 'var(--red)';
+  }
+}
+
 // Variável global para cliente atual
 let clienteAtual = null;
 
@@ -533,7 +654,7 @@ async function listarAniversariantes() {
   try {
     const hoje = new Date();
     const mes = String(hoje.getMonth()+1).padStart(2,'0');
-    const r = await fetch(`${SUPA_URL}/rest/v1/clientes?select=nome,nacimento&nacimento=like.*-${mes}-*&order=nome`, { headers: SH });
+    const r = await fetch(`${SUPA_URL}/rest/v1/clientes?select=nome,nacimento&nacimento=ilike.*-${mes}-*&order=nacimento`, { headers: SH });
     const lista = await r.json();
     const el = document.getElementById('aniversariantes-lista');
     if(!el) return;
