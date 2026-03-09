@@ -511,7 +511,9 @@ function preencherTela(cliente, saldo) {
   localStorage.setItem('clube_cliente_saldo', String(saldo));
   localStorage.setItem('clube_cliente_tel', cliente.telefone);
   document.getElementById('display-nome').textContent = cliente.nome;
-  document.getElementById('card-nome').textContent = cliente.nome.split(' ')[0] + ' ' + (cliente.nome.split(' ').slice(-1)[0]||'')[0] + '.';
+  const nomes = cliente.nome.split(' ');
+  const sobrenomeInicial = nomes.length > 1 ? ' ' + nomes[nomes.length - 1][0] + '.' : '';
+  document.getElementById('card-nome').textContent = nomes[0] + sobrenomeInicial;
   const pts = saldo || 0;
   document.querySelectorAll('.pts-val, #saldo-pts').forEach(el => el.textContent = pts.toLocaleString('pt-BR'));
   // Barra de progresso
@@ -580,13 +582,11 @@ async function goApp() {
         preencherTela(cliente, 0);
         localStorage.setItem('clube_cliente_id', cliente.id);
         localStorage.setItem('clube_cliente_tel', tel);
-      } else {
-        alert('Erro ao cadastrar. Tente novamente.');
       }
     }
   } catch(e) {
-    console.error(e);
-    alert('Erro de conexão. Verifique sua internet.');
+    console.error('goApp error:', e);
+    alert('Erro: ' + (e.message || 'Verifique sua conexão e tente novamente.'));
   } finally {
     btn.textContent = 'Entrar no Clube Prime →';
     btn.disabled = false;
@@ -764,10 +764,19 @@ const SH = { apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}`, 'Content-Typ
 // Buscar cliente pelo telefone
 async function buscarCliente(telefone) {
   try {
-    const telNorm = telefone.replace(/\D/g,''); const r = await fetch(`${SUPA_URL}/rest/v1/clientes?telefone=eq.${telNorm}&select=*`, { headers: SH });
+    const telNorm = telefone.replace(/\D/g,'');
+    const r = await fetch(`${SUPA_URL}/rest/v1/clientes?telefone=eq.${telNorm}&select=*`, { headers: SH });
+    if (!r.ok) {
+      const d = await r.json();
+      console.error('Erro ao buscar cliente:', d);
+      throw new Error(d.message || 'Erro ao consultar banco');
+    }
     const d = await r.json();
     return d[0] || null;
-  } catch(e) { return null; }
+  } catch(e) {
+    console.error('buscarCliente exception:', e);
+    throw e;
+  }
 }
 
 // Cadastrar novo cliente
@@ -778,14 +787,27 @@ async function cadastrarCliente(dados) {
       body: JSON.stringify(dados)
     });
     const d = await r.json();
-    const cliente = d[0];
+    if (!r.ok) {
+      console.error('Erro ao cadastrar cliente:', d);
+      throw new Error(d.message || d.details || 'Erro no cadastro');
+    }
+    const cliente = Array.isArray(d) ? d[0] : d;
+    if (!cliente || !cliente.id) throw new Error('Resposta inesperada do servidor');
     // Criar saldo de pontos zerado
-    await fetch(`${SUPA_URL}/rest/v1/pontos`, {
-      method: 'POST', headers: SH,
+    const rp = await fetch(`${SUPA_URL}/rest/v1/pontos`, {
+      method: 'POST', headers: { ...SH, Prefer: 'return=representation' },
       body: JSON.stringify({ cliente_id: cliente.id, saldo: 0, total_ganho: 0, total_usado: 0 })
     });
+    if (!rp.ok) {
+      const dp = await rp.json();
+      console.error('Erro ao criar pontos:', dp);
+      // Não bloqueia — cliente foi criado, pontos podem ser criados depois
+    }
     return cliente;
-  } catch(e) { return null; }
+  } catch(e) {
+    console.error('cadastrarCliente exception:', e);
+    throw e; // Propaga para o goApp() tratar e exibir mensagem real
+  }
 }
 
 // Atualizar perfil do cliente
@@ -872,7 +894,9 @@ async function carregarRede(cliente, saldo) {
 async function buscarTransacoes(clienteId) {
   try {
     const r = await fetch(`${SUPA_URL}/rest/v1/transacoes?cliente_id=eq.${clienteId}&order=created_at.desc&limit=20`, { headers: SH });
-    return await r.json();
+    const d = await r.json();
+    if (!r.ok) { console.error('buscarTransacoes erro:', d); return []; }
+    return Array.isArray(d) ? d : [];
   } catch(e) { return []; }
 }
 
