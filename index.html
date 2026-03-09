@@ -584,16 +584,8 @@ async function goApp() {
     } else {
       // Novo cadastro
       const codigo = gerarCodigo(nome);
-      let indicado_por = null;
-
-      // Buscar quem indicou
-      if (refCodigo) {
-        const r = await fetch(`${SUPA_URL}/rest/v1/clientes?codigo=eq.${refCodigo}&select=id`, { headers: SH });
-        const d = await r.json();
-        if (d[0]) indicado_por = d[0].id;
-      }
-
-      cliente = await cadastrarCliente({ nome, telefone: tel, nacimento: nasc || null, codigo, indicado_por, status: 'ativo' });
+      // refCodigo salvo para registrar indicação após cadastro
+      cliente = await cadastrarCliente({ nome, telefone: tel, nascimento: nasc || null, codigo, status: 'ativo' });
 
       if (cliente) {
         preencherTela(cliente, 0);
@@ -885,27 +877,12 @@ async function carregarRede(cliente, saldo) {
   const elSub  = document.getElementById('net-me-sub');
   if (elInic) elInic.textContent = iniciais;
   if (elNome) elNome.textContent = cliente.nome + ' (você)';
-
-  // Buscar indicados
-  const r = await fetch(`${SUPA_URL}/rest/v1/clientes?indicado_por=eq.${cliente.id}&select=id,nome`, { headers: SH });
-  const indicados = await r.json();
-  if (elSub) elSub.textContent = (indicados.length) + ' indicados · 2% permanente';
+  if (elSub) elSub.textContent = '0 indicados · 2% permanente';
 
   const listaEl = document.getElementById('rede-indicados');
-  if (!listaEl) return;
-
-  if (!indicados || indicados.length === 0) {
-    listaEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Nenhum indicado ainda</div>';
-    document.getElementById('bonus-lista').innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Nenhum bônus ainda</div>';
-    return;
-  }
-
-  listaEl.innerHTML = indicados.map(ind => {
-    const ini = ind.nome.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
-    return `<div class="tl-item"><div class="av sm">${ini}</div><div class="tl-info"><div class="tl-title">${ind.nome}</div><div class="av-sub">membro ativo</div></div></div>`;
-  }).join('');
-
-  document.getElementById('bonus-lista').innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Bônus calculados a cada compra dos indicados</div>';
+  if (listaEl) listaEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Nenhum indicado ainda</div>';
+  const bonusEl = document.getElementById('bonus-lista');
+  if (bonusEl) bonusEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Nenhum bônus ainda</div>';
 }
 
 async function buscarTransacoes(clienteId) {
