@@ -255,6 +255,58 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom))}
         <div id="resgates-lista" style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Nenhum resgate pendente</div>
       </div>
 
+      <!-- REGRAS DE PONTUAÇÃO -->
+      <div class="sec-card">
+        <div class="sec-title">⚙️ Regras de Pontuação & Troca</div>
+        <div style="font-size:11px;color:var(--gray);margin-bottom:12px">Configure as regras do programa de fidelidade</div>
+
+        <div style="background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.15);border-radius:10px;padding:14px;margin-bottom:14px">
+          <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gold-dark);margin-bottom:10px">Acúmulo de Pontos</div>
+          <div class="fl">
+            <label class="flabel">Pontos por R$1 gasto</label>
+            <input class="fi" id="regra-pts-por-real" type="number" value="1" min="1" max="10" style="width:80px">
+          </div>
+          <div class="fl">
+            <label class="flabel">Bônus indicação (%)</label>
+            <input class="fi" id="regra-bonus-indicacao" type="number" value="2" min="0" max="20" style="width:80px">
+          </div>
+        </div>
+
+        <div style="background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.15);border-radius:10px;padding:14px;margin-bottom:14px">
+          <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gold-dark);margin-bottom:10px">Regra de Troca</div>
+          <div class="fl">
+            <label class="flabel">Pontos necessários para resgate</label>
+            <input class="fi" id="regra-meta-pontos" type="number" value="5000" min="100" step="100">
+          </div>
+          <div class="fl">
+            <label class="flabel">Valor do cupom (R$)</label>
+            <input class="fi" id="regra-valor-cupom" type="number" value="100" min="10" step="10">
+          </div>
+          <div class="fl">
+            <label class="flabel">Compra mínima para usar cupom (R$)</label>
+            <input class="fi" id="regra-compra-minima" type="number" value="200" min="0" step="10">
+          </div>
+          <div class="fl">
+            <label class="flabel">Validade do cupom (dias)</label>
+            <input class="fi" id="regra-validade-cupom" type="number" value="30" min="1" max="365">
+          </div>
+        </div>
+
+        <div style="background:rgba(192,57,43,.1);border:1px solid rgba(192,57,43,.2);border-radius:10px;padding:14px;margin-bottom:14px">
+          <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#e74c3c;margin-bottom:10px">Expiração</div>
+          <div class="fl">
+            <label class="flabel">Cupom expirado = perda dos pontos?</label>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+              <div class="tog on" id="tog-perde-pontos" onclick="this.classList.toggle('on')"><div class="tog-d"></div></div>
+              <span style="font-size:11px;color:var(--gray)" id="label-perde-pontos">Sim — cliente perde os pontos usados</span>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn bg" style="width:100%;margin-top:4px" onclick="salvarRegras()">💾 Salvar Regras</button>
+        <div id="regras-status" style="font-size:11px;margin-top:8px;text-align:center"></div>
+      </div>
+
       <div class="sec-card">
         <div class="sec-title">🔔 Push Notifications</div>
         <div style="font-size:11px;color:var(--gray);margin-bottom:12px">Envie uma mensagem para todos os membros do Clube Prime</div>
@@ -351,7 +403,7 @@ async function notificarCliente(clienteId, pontos, novoSaldo) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Basic ${ONESIGNAL_REST_KEY}`
+        'Authorization': `Key ${ONESIGNAL_REST_KEY}`
       },
       body: JSON.stringify({
         app_id: ONESIGNAL_APP_ID,
@@ -376,7 +428,7 @@ async function enviarCampanha(titulo, mensagem, url) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Basic ${ONESIGNAL_REST_KEY}`
+        'Authorization': `Key ${ONESIGNAL_REST_KEY}`
       },
       body: JSON.stringify({
         app_id: ONESIGNAL_APP_ID,
@@ -434,7 +486,8 @@ async function buscarClientePorCodigo(codigo) {
 // Registrar compra e pontuar cliente
 async function registrarCompra(clienteId, valorReais) {
   try {
-    const pts = Math.floor(valorReais);
+    const regras = getRegras();
+    const pts = Math.floor(valorReais * regras.ptsPorReal);
     // 1. Inserir transação
     const rt = await fetch(`${SUPA_URL}/rest/v1/transacoes`, {
       method: 'POST', headers: SH,
@@ -532,6 +585,9 @@ async function cadastrarClienteAdmin(dados) {
   } catch(e) { console.error('cadastrarClienteAdmin:', e); alert('Erro ao cadastrar: ' + e.message); return null; }
 }
 async function carregarDadosAdmin() {
+  // Tenta carregar regras do Supabase primeiro, senão usa localStorage
+  await carregarRegrasSupabase();
+  carregarRegras();
   await listarClientes();
   await listarResgatesPendentes();
   await listarAniversariantes();
@@ -585,7 +641,7 @@ function kp(k){
       registrarCompra(clienteAtual.id, v).then(resultado => {
         if(resultado) {
           document.getElementById('cli-pontos').textContent = resultado.novoSaldo + ' pontos';
-          alert('✓ R$' + valor + ' registrado!\n+' + Math.floor(v) + ' pontos adicionados!\nSaldo: ' + resultado.novoSaldo + ' pts');
+          alert('✓ R$' + valor + ' registrado!\n+' + resultado.pts + ' pontos adicionados!\nSaldo: ' + resultado.novoSaldo + ' pts');
         } else {
           alert('Erro ao registrar. Tente novamente.');
         }
@@ -597,7 +653,9 @@ function kp(k){
   }
   else if(valor.length<6){valor+=k;}
   document.getElementById('valor-display').textContent=valor||'___';
-  document.getElementById('pts-preview').textContent=valor?'Esta compra gera +'+valor+' pontos':'';
+  const regrasPreview = getRegras();
+  const ptsPreview = valor ? Math.floor(parseFloat(valor) * regrasPreview.ptsPorReal) : 0;
+  document.getElementById('pts-preview').textContent=valor?'Esta compra gera +'+ptsPreview+' pontos':'';
 }
 // Disparar campanha push pela UI admin
 async function dispararCampanha() {
@@ -789,6 +847,100 @@ function parabens(nome) {
   );
   window.open('https://wa.me/?text=' + msg, '_blank');
 }
+
+// ── REGRAS DE PONTUAÇÃO ──────────────────────────────────
+const REGRAS_DEFAULT = {
+  ptsPorReal: 1,
+  bonusIndicacao: 2,
+  metaPontos: 5000,
+  valorCupom: 100,
+  compraMinima: 200,
+  validadeCupom: 30,
+  perdePontos: true
+};
+
+function carregarRegras() {
+  const saved = localStorage.getItem('clube-prime-regras');
+  const regras = saved ? JSON.parse(saved) : REGRAS_DEFAULT;
+  document.getElementById('regra-pts-por-real').value = regras.ptsPorReal;
+  document.getElementById('regra-bonus-indicacao').value = regras.bonusIndicacao;
+  document.getElementById('regra-meta-pontos').value = regras.metaPontos;
+  document.getElementById('regra-valor-cupom').value = regras.valorCupom;
+  document.getElementById('regra-compra-minima').value = regras.compraMinima;
+  document.getElementById('regra-validade-cupom').value = regras.validadeCupom;
+  const tog = document.getElementById('tog-perde-pontos');
+  if (regras.perdePontos) tog.classList.add('on'); else tog.classList.remove('on');
+  atualizarLabelPerde();
+  return regras;
+}
+
+function getRegras() {
+  const saved = localStorage.getItem('clube-prime-regras');
+  return saved ? JSON.parse(saved) : REGRAS_DEFAULT;
+}
+
+function salvarRegras() {
+  const regras = {
+    ptsPorReal: parseInt(document.getElementById('regra-pts-por-real').value) || 1,
+    bonusIndicacao: parseInt(document.getElementById('regra-bonus-indicacao').value) || 2,
+    metaPontos: parseInt(document.getElementById('regra-meta-pontos').value) || 5000,
+    valorCupom: parseInt(document.getElementById('regra-valor-cupom').value) || 100,
+    compraMinima: parseInt(document.getElementById('regra-compra-minima').value) || 200,
+    validadeCupom: parseInt(document.getElementById('regra-validade-cupom').value) || 30,
+    perdePontos: document.getElementById('tog-perde-pontos').classList.contains('on')
+  };
+  localStorage.setItem('clube-prime-regras', JSON.stringify(regras));
+  // Também salvar no Supabase para sincronizar com o app do cliente
+  salvarRegrasSupabase(regras);
+  const status = document.getElementById('regras-status');
+  status.textContent = '✓ Regras salvas com sucesso!';
+  status.style.color = 'var(--green)';
+  setTimeout(() => status.textContent = '', 3000);
+}
+
+async function salvarRegrasSupabase(regras) {
+  try {
+    // Tenta atualizar se já existe, senão insere
+    const r = await fetch(`${SUPA_URL}/rest/v1/configuracoes?chave=eq.regras_pontuacao`, { headers: SH });
+    const d = await r.json();
+    if (d.length > 0) {
+      await fetch(`${SUPA_URL}/rest/v1/configuracoes?chave=eq.regras_pontuacao`, {
+        method: 'PATCH', headers: SH,
+        body: JSON.stringify({ valor: JSON.stringify(regras) })
+      });
+    } else {
+      await fetch(`${SUPA_URL}/rest/v1/configuracoes`, {
+        method: 'POST', headers: SH,
+        body: JSON.stringify({ chave: 'regras_pontuacao', valor: JSON.stringify(regras) })
+      });
+    }
+  } catch(e) {
+    console.warn('Regras salvas localmente. Supabase sync falhou (tabela configuracoes pode não existir):', e.message);
+  }
+}
+
+async function carregarRegrasSupabase() {
+  try {
+    const r = await fetch(`${SUPA_URL}/rest/v1/configuracoes?chave=eq.regras_pontuacao&select=valor`, { headers: SH });
+    const d = await r.json();
+    if (d.length > 0 && d[0].valor) {
+      const regras = JSON.parse(d[0].valor);
+      localStorage.setItem('clube-prime-regras', JSON.stringify(regras));
+      return regras;
+    }
+  } catch(e) { console.warn('Supabase regras fetch falhou:', e.message); }
+  return null;
+}
+
+function atualizarLabelPerde() {
+  const on = document.getElementById('tog-perde-pontos').classList.contains('on');
+  document.getElementById('label-perde-pontos').textContent = on
+    ? 'Sim — cliente perde os pontos usados'
+    : 'Não — pontos são devolvidos ao saldo';
+}
+
+// Atualizar label quando toggle muda
+document.getElementById('tog-perde-pontos')?.addEventListener('click', () => setTimeout(atualizarLabelPerde, 50));
 
 // CEP mask admin
 const admCepInput=document.getElementById('adm-cep');

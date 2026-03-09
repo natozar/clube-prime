@@ -348,11 +348,11 @@ body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
     <div class="rg-card" id="card-resgate">
       <div class="rg-icon">💰</div>
       <div class="rg-info">
-        <div class="rg-title">Desconto R$ 50</div>
-        <div class="rg-desc">Válido por 90 dias após geração</div>
+        <div class="rg-title" id="rg-titulo">Desconto R$ 100</div>
+        <div class="rg-desc" id="rg-desc">Compras acima de R$200 · Válido por 30 dias</div>
       </div>
       <div style="text-align:right">
-        <div class="rg-pts">5.000pts</div>
+        <div class="rg-pts" id="rg-pts-meta">5.000pts</div>
         <div class="rg-req" id="resgate-status" style="color:var(--gray)">carregando...</div>
         <button class="btn bg bsm" id="btn-resgatar" style="margin-top:5px;display:none" onclick="fazerResgate()">Resgatar</button>
       </div>
@@ -455,12 +455,12 @@ body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
   <div class="md" style="text-align:center">
     <div class="md-handle"></div>
     <div style="font-size:48px;margin-bottom:10px">🎉</div>
-    <div class="md-title" style="color:var(--gold-light);justify-content:center;display:flex">Você chegou aos 5.000 pontos!</div>
-    <div class="md-text">Parabéns! Você acumulou <strong style="color:var(--gold)">5.000 pontos Prime</strong>.<br>Um cupom de desconto foi gerado automaticamente.<br><br><span style="font-size:10px;color:var(--gray)">⏰ Válido por 90 dias — não perca!</span></div>
+    <div class="md-title" style="color:var(--gold-light);justify-content:center;display:flex" id="modal-5k-title">Você chegou aos 5.000 pontos!</div>
+    <div class="md-text" id="modal-5k-text">Parabéns! Você acumulou <strong style="color:var(--gold)">5.000 pontos Prime</strong>.<br>Troque por um cupom de desconto!<br><br><span style="font-size:10px;color:var(--gray)">⏰ Válido por 30 dias · Compras acima de R$200</span></div>
     <div style="background:rgba(201,168,76,.08);border:2px dashed rgba(201,168,76,.4);border-radius:12px;padding:16px;margin-bottom:18px">
       <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gray);margin-bottom:6px">seu cupom</div>
-      <div style="font-family:'Fira Code',monospace;font-size:22px;color:var(--gold-light);font-weight:700;letter-spacing:4px" id="cupom-code">PRIME50</div>
-      <div style="font-size:10px;color:var(--gray);margin-top:4px">R$ 50 de desconto na próxima compra</div>
+      <div style="font-family:'Fira Code',monospace;font-size:22px;color:var(--gold-light);font-weight:700;letter-spacing:4px" id="cupom-code">PRIME100</div>
+      <div style="font-size:10px;color:var(--gray);margin-top:4px" id="cupom-valor-desc">R$ 100 de desconto · compras acima de R$200</div>
     </div>
     <div class="md-actions" style="justify-content:center;flex-direction:column;gap:8px">
       <button class="btn bg" style="width:100%" onclick="compartilharCupom()">📲 Compartilhar cupom</button>
@@ -513,7 +513,7 @@ function gerarQRCode(codigo) {
   });
 }
 
-function preencherTela(cliente, saldo) {
+async function preencherTela(cliente, saldo) {
   clienteId = cliente.id;
   clienteCodigo = cliente.codigo;
   clienteNome = cliente.nome.split(' ')[0];
@@ -538,17 +538,20 @@ function preencherTela(cliente, saldo) {
   if (codigoEl) codigoEl.textContent = '#' + cliente.codigo;
   const pontosCodigoEl = document.getElementById('pontos-codigo');
   if (pontosCodigoEl) pontosCodigoEl.textContent = '#' + cliente.codigo;
-  // Barra de progresso
-  const META = 5000;
+  // Barra de progresso (usa regras dinâmicas)
+  const regrasUI = getRegrasCliente();
+  const META = regrasUI.metaPontos;
   const pct = Math.min(100, (pts / META) * 100);
   const faltam = Math.max(0, META - pts);
   document.querySelectorAll('.prog-fill').forEach(el => el.style.width = pct + '%');
-  document.querySelectorAll('.prog-label').forEach(el => el.textContent = pts + ' / 5.000 pts');
+  document.querySelectorAll('.prog-label').forEach(el => el.textContent = pts + ' / ' + META.toLocaleString('pt-BR') + ' pts');
   const progRestEl = document.querySelector('.prog-header span:last-child');
   if (progRestEl) progRestEl.textContent = faltam.toLocaleString('pt-BR') + ' pts restantes';
   // Modal excluir conta
   const delPtsEl = document.getElementById('del-pontos');
   if (delPtsEl) delPtsEl.textContent = pts.toLocaleString('pt-BR') + ' pontos';
+  // Carregar regras do servidor
+  await carregarRegrasDoServidor();
   // Carregar stats reais do banco
   carregarStats(cliente.id, pts);
   atualizarLinkConvite();
@@ -703,15 +706,26 @@ function compartilharWhats(){
 }
 
 function compartilharCupom(){
-  const msg = 'Meu cupom do Clube Prime: *PRIME50* — R$50 de desconto na próxima compra no Empório Família Rodrigues! 🥩';
+  const regras = getRegrasCliente();
+  const msg = `Meu cupom do Clube Prime: *PRIME100* — R$${regras.valorCupom} de desconto em compras acima de R$${regras.compraMinima} no Empório Família Rodrigues! 🥩 Válido por ${regras.validadeCupom} dias.`;
   if(navigator.share) navigator.share({title:'Cupom Clube Prime', text:msg});
   else navigator.clipboard.writeText(msg).then(()=>alert('Cupom copiado!'));
 }
 
 // Verificar se atingiu 5.000 pontos e mostrar alerta
 function verificar5k(saldo) {
+  const regras = getRegrasCliente();
   const ja_viu = localStorage.getItem('5k-alerta-' + clienteCodigo);
-  if(saldo >= 5000 && !ja_viu) {
+  if(saldo >= regras.metaPontos && !ja_viu) {
+    // Atualizar modal com regras dinâmicas
+    const titleEl = document.getElementById('modal-5k-title');
+    const textEl = document.getElementById('modal-5k-text');
+    const codeEl = document.getElementById('cupom-code');
+    const descEl = document.getElementById('cupom-valor-desc');
+    if (titleEl) titleEl.textContent = `Você chegou aos ${regras.metaPontos.toLocaleString('pt-BR')} pontos!`;
+    if (textEl) textEl.innerHTML = `Parabéns! Você acumulou <strong style="color:var(--gold)">${regras.metaPontos.toLocaleString('pt-BR')} pontos Prime</strong>.<br>Troque por um cupom de desconto!<br><br><span style="font-size:10px;color:var(--gray)">⏰ Válido por ${regras.validadeCupom} dias · Compras acima de R$${regras.compraMinima}</span>`;
+    if (codeEl) codeEl.textContent = 'PRIME' + regras.valorCupom;
+    if (descEl) descEl.textContent = `R$ ${regras.valorCupom} de desconto · compras acima de R$${regras.compraMinima}`;
     setTimeout(()=>{
       document.getElementById('mo-5k').classList.add('open');
       localStorage.setItem('5k-alerta-' + clienteCodigo, '1');
@@ -784,6 +798,35 @@ window.addEventListener('appinstalled', () => {
 const SUPA_URL = 'https://mrourzdxrahpysscckxm.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1yb3VyemR4cmFocHlzc2Nja3htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODMzMTUsImV4cCI6MjA4ODU1OTMxNX0.A4ueyDJgOu4cbxcHxsMTDBNHkxAOUlWFoYuv88LdnU4';
 const SH = { apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}`, 'Content-Type': 'application/json' };
+
+// ── REGRAS DE PONTUAÇÃO (sincronizadas com admin) ──────
+const REGRAS_DEFAULT = {
+  ptsPorReal: 1,
+  bonusIndicacao: 2,
+  metaPontos: 5000,
+  valorCupom: 100,
+  compraMinima: 200,
+  validadeCupom: 30,
+  perdePontos: true
+};
+
+function getRegrasCliente() {
+  const saved = localStorage.getItem('clube-prime-regras');
+  return saved ? JSON.parse(saved) : REGRAS_DEFAULT;
+}
+
+async function carregarRegrasDoServidor() {
+  try {
+    const r = await fetch(`${SUPA_URL}/rest/v1/configuracoes?chave=eq.regras_pontuacao&select=valor`, { headers: SH });
+    const d = await r.json();
+    if (d.length > 0 && d[0].valor) {
+      const regras = JSON.parse(d[0].valor);
+      localStorage.setItem('clube-prime-regras', JSON.stringify(regras));
+      return regras;
+    }
+  } catch(e) { console.warn('Regras do servidor não disponíveis, usando padrão'); }
+  return null;
+}
 
 // Buscar cliente pelo telefone
 async function buscarCliente(telefone) {
@@ -870,7 +913,15 @@ function atualizarStatusResgate(pts) {
   const status = document.getElementById('resgate-status');
   const btn = document.getElementById('btn-resgatar');
   if (!status || !btn) return;
-  const META = 5000;
+  const regras = getRegrasCliente();
+  const META = regras.metaPontos;
+  // Atualizar textos dinâmicos do card
+  const tituloEl = document.getElementById('rg-titulo');
+  const descEl = document.getElementById('rg-desc');
+  const ptsMetaEl = document.getElementById('rg-pts-meta');
+  if (tituloEl) tituloEl.textContent = 'Desconto R$ ' + regras.valorCupom;
+  if (descEl) descEl.textContent = 'Compras acima de R$' + regras.compraMinima + ' · Válido por ' + regras.validadeCupom + ' dias';
+  if (ptsMetaEl) ptsMetaEl.textContent = META.toLocaleString('pt-BR') + 'pts';
   if (pts >= META) {
     status.textContent = 'disponível ✓';
     status.style.color = 'var(--green)';
@@ -965,12 +1016,13 @@ async function solicitarResgate(cId, recompensa, pontos) {
 // Wrapper chamado pelo botão Resgatar
 async function fazerResgate() {
   if (!clienteId) return alert('Erro: cliente não identificado');
-  if (!confirm('Deseja resgatar R$50 usando 5.000 pontos?')) return;
+  const regras = getRegrasCliente();
+  if (!confirm(`Deseja resgatar R$${regras.valorCupom} usando ${regras.metaPontos.toLocaleString('pt-BR')} pontos?\n\nCondições:\n• Válido para compras acima de R$${regras.compraMinima}\n• Prazo: ${regras.validadeCupom} dias para usar\n• Cupom expirado = perda dos pontos`)) return;
   const btn = document.getElementById('btn-resgatar');
   if (btn) { btn.disabled = true; btn.textContent = 'Aguarde...'; }
-  const ok = await solicitarResgate(clienteId, 'Desconto R$50', 5000);
+  const ok = await solicitarResgate(clienteId, `Desconto R$${regras.valorCupom}`, regras.metaPontos);
   if (ok) {
-    alert('Resgate solicitado! Aguarde aprovação.');
+    alert('Resgate solicitado! Aguarde aprovação.\n\n⏰ Você terá ' + regras.validadeCupom + ' dias para usar o cupom.');
     if (btn) btn.style.display = 'none';
   } else {
     alert('Erro ao solicitar resgate. Tente novamente.');
