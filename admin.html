@@ -624,8 +624,26 @@ async function dispararCampanha() {
 // Variável global para cliente atual
 let clienteAtual = null;
 
+// Extrair código do cliente de um texto (pode ser URL com ?scan=CODIGO ou código direto)
+function extrairCodigo(texto) {
+  if (!texto) return null;
+  // Se for URL com parâmetro ?scan=
+  try {
+    const url = new URL(texto);
+    const scan = url.searchParams.get('scan');
+    if (scan) return scan.trim().toUpperCase();
+  } catch(e) {}
+  // Se for URL com ?scan= sem protocolo válido, tentar regex
+  const match = texto.match(/[?&]scan=([^&\s]+)/i);
+  if (match) return match[1].trim().toUpperCase();
+  // Senão, é o código direto
+  return texto.trim().toUpperCase();
+}
+
 // Função para carregar cliente pelo código (chamada após scan ou busca manual)
-async function carregarCliente(codigo) {
+async function carregarCliente(textoScan) {
+  const codigo = extrairCodigo(textoScan);
+  if (!codigo) { alert('Código inválido!'); return; }
   const cliente = await buscarClientePorCodigo(codigo);
   if (!cliente) { alert('Cliente não encontrado!'); return; }
   clienteAtual = cliente;
