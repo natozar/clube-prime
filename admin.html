@@ -380,9 +380,9 @@ const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsI
 const SH = { apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}`, 'Content-Type': 'application/json' };
 
 // ── ONESIGNAL ─────────────────────────────────────────────
-// ⚠️ Substitua pelo seu App ID em: https://app.onesignal.com → Settings → Keys & IDs
 const ONESIGNAL_APP_ID = '204a1304-2cc4-44b8-af83-f35ceaabd504';
-const ONESIGNAL_REST_KEY = 'os_v2_app_ebfbgbbmyrc1rl4d6noovk6vaqz6cdyionne4umvp4mlwclibcgdvljkczvtpxyow6t5cxjezvznbstvnj7gvqlf3thyfdfejgb2vsq';
+// REST API Key agora fica APENAS na Edge Function (server-side) por segurança
+const ONESIGNAL_PUSH_URL = `${SUPA_URL}/functions/v1/onesignal-push`;
 
 window.OneSignalDeferred = window.OneSignalDeferred || [];
 OneSignalDeferred.push(async function(OneSignal) {
@@ -393,53 +393,45 @@ OneSignalDeferred.push(async function(OneSignal) {
   });
 });
 
-// Envia push notification para um cliente específico via External User ID
+// Envia push notification para um cliente específico via Edge Function (server-side)
 // Para funcionar: no index.html, ao cadastrar/logar, chamar:
 //   OneSignal.login(cliente.id)   ← vincula o dispositivo ao ID do cliente
 async function notificarCliente(clienteId, pontos, novoSaldo) {
-  if (!ONESIGNAL_REST_KEY || ONESIGNAL_REST_KEY === 'SEU_REST_API_KEY_AQUI') return;
   try {
-    await fetch('https://api.onesignal.com/notifications', {
+    await fetch(ONESIGNAL_PUSH_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Key ${ONESIGNAL_REST_KEY}`
+        'Authorization': `Bearer ${SUPA_KEY}`
       },
       body: JSON.stringify({
-        app_id: ONESIGNAL_APP_ID,
-        include_aliases: { external_id: [String(clienteId)] },
-        target_channel: 'push',
-        headings: { pt: '🥩 Clube Prime — Compra registrada!' },
-        contents: { pt: `+${pontos} pontos adicionados! Seu saldo: ${novoSaldo.toLocaleString('pt-BR')} pts` },
-        url: 'https://carnesrodrigues.com.br/',
+        type: 'cliente',
+        clienteId: String(clienteId),
+        pontos,
+        novoSaldo
       })
     });
   } catch(e) { console.warn('OneSignal notificação falhou:', e); }
 }
 
-// Envia push para TODOS os assinantes (campanha geral)
+// Envia push para TODOS os assinantes via Edge Function (server-side)
 async function enviarCampanha(titulo, mensagem, url) {
-  if (!ONESIGNAL_REST_KEY || ONESIGNAL_REST_KEY === 'SEU_REST_API_KEY_AQUI') {
-    alert('Configure o REST API Key do OneSignal no admin.html');
-    return false;
-  }
   try {
-    const r = await fetch('https://api.onesignal.com/notifications', {
+    const r = await fetch(ONESIGNAL_PUSH_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Key ${ONESIGNAL_REST_KEY}`
+        'Authorization': `Bearer ${SUPA_KEY}`
       },
       body: JSON.stringify({
-        app_id: ONESIGNAL_APP_ID,
-        included_segments: ['All'],
-        headings: { pt: titulo },
-        contents: { pt: mensagem },
+        type: 'campanha',
+        titulo,
+        mensagem,
         url: url || 'https://carnesrodrigues.com.br/',
       })
     });
     const d = await r.json();
-    if (d.errors) throw new Error(JSON.stringify(d.errors));
+    if (d.error) throw new Error(JSON.stringify(d.error));
     return true;
   } catch(e) { console.error('enviarCampanha:', e); alert('Erro ao enviar campanha: ' + e.message); return false; }
 }
