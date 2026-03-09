@@ -1,5 +1,5 @@
-const CACHE_NAME = 'clube-prime-v3';
-const ASSETS = ['/', '/index.html', '/admin.html', '/manifest.json'];
+const CACHE_NAME = 'clube-prime-v4';
+const ASSETS = ['/manifest.json', '/icon-192.png', '/icon-384.png', '/icon-512.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(
@@ -18,8 +18,26 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  // Ignorar requisições externas (Supabase, OneSignal, etc)
+  // Ignorar requisições externas (Supabase, OneSignal, APIs, etc)
   if (!e.request.url.startsWith(self.location.origin)) return;
+
+  const url = new URL(e.request.url);
+
+  // HTML pages: network-first (sempre busca versão atualizada)
+  if (e.request.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname === '/') {
+    e.respondWith(
+      fetch(e.request)
+        .then(response => {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
+          return response;
+        })
+        .catch(() => caches.match(e.request))
+    );
+    return;
+  }
+
+  // Static assets: cache-first (icons, manifest)
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request))
   );

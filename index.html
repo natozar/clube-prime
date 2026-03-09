@@ -128,7 +128,7 @@ body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
 .prog-wrap{padding:0 16px 4px}
 .prog-header{display:flex;justify-content:space-between;margin-bottom:7px}
 .prog-bar{height:3px;background:rgba(255,255,255,.08);border-radius:2px}
-.prog-fill{height:100%;background:linear-gradient(90deg,var(--gold-dark),var(--gold-light));border-radius:2px;width:64%;position:relative}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--gold-dark),var(--gold-light));border-radius:2px;width:0%;position:relative;transition:width .5s ease}
 .prog-fill::after{content:'';position:absolute;right:0;top:-3px;width:9px;height:9px;background:var(--gold-light);border-radius:50%;box-shadow:0 0 8px var(--gold)}
 .stats-row{display:flex;padding:12px 16px;gap:8px}
 .stat-card{flex:1;background:var(--dark2);border:1px solid rgba(201,168,76,.1);border-radius:11px;padding:10px;text-align:center}
@@ -294,11 +294,11 @@ body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
     </div>
     <div class="card-divider"></div>
     <div class="card-mid">
-      <div><div style="font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--gray)">saldo de pontos</div><div style="font-family:'Cormorant Garamond',serif;font-size:38px;color:var(--gold-light);font-weight:700;line-height:1">2.840</div><div style="font-size:9px;color:var(--gold-dark);letter-spacing:1px">pts acumulados</div></div>
+      <div><div style="font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--gray)">saldo de pontos</div><div class="pts-val" style="font-family:'Cormorant Garamond',serif;font-size:38px;color:var(--gold-light);font-weight:700;line-height:1">0</div><div style="font-size:9px;color:var(--gold-dark);letter-spacing:1px">pts acumulados</div></div>
       <div class="qr-box" id="qr-box"><canvas id="qr-canvas" width="50" height="50"></canvas></div>
     </div>
     <div class="card-bot">
-      <div><div style="font-size:12px;font-weight:600;color:var(--white);letter-spacing:1px;text-transform:uppercase" id="card-nome">Carlos R.</div><div style="font-size:9px;color:var(--gray);margin-top:2px">#CR-00847</div></div>
+      <div><div style="font-size:12px;font-weight:600;color:var(--white);letter-spacing:1px;text-transform:uppercase" id="card-nome">Carlos R.</div><div style="font-size:9px;color:var(--gray);margin-top:2px" id="card-codigo">#---</div></div>
       <div style="text-align:right"><div style="font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--gold-dark)">cartão</div><div style="font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--gold);letter-spacing:2px;font-weight:600">BLACK</div></div>
     </div>
   </div>
@@ -307,9 +307,9 @@ body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
     <div class="prog-bar"><div class="prog-fill"></div></div>
   </div>
   <div class="stats-row">
-    <div class="stat-card"><div class="stat-icon">🥩</div><div class="stat-value">18</div><div class="stat-label">compras</div></div>
-    <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-value">5</div><div class="stat-label">indicados</div></div>
-    <div class="stat-card"><div class="stat-icon">⭐</div><div class="stat-value">284</div><div class="stat-label">pts bônus</div></div>
+    <div class="stat-card"><div class="stat-icon">🥩</div><div class="stat-value" id="stat-compras">0</div><div class="stat-label">compras</div></div>
+    <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-value" id="stat-indicados">0</div><div class="stat-label">indicados</div></div>
+    <div class="stat-card"><div class="stat-icon">⭐</div><div class="stat-value" id="stat-bonus">0</div><div class="stat-label">pts bônus</div></div>
   </div>
   <div class="sec-label">— últimas compras</div>
   <div style="padding:0 16px 16px">
@@ -319,15 +319,15 @@ body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
 
 <!-- TELA: PONTOS -->
 <div class="screen" id="screen-pontos">
-  <div class="app-header"><div class="logo logo-sm"></div><div style="text-align:right"><div class="h-name">Meus Pontos</div><div class="h-level">#CR-00847</div></div></div>
+  <div class="app-header"><div class="logo logo-sm"></div><div style="text-align:right"><div class="h-name">Meus Pontos</div><div class="h-level" id="pontos-codigo">#---</div></div></div>
   <div class="sh">
-    <div class="sh-label">saldo atual</div><div class="sh-value">2.840</div><div class="sh-unit">pontos prime</div>
+    <div class="sh-label">saldo atual</div><div class="sh-value" id="saldo-pts">0</div><div class="sh-unit">pontos prime</div>
     <div class="sh-row">
-      <div><div class="sh-sv">R$640</div><div class="sh-sl">gastos/mês</div></div>
+      <div><div class="sh-sv" id="sh-gastos">R$0</div><div class="sh-sl">gastos/mês</div></div>
       <div style="width:1px;background:rgba(201,168,76,.2);height:28px"></div>
-      <div><div class="sh-sv">284</div><div class="sh-sl">pts bônus</div></div>
+      <div><div class="sh-sv" id="sh-bonus">0</div><div class="sh-sl">pts bônus</div></div>
       <div style="width:1px;background:rgba(201,168,76,.2);height:28px"></div>
-      <div><div class="sh-sv">5</div><div class="sh-sl">indicados</div></div>
+      <div><div class="sh-sv" id="sh-indicados">0</div><div class="sh-sl">indicados</div></div>
     </div>
   </div>
   <div class="sec-card" style="background:linear-gradient(135deg,#0a1a0a,#0d2b0d);border:1px solid rgba(37,211,102,.2)">
@@ -354,7 +354,7 @@ body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
       <div style="text-align:right">
         <div class="rg-pts">5.000pts</div>
         <div class="rg-req" id="resgate-status" style="color:var(--gray)">carregando...</div>
-        <button class="btn bg bsm" id="btn-resgatar" style="margin-top:5px;display:none" onclick="solicitarResgate()">Resgatar</button>
+        <button class="btn bg bsm" id="btn-resgatar" style="margin-top:5px;display:none" onclick="fazerResgate()">Resgatar</button>
       </div>
     </div>
   </div>
@@ -408,17 +408,17 @@ body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
     <div class="sec-card" style="margin:0 0 14px">
       <div class="sec-title">👤 Dados Básicos</div>
       <div class="fl"><label class="flabel">Nome completo</label><input class="fi" id="perfil-nome" value=""></div>
-      <div class="fl"><label class="flabel">WhatsApp</label><input class="fi" value="(16) 99999-0000" type="tel"></div>
-      <div class="fl"><label class="flabel">Data de nascimento</label><input class="fi" type="date" value="1985-06-15"></div>
-      <button class="btn bg" style="margin-top:6px">Salvar</button>
+      <div class="fl"><label class="flabel">WhatsApp</label><input class="fi" id="perfil-tel" value="" type="tel" readonly></div>
+      <div class="fl"><label class="flabel">Data de nascimento</label><input class="fi" type="date" id="perfil-nasc" value=""></div>
+      <button class="btn bg" style="margin-top:6px" onclick="salvarPerfil()">Salvar</button>
     </div>
 
     <!-- DADOS COMPLEMENTARES -->
     <div class="sec-card" style="margin:0 0 14px">
       <div class="sec-title">📋 Dados Complementares <span style="font-size:8px;color:var(--gray);letter-spacing:0;text-transform:none;font-weight:400">opcional</span></div>
-      <div class="fl"><label class="flabel">E-mail</label><input class="fi" placeholder="seu@email.com"></div>
+      <div class="fl"><label class="flabel">E-mail</label><input class="fi" id="perfil-email" placeholder="seu@email.com"></div>
       <div class="fl"><label class="flabel">CPF</label><input class="fi" placeholder="000.000.000-00" maxlength="14" id="inp-cpf"></div>
-      <button class="btn bg" style="margin-top:6px">Salvar</button>
+      <button class="btn bg" style="margin-top:6px" onclick="salvarComplemento()">Salvar</button>
     </div>
 
     <!-- ENDEREÇO -->
@@ -440,7 +440,7 @@ body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
         <div class="fl" style="flex:2"><label class="flabel">Cidade</label><input class="fi" id="inp-cidade" placeholder="Ex: Ribeirão Preto"></div>
         <div class="fl" style="flex:1"><label class="flabel">Estado</label><input class="fi" id="inp-uf" placeholder="SP" maxlength="2" style="text-transform:uppercase"></div>
       </div>
-      <button class="btn bg" style="margin-top:6px">Salvar endereço</button>
+      <button class="btn bg" style="margin-top:6px" onclick="salvarEndereco()">Salvar endereço</button>
     </div>
 
     <!-- ZONA DE PERIGO -->
@@ -471,7 +471,7 @@ body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
 
 <!-- MODAL EXCLUSÃO -->
 <div class="mo" id="mo-del">
-  <div class="md"><div class="md-handle"></div><div class="md-title" style="color:var(--red)">Excluir Conta</div><div class="md-text">Você perderá <strong style="color:var(--gold)">2.840 pontos</strong> permanentemente.</div><div class="md-actions"><button class="btn bo" onclick="document.getElementById('mo-del').classList.remove('open')">Cancelar</button><button class="btn bd">Confirmar</button></div></div>
+  <div class="md"><div class="md-handle"></div><div class="md-title" style="color:var(--red)">Excluir Conta</div><div class="md-text">Você perderá <strong style="color:var(--gold)" id="del-pontos">0 pontos</strong> permanentemente.</div><div class="md-actions"><button class="btn bo" onclick="document.getElementById('mo-del').classList.remove('open')">Cancelar</button><button class="btn bd">Confirmar</button></div></div>
 </div>
 
 <!-- BOTTOM NAV -->
@@ -533,16 +533,31 @@ function preencherTela(cliente, saldo) {
   document.getElementById('card-nome').textContent = nomes[0] + sobrenomeInicial;
   const pts = saldo || 0;
   document.querySelectorAll('.pts-val, #saldo-pts').forEach(el => el.textContent = pts.toLocaleString('pt-BR'));
+  // Código do cartão
+  const codigoEl = document.getElementById('card-codigo');
+  if (codigoEl) codigoEl.textContent = '#' + cliente.codigo;
+  const pontosCodigoEl = document.getElementById('pontos-codigo');
+  if (pontosCodigoEl) pontosCodigoEl.textContent = '#' + cliente.codigo;
   // Barra de progresso
-  const pct = Math.min(100, (pts / 5000) * 100);
-  document.querySelectorAll('.prog-bar').forEach(el => el.style.width = pct + '%');
+  const META = 5000;
+  const pct = Math.min(100, (pts / META) * 100);
+  const faltam = Math.max(0, META - pts);
+  document.querySelectorAll('.prog-fill').forEach(el => el.style.width = pct + '%');
   document.querySelectorAll('.prog-label').forEach(el => el.textContent = pts + ' / 5.000 pts');
+  const progRestEl = document.querySelector('.prog-header span:last-child');
+  if (progRestEl) progRestEl.textContent = faltam.toLocaleString('pt-BR') + ' pts restantes';
+  // Modal excluir conta
+  const delPtsEl = document.getElementById('del-pontos');
+  if (delPtsEl) delPtsEl.textContent = pts.toLocaleString('pt-BR') + ' pontos';
+  // Carregar stats reais do banco
+  carregarStats(cliente.id, pts);
   atualizarLinkConvite();
   verificar5k(pts);
   gerarQRCode(cliente.codigo);
   carregarExtrato(cliente.id);
   atualizarStatusResgate(pts);
   carregarRede(cliente, pts);
+  preencherPerfil(cliente);
   document.getElementById('screen-cad').classList.remove('active');
   document.getElementById('screen-cartao').classList.add('active');
   document.getElementById('bnav').style.display = 'flex';
@@ -868,6 +883,40 @@ function atualizarStatusResgate(pts) {
   }
 }
 
+// Carregar estatísticas reais do banco
+async function carregarStats(clienteId, saldo) {
+  try {
+    // Buscar total de compras
+    const rt = await fetch(`${SUPA_URL}/rest/v1/transacoes?cliente_id=eq.${clienteId}&tipo=eq.compra&select=id,valor_reais`, { headers: SH });
+    const trans = await rt.json();
+    const totalCompras = Array.isArray(trans) ? trans.length : 0;
+    const totalGasto = Array.isArray(trans) ? trans.reduce((s, t) => s + (t.valor_reais || 0), 0) : 0;
+
+    // Buscar indicados
+    const ri = await fetch(`${SUPA_URL}/rest/v1/clientes?indicado_por=eq.${clienteId}&select=id`, { headers: SH });
+    const indicados = await ri.json();
+    const totalIndicados = Array.isArray(indicados) ? indicados.length : 0;
+
+    // Atualizar stat-cards na tela do cartão
+    const elCompras = document.getElementById('stat-compras');
+    if (elCompras) elCompras.textContent = totalCompras;
+    const elIndicados = document.getElementById('stat-indicados');
+    if (elIndicados) elIndicados.textContent = totalIndicados;
+    const elBonus = document.getElementById('stat-bonus');
+    if (elBonus) elBonus.textContent = '0'; // TODO: calcular bônus de indicação
+
+    // Atualizar tela de pontos
+    const elShGastos = document.getElementById('sh-gastos');
+    if (elShGastos) elShGastos.textContent = 'R$' + Math.floor(totalGasto).toLocaleString('pt-BR');
+    const elShBonus = document.getElementById('sh-bonus');
+    if (elShBonus) elShBonus.textContent = '0';
+    const elShIndicados = document.getElementById('sh-indicados');
+    if (elShIndicados) elShIndicados.textContent = totalIndicados;
+  } catch(e) {
+    console.error('carregarStats:', e);
+  }
+}
+
 // Carregar aba Indicar com dados reais
 async function carregarRede(cliente, saldo) {
   // Preencher card do próprio usuário
@@ -897,21 +946,97 @@ async function buscarTransacoes(clienteId) {
 // Buscar resgates do cliente
 async function buscarResgates(clienteId) {
   try {
-    const r = await fetch(`${SUPA_URL}/rest/v1/resgates?cliente_id=eq.${clienteId}&order=created_at.desc`, { headers: SH });
+    const r = await fetch(`${SUPA_URL}/rest/v1/resgate?cliente_id=eq.${clienteId}&order=created_at.desc`, { headers: SH });
     return await r.json();
   } catch(e) { return []; }
 }
 
 // Solicitar resgate
-async function solicitarResgate(clienteId, recompensa, pontos) {
+async function solicitarResgate(cId, recompensa, pontos) {
   try {
-    await fetch(`${SUPA_URL}/rest/v1/resgates`, {
-      method: 'POST', headers: SH,
-      body: JSON.stringify({ cliente_id: clienteId, recompensa, pontos_usados: pontos, status: 'pendente' })
+    const r = await fetch(`${SUPA_URL}/rest/v1/resgate`, {
+      method: 'POST', headers: { ...SH, Prefer: 'return=representation' },
+      body: JSON.stringify({ cliente_id: cId, recompensa, pontos_usados: pontos, status: 'pendente' })
     });
-    return true;
+    return r.ok;
   } catch(e) { return false; }
 }
+
+// Wrapper chamado pelo botão Resgatar
+async function fazerResgate() {
+  if (!clienteId) return alert('Erro: cliente não identificado');
+  if (!confirm('Deseja resgatar R$50 usando 5.000 pontos?')) return;
+  const btn = document.getElementById('btn-resgatar');
+  if (btn) { btn.disabled = true; btn.textContent = 'Aguarde...'; }
+  const ok = await solicitarResgate(clienteId, 'Desconto R$50', 5000);
+  if (ok) {
+    alert('Resgate solicitado! Aguarde aprovação.');
+    if (btn) btn.style.display = 'none';
+  } else {
+    alert('Erro ao solicitar resgate. Tente novamente.');
+  }
+  if (btn) { btn.disabled = false; btn.textContent = 'Resgatar'; }
+}
+// Preencher campos do perfil com dados do cliente
+function preencherPerfil(cliente) {
+  const el = (id) => document.getElementById(id);
+  if (el('perfil-nome')) el('perfil-nome').value = cliente.nome || '';
+  if (el('perfil-tel')) {
+    const t = cliente.telefone || '';
+    const num = t.replace(/^55/,'');
+    el('perfil-tel').value = num ? '(' + num.substring(0,2) + ') ' + num.substring(2) : '';
+  }
+  if (el('perfil-nasc')) el('perfil-nasc').value = cliente.nascimento || '';
+  if (el('perfil-email')) el('perfil-email').value = cliente.email || '';
+  if (el('inp-cpf') && cliente.cpf) el('inp-cpf').value = cliente.cpf;
+  if (el('inp-cep') && cliente.cep) el('inp-cep').value = cliente.cep;
+  if (el('inp-rua') && cliente.rua) el('inp-rua').value = cliente.rua;
+  if (el('inp-num') && cliente.numero) el('inp-num').value = cliente.numero;
+  if (el('inp-bairro') && cliente.bairro) el('inp-bairro').value = cliente.bairro;
+  if (el('inp-cidade') && cliente.cidade) el('inp-cidade').value = cliente.cidade;
+  if (el('inp-uf') && cliente.uf) el('inp-uf').value = cliente.uf;
+}
+
+// Salvar dados básicos do perfil
+async function salvarPerfil() {
+  if (!clienteId) return alert('Erro: cliente não identificado');
+  const nome = document.getElementById('perfil-nome').value.trim();
+  const nasc = document.getElementById('perfil-nasc').value;
+  if (!nome) return alert('Nome não pode ficar vazio');
+  const ok = await atualizarCliente(clienteId, { nome, nascimento: nasc || null });
+  if (ok) alert('Dados salvos com sucesso!');
+  else alert('Erro ao salvar. Tente novamente.');
+}
+
+// Salvar dados complementares
+async function salvarComplemento() {
+  if (!clienteId) return alert('Erro: cliente não identificado');
+  const email = document.getElementById('perfil-email').value.trim();
+  const cpf = document.getElementById('inp-cpf').value.replace(/\D/g,'');
+  const dados = {};
+  if (email) dados.email = email;
+  if (cpf) dados.cpf = cpf;
+  const ok = await atualizarCliente(clienteId, dados);
+  if (ok) alert('Dados salvos com sucesso!');
+  else alert('Erro ao salvar. Tente novamente.');
+}
+
+// Salvar endereço
+async function salvarEndereco() {
+  if (!clienteId) return alert('Erro: cliente não identificado');
+  const dados = {
+    cep: document.getElementById('inp-cep').value.replace(/\D/g,''),
+    rua: document.getElementById('inp-rua').value.trim(),
+    numero: document.getElementById('inp-num').value.trim(),
+    bairro: document.getElementById('inp-bairro').value.trim(),
+    cidade: document.getElementById('inp-cidade').value.trim(),
+    uf: document.getElementById('inp-uf').value.trim().toUpperCase()
+  };
+  const ok = await atualizarCliente(clienteId, dados);
+  if (ok) alert('Endereço salvo com sucesso!');
+  else alert('Erro ao salvar. Tente novamente.');
+}
+
 // CPF mask
 const cpfInput=document.getElementById('inp-cpf');
 if(cpfInput)cpfInput.addEventListener('input',function(){

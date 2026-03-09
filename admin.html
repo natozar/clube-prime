@@ -232,8 +232,8 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom))}
       <div style="padding:0 16px">
         <div class="kpi-row">
           <div class="kpi"><div class="kpi-l">Membros</div><div class="kpi-v">0</div><div class="kpi-u">—</div></div>
-          <div class="kpi"><div class="kpi-l">Pendentes</div><div class="kpi-v" style="color:var(--red)">8</div><div class="kpi-s">resgates</div></div>
-          <div class="kpi"><div class="kpi-l">Bloqueados</div><div class="kpi-v">2</div><div class="kpi-s">suspensos</div></div>
+          <div class="kpi"><div class="kpi-l">Pendentes</div><div class="kpi-v" id="kpi-pendentes" style="color:var(--red)">0</div><div class="kpi-s">resgates</div></div>
+          <div class="kpi"><div class="kpi-l">Bloqueados</div><div class="kpi-v" id="kpi-bloqueados">0</div><div class="kpi-s">suspensos</div></div>
           <div class="kpi"><div class="kpi-l">Pontos</div><div class="kpi-v" style="font-size:18px">0</div><div class="kpi-s">pts em circulação</div></div>
         </div>
       </div>
@@ -386,7 +386,7 @@ async function enviarCampanha(titulo, mensagem, url) {
 // Listar todos os clientes
 async function listarClientes() {
   try {
-    const r = await fetch(`${SUPA_URL}/rest/v1/clientes?select=*&order=created_at.desc&limit=50`, { headers: SH });
+    const r = await fetch(`${SUPA_URL}/rest/v1/clientes?select=*&order=id.desc&limit=50`, { headers: SH });
     const lista = await r.json();
     const el = document.getElementById('clientes-lista');
     const rankEl = document.getElementById('ranking-lista');
@@ -395,7 +395,7 @@ async function listarClientes() {
       el.innerHTML = !lista.length ? '<p style="opacity:.5;padding:8px">Nenhum cliente cadastrado</p>'
         : lista.map(c=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #333">
           <div><div style="font-weight:600">${c.nome}</div><div style="opacity:.6;font-size:12px">${c.codigo} · ${c.telefone}</div></div>
-          <div style="font-size:12px;opacity:.7">${new Date(c.created_at).toLocaleDateString('pt-BR')}</div></div>`).join('');
+          <div style="font-size:12px;opacity:.7">${c.codigo}</div></div>`).join('');
     }
     if(rankEl) {
       rankEl.innerHTML = lista.slice(0,10).map((c,i)=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #333">
@@ -404,7 +404,7 @@ async function listarClientes() {
     }
     if(alertEl) {
       const hoje = new Date();
-      const venc = lista.filter(c => c.created_at && Math.floor((hoje - new Date(c.created_at)) / 86400000) >= 80);
+      const venc = []; // TODO: implementar verificação de vencimento baseada em última transação
       alertEl.innerHTML = venc.length ? venc.map(c=>`<div style="padding:8px 0;border-bottom:1px solid #333">
         <span style="color:#f90">⚠️</span> ${c.nome} — pontos próximos do vencimento</div>`).join('')
         : '<p style="opacity:.5;padding:8px">Nenhum alerta no momento</p>';
@@ -458,7 +458,7 @@ async function registrarCompra(clienteId, valorReais) {
 // Listar resgates pendentes
 async function listarResgatesPendentes() {
   try {
-    const r = await fetch(`${SUPA_URL}/rest/v1/resgates?status=eq.pendente&select=*,clientes(nome,codigo)&order=created_at.desc`, { headers: SH });
+    const r = await fetch(`${SUPA_URL}/rest/v1/resgate?status=eq.pendente&select=*,clientes(nome,codigo)&order=created_at.desc`, { headers: SH });
     const lista = await r.json();
     const el = document.getElementById('resgates-lista');
     if(!el) return lista;
@@ -482,7 +482,7 @@ async function listarResgatesPendentes() {
 // Aprovar ou recusar resgate
 async function atualizarResgate(id, status, clienteId, pontos) {
   try {
-    const rr = await fetch(`${SUPA_URL}/rest/v1/resgates?id=eq.${id}`, {
+    const rr = await fetch(`${SUPA_URL}/rest/v1/resgate?id=eq.${id}`, {
       method: 'PATCH', headers: SH,
       body: JSON.stringify({ status, aprovado_em: new Date().toISOString() })
     });
