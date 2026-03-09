@@ -399,7 +399,7 @@ OneSignalDeferred.push(async function(OneSignal) {
 async function notificarCliente(clienteId, pontos, novoSaldo) {
   if (!ONESIGNAL_REST_KEY || ONESIGNAL_REST_KEY === 'SEU_REST_API_KEY_AQUI') return;
   try {
-    await fetch('https://onesignal.com/api/v1/notifications', {
+    await fetch('https://api.onesignal.com/notifications', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -424,7 +424,7 @@ async function enviarCampanha(titulo, mensagem, url) {
     return false;
   }
   try {
-    const r = await fetch('https://onesignal.com/api/v1/notifications', {
+    const r = await fetch('https://api.onesignal.com/notifications', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
