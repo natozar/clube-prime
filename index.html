@@ -174,6 +174,20 @@ body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
 .ind-hero{background:linear-gradient(135deg,rgba(201,168,76,.08),rgba(201,168,76,.03));border:1px solid rgba(201,168,76,.25);border-radius:14px;padding:20px;margin:16px;text-align:center}
 .share-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:calc(100% - 32px);margin:0 16px 8px;padding:14px;background:linear-gradient(135deg,var(--gold-dark),var(--gold));border:none;border-radius:12px;color:var(--black);font-family:'Montserrat',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer}
 .share-url{text-align:center;font-size:10px;color:var(--gray);margin-bottom:16px}
+/* NOTIF BANNER */
+#notif-banner{position:fixed;inset:0;z-index:150;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;pointer-events:none;transition:opacity .3s ease}
+#notif-banner.show{opacity:1;pointer-events:all}
+.notif-inner{background:linear-gradient(135deg,#111,#1c1c1c);border:1px solid rgba(201,168,76,.35);border-radius:20px;padding:32px 24px;width:100%;max-width:340px;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,.8);transform:scale(.92);transition:transform .3s cubic-bezier(.16,1,.3,1)}
+#notif-banner.show .notif-inner{transform:scale(1)}
+.notif-icon{font-size:48px;margin-bottom:14px;display:block}
+.notif-title{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--gold-light);letter-spacing:2px;margin-bottom:8px}
+.notif-desc{font-size:12px;color:var(--gray);line-height:1.7;margin-bottom:22px}
+.notif-desc strong{color:var(--gold)}
+.notif-features{text-align:left;margin:0 auto 22px;max-width:260px}
+.notif-feat{display:flex;align-items:center;gap:10px;padding:6px 0;font-size:11px;color:var(--white)}
+.notif-feat span:first-child{font-size:16px;flex-shrink:0}
+.notif-accept{width:100%;padding:14px;background:linear-gradient(135deg,var(--gold-dark),var(--gold));border:none;border-radius:11px;color:var(--black);font-family:'Montserrat',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer;margin-bottom:10px;display:block}
+.notif-deny{width:100%;padding:10px;background:transparent;border:1px solid rgba(255,255,255,.08);border-radius:9px;color:var(--gray);font-family:'Montserrat',sans-serif;font-size:11px;cursor:pointer;display:block}
 /* PWA BANNER — popup central */
 #pwa-banner{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;pointer-events:none;transition:opacity .3s ease}
 #pwa-banner.show{opacity:1;pointer-events:all}
@@ -210,6 +224,7 @@ body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
       appId: "204a1304-2cc4-44b8-af83-f35ceaabd504",
       serviceWorkerPath: "/OneSignalSDKWorker.js",
       notifyButton: { enable: false },
+      promptOptions: { autoPrompt: false },
     });
   });
 </script>
@@ -217,6 +232,22 @@ body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
 <body>
 
 <!-- PWA BANNER -->
+<!-- NOTIF PERMISSION BANNER -->
+<div id="notif-banner">
+  <div class="notif-inner">
+    <div class="notif-icon">🔔</div>
+    <div class="notif-title">Fique por dentro!</div>
+    <div class="notif-desc">Ative as notificações e não perca <strong>promoções exclusivas</strong>, novidades do cardápio e avisos sobre seus pontos.</div>
+    <div class="notif-features">
+      <div class="notif-feat"><span>🏷️</span> Promoções e ofertas especiais</div>
+      <div class="notif-feat"><span>⭐</span> Alertas de pontos e recompensas</div>
+      <div class="notif-feat"><span>🥩</span> Novidades no cardápio</div>
+    </div>
+    <button class="notif-accept" id="notif-accept-btn">ATIVAR NOTIFICAÇÕES</button>
+    <button class="notif-deny" id="notif-deny-btn">Agora não</button>
+  </div>
+</div>
+
 <div id="pwa-banner">
   <div class="pwa-inner">
     <div class="pwa-icon"></div>
@@ -624,6 +655,8 @@ async function preencherTela(cliente, saldo) {
   if (window.OneSignalDeferred) {
     OneSignalDeferred.push(os => os.login(String(cliente.id)));
   }
+  // Mostrar banner customizado de notificações (se ainda não aceitou)
+  mostrarBannerNotif();
 
   document.getElementById('display-nome').textContent = cliente.nome;
   const nomes = cliente.nome.split(' ');
@@ -891,6 +924,52 @@ document.getElementById('dismiss-btn').addEventListener('click', () => {
 window.addEventListener('appinstalled', () => {
   pwaBanner.classList.remove('show');
   localStorage.setItem('pwa-installed', '1');
+});
+
+// ── NOTIFICAÇÕES — Prompt Customizado ─────────────────────
+function mostrarBannerNotif() {
+  // Só mostra se: permissão ainda não foi decidida, e não dispensou recentemente
+  if (!('Notification' in window)) return;
+  if (Notification.permission !== 'default') return;
+  const dispensou = localStorage.getItem('notif-dismissed');
+  const seteDias = 7 * 24 * 60 * 60 * 1000;
+  if (dispensou && Date.now() - parseInt(dispensou) < seteDias) return;
+  // Espera 3s após login para não sobrepor o PWA banner
+  setTimeout(() => {
+    // Só mostra se o PWA banner não estiver visível
+    const pwa = document.getElementById('pwa-banner');
+    if (pwa && pwa.classList.contains('show')) {
+      // Espera o PWA banner fechar e tenta de novo
+      const obs = new MutationObserver(() => {
+        if (!pwa.classList.contains('show')) { obs.disconnect(); mostrarNotifBanner(); }
+      });
+      obs.observe(pwa, { attributes: true, attributeFilter: ['class'] });
+    } else {
+      mostrarNotifBanner();
+    }
+  }, 3500);
+}
+
+function mostrarNotifBanner() {
+  document.getElementById('notif-banner').classList.add('show');
+}
+
+document.getElementById('notif-accept-btn').addEventListener('click', async () => {
+  document.getElementById('notif-banner').classList.remove('show');
+  localStorage.setItem('notif-accepted', '1');
+  // Pede permissão real via OneSignal
+  if (window.OneSignalDeferred) {
+    OneSignalDeferred.push(async (OneSignal) => {
+      try {
+        await OneSignal.Notifications.requestPermission();
+      } catch(e) { console.warn('OneSignal permission error:', e); }
+    });
+  }
+});
+
+document.getElementById('notif-deny-btn').addEventListener('click', () => {
+  document.getElementById('notif-banner').classList.remove('show');
+  localStorage.setItem('notif-dismissed', String(Date.now()));
 });
 
 // ── SUPABASE ──────────────────────────────────────────────
