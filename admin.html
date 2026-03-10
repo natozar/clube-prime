@@ -319,6 +319,66 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom))}
     </div>
   </div>
 
+  <!-- TELA: CARDÁPIO (Gestão) -->
+  <div class="screen" id="screen-cardapio">
+    <div class="ph"><div class="logo ph-logo"></div><div><div class="ph-title">Cardápio</div><div class="ph-sub">Clube Prime · Gestão</div></div></div>
+    <div class="pw">
+      <!-- CATEGORIAS -->
+      <div class="sec-card">
+        <div class="sec-title">📂 Categorias <button class="btn bg bsm" onclick="abrirModalCat()">+ Categoria</button></div>
+        <div id="cat-lista"><div style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Carregando...</div></div>
+      </div>
+      <!-- PRODUTOS -->
+      <div class="sec-card">
+        <div class="sec-title">🥩 Produtos <button class="btn bg bsm" onclick="abrirModalProd()">+ Produto</button></div>
+        <div class="search-bar">
+          <select class="fsel" id="filtro-cat-prod" onchange="renderizarProdutos()" style="width:160px"><option value="">Todas as categorias</option></select>
+          <input class="si" id="busca-prod" placeholder="Buscar produto..." oninput="renderizarProdutos()">
+        </div>
+        <div id="prod-lista"><div style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Carregando...</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL CATEGORIA -->
+  <div class="mo" id="mo-cat">
+    <div class="md">
+      <div class="md-handle"></div>
+      <div class="md-title" id="mo-cat-title">Nova Categoria</div>
+      <input type="hidden" id="cat-edit-id">
+      <div class="fl"><label class="flabel">Nome da categoria</label><input class="fi" id="cat-nome" placeholder="Ex: Bovinos"></div>
+      <div class="md-actions" style="margin-top:12px">
+        <button class="btn bo" onclick="document.getElementById('mo-cat').classList.remove('open')">Cancelar</button>
+        <button class="btn bg" onclick="salvarCategoria()">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL PRODUTO -->
+  <div class="mo" id="mo-prod">
+    <div class="md" style="max-height:85vh;overflow-y:auto">
+      <div class="md-handle"></div>
+      <div class="md-title" id="mo-prod-title">Novo Produto</div>
+      <input type="hidden" id="prod-edit-id">
+      <div class="fl"><label class="flabel">Nome do produto *</label><input class="fi" id="prod-nome" placeholder="Ex: Picanha"></div>
+      <div class="fl"><label class="flabel">Apresentação</label><input class="fi" id="prod-apresentacao" placeholder="Ex: pacotes de ~500g"></div>
+      <div class="fl"><label class="flabel">Categoria *</label>
+        <select class="fsel" id="prod-categoria" style="width:100%"><option value="">Selecione...</option></select>
+      </div>
+      <div class="fl"><label class="flabel">Destaque</label>
+        <select class="fsel" id="prod-destaque" style="width:100%">
+          <option value="">Nenhum</option>
+          <option value="promocao">Promoção</option>
+          <option value="novidade">Novidade</option>
+        </select>
+      </div>
+      <div class="md-actions" style="margin-top:12px">
+        <button class="btn bo" onclick="document.getElementById('mo-prod').classList.remove('open')">Cancelar</button>
+        <button class="btn bg" onclick="salvarProduto()">Salvar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL NOVO CLIENTE -->
   <div class="mo" id="mo-new">
     <div class="md" style="max-height:85vh;overflow-y:auto">
@@ -364,6 +424,7 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom))}
   <nav class="admin-nav">
     <button class="an active" onclick="A('op',this)"><span class="an-icon">🏪</span>Caixa</button>
     <button class="an" onclick="A('painel',this)"><span class="an-icon">📊</span>Painel</button>
+    <button class="an" onclick="A('cardapio',this)"><span class="an-icon">🍖</span>Cardápio</button>
     <button class="an" onclick="A('admin',this)"><span class="an-icon">⚙️</span>Admin</button>
   </nav>
 </div>
@@ -830,6 +891,7 @@ function A(n,btn){
   document.getElementById('screen-'+n).classList.add('active');
   btn.classList.add('active');
   if(n==='painel') { listarClientes(); listarResgatesPendentes(); listarAniversariantes(); carregarEstatisticas(); }
+  if(n==='cardapio') { carregarCardapioAdmin(); }
 }
 async function listarAniversariantes() {
   try {
@@ -979,6 +1041,186 @@ function atualizarLabelPerde() {
 
 // Atualizar label quando toggle muda
 document.getElementById('tog-perde-pontos')?.addEventListener('click', () => setTimeout(atualizarLabelPerde, 50));
+
+// ── CARDÁPIO ADMIN ─────────────────────────────────────────
+let categoriasCache = [];
+let produtosCache = [];
+
+async function carregarCardapioAdmin() {
+  try {
+    const [rCat, rProd] = await Promise.all([
+      fetch(`${SUPA_URL}/rest/v1/cardapio_categorias?select=*&order=ordem`, { headers: SH }),
+      fetch(`${SUPA_URL}/rest/v1/cardapio_produtos?select=*&order=ordem`, { headers: SH })
+    ]);
+    categoriasCache = await rCat.json();
+    produtosCache = await rProd.json();
+    if (!Array.isArray(categoriasCache)) categoriasCache = [];
+    if (!Array.isArray(produtosCache)) produtosCache = [];
+    renderizarCategorias();
+    renderizarProdutos();
+    atualizarSelectsCat();
+  } catch(e) { console.error('carregarCardapioAdmin:', e); }
+}
+
+function renderizarCategorias() {
+  const el = document.getElementById('cat-lista');
+  if (!categoriasCache.length) { el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Nenhuma categoria cadastrada</div>'; return; }
+  el.innerHTML = categoriasCache.map((c, i) => {
+    const qtd = produtosCache.filter(p => p.categoria_id === c.id).length;
+    return `<div class="toggle-row" style="gap:10px">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;color:${c.ativo?'var(--white)':'var(--gray)'}">${c.nome} <span style="font-size:10px;opacity:.5">(${qtd})</span></div>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
+        ${i > 0 ? `<button class="btn bo bsm" onclick="moverCategoria(${c.id},-1)" style="padding:4px 7px;font-size:10px">↑</button>` : ''}
+        ${i < categoriasCache.length-1 ? `<button class="btn bo bsm" onclick="moverCategoria(${c.id},1)" style="padding:4px 7px;font-size:10px">↓</button>` : ''}
+        <div class="tog ${c.ativo?'on':''}" onclick="toggleCategoria(${c.id},${c.ativo?'false':'true'})"><div class="tog-d"></div></div>
+        <button class="btn bo bsm" onclick="editarCategoria(${c.id})" style="padding:4px 10px;font-size:10px">✏️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderizarProdutos() {
+  const el = document.getElementById('prod-lista');
+  const filtCat = document.getElementById('filtro-cat-prod')?.value || '';
+  const busca = (document.getElementById('busca-prod')?.value || '').toLowerCase();
+  let lista = produtosCache;
+  if (filtCat) lista = lista.filter(p => String(p.categoria_id) === filtCat);
+  if (busca) lista = lista.filter(p => p.nome.toLowerCase().includes(busca));
+  if (!lista.length) { el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Nenhum produto encontrado</div>'; return; }
+  el.innerHTML = lista.map((p, i) => {
+    const cat = categoriasCache.find(c => c.id === p.categoria_id);
+    const badge = p.destaque === 'promocao' ? '<span style="background:var(--red);color:#fff;border-radius:6px;padding:1px 6px;font-size:8px;margin-left:6px">PROMO</span>'
+      : p.destaque === 'novidade' ? '<span style="background:var(--blue);color:#fff;border-radius:6px;padding:1px 6px;font-size:8px;margin-left:6px">NOVO</span>' : '';
+    return `<div class="toggle-row" style="gap:10px">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;color:${p.ativo?'var(--white)':'var(--gray)'}">${p.nome}${badge}</div>
+        <div style="font-size:10px;color:var(--gray)">${p.apresentacao||''} · ${cat?cat.nome:'—'}</div>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
+        <button class="btn bo bsm" onclick="moverProduto(${p.id},-1)" style="padding:4px 7px;font-size:10px">↑</button>
+        <button class="btn bo bsm" onclick="moverProduto(${p.id},1)" style="padding:4px 7px;font-size:10px">↓</button>
+        <div class="tog ${p.ativo?'on':''}" onclick="toggleProduto(${p.id},${p.ativo?'false':'true'})"><div class="tog-d"></div></div>
+        <button class="btn bo bsm" onclick="editarProduto(${p.id})" style="padding:4px 10px;font-size:10px">✏️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function atualizarSelectsCat() {
+  const ativas = categoriasCache.filter(c => c.ativo);
+  ['filtro-cat-prod', 'prod-categoria'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const val = sel.value;
+    const opts = id === 'filtro-cat-prod' ? '<option value="">Todas as categorias</option>' : '<option value="">Selecione...</option>';
+    sel.innerHTML = opts + ativas.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
+    sel.value = val;
+  });
+}
+
+function abrirModalCat(id) {
+  document.getElementById('cat-edit-id').value = id || '';
+  document.getElementById('cat-nome').value = id ? (categoriasCache.find(c=>c.id===id)?.nome||'') : '';
+  document.getElementById('mo-cat-title').textContent = id ? 'Editar Categoria' : 'Nova Categoria';
+  document.getElementById('mo-cat').classList.add('open');
+}
+
+function editarCategoria(id) { abrirModalCat(id); }
+
+async function salvarCategoria() {
+  const id = document.getElementById('cat-edit-id').value;
+  const nome = document.getElementById('cat-nome').value.trim();
+  if (!nome) { alert('Digite o nome da categoria'); return; }
+  try {
+    if (id) {
+      await fetch(`${SUPA_URL}/rest/v1/cardapio_categorias?id=eq.${id}`, { method: 'PATCH', headers: SH, body: JSON.stringify({ nome }) });
+    } else {
+      const maxOrdem = categoriasCache.reduce((m,c) => Math.max(m, c.ordem||0), 0);
+      await fetch(`${SUPA_URL}/rest/v1/cardapio_categorias`, { method: 'POST', headers: SH, body: JSON.stringify({ nome, ordem: maxOrdem+1 }) });
+    }
+    document.getElementById('mo-cat').classList.remove('open');
+    await carregarCardapioAdmin();
+  } catch(e) { alert('Erro ao salvar: ' + e.message); }
+}
+
+async function toggleCategoria(id, ativo) {
+  try {
+    await fetch(`${SUPA_URL}/rest/v1/cardapio_categorias?id=eq.${id}`, { method: 'PATCH', headers: SH, body: JSON.stringify({ ativo }) });
+    await carregarCardapioAdmin();
+  } catch(e) { console.error('toggleCategoria:', e); }
+}
+
+async function moverCategoria(id, dir) {
+  const idx = categoriasCache.findIndex(c => c.id === id);
+  const targetIdx = idx + dir;
+  if (targetIdx < 0 || targetIdx >= categoriasCache.length) return;
+  const a = categoriasCache[idx], b = categoriasCache[targetIdx];
+  try {
+    await Promise.all([
+      fetch(`${SUPA_URL}/rest/v1/cardapio_categorias?id=eq.${a.id}`, { method: 'PATCH', headers: SH, body: JSON.stringify({ ordem: b.ordem }) }),
+      fetch(`${SUPA_URL}/rest/v1/cardapio_categorias?id=eq.${b.id}`, { method: 'PATCH', headers: SH, body: JSON.stringify({ ordem: a.ordem }) })
+    ]);
+    await carregarCardapioAdmin();
+  } catch(e) { console.error('moverCategoria:', e); }
+}
+
+function abrirModalProd(id) {
+  const prod = id ? produtosCache.find(p=>p.id===id) : null;
+  document.getElementById('prod-edit-id').value = id || '';
+  document.getElementById('prod-nome').value = prod?.nome || '';
+  document.getElementById('prod-apresentacao').value = prod?.apresentacao || '';
+  document.getElementById('prod-destaque').value = prod?.destaque || '';
+  document.getElementById('mo-prod-title').textContent = id ? 'Editar Produto' : 'Novo Produto';
+  atualizarSelectsCat();
+  setTimeout(() => { document.getElementById('prod-categoria').value = prod?.categoria_id || ''; }, 50);
+  document.getElementById('mo-prod').classList.add('open');
+}
+
+function editarProduto(id) { abrirModalProd(id); }
+
+async function salvarProduto() {
+  const id = document.getElementById('prod-edit-id').value;
+  const nome = document.getElementById('prod-nome').value.trim();
+  const apresentacao = document.getElementById('prod-apresentacao').value.trim();
+  const categoria_id = document.getElementById('prod-categoria').value;
+  const destaque = document.getElementById('prod-destaque').value || null;
+  if (!nome || !categoria_id) { alert('Preencha nome e categoria'); return; }
+  try {
+    if (id) {
+      await fetch(`${SUPA_URL}/rest/v1/cardapio_produtos?id=eq.${id}`, { method: 'PATCH', headers: SH, body: JSON.stringify({ nome, apresentacao, categoria_id, destaque, updated_at: new Date().toISOString() }) });
+    } else {
+      const maxOrdem = produtosCache.filter(p=>String(p.categoria_id)===String(categoria_id)).reduce((m,p) => Math.max(m,p.ordem||0), 0);
+      await fetch(`${SUPA_URL}/rest/v1/cardapio_produtos`, { method: 'POST', headers: SH, body: JSON.stringify({ nome, apresentacao, categoria_id, destaque, ordem: maxOrdem+1 }) });
+    }
+    document.getElementById('mo-prod').classList.remove('open');
+    await carregarCardapioAdmin();
+  } catch(e) { alert('Erro ao salvar: ' + e.message); }
+}
+
+async function toggleProduto(id, ativo) {
+  try {
+    await fetch(`${SUPA_URL}/rest/v1/cardapio_produtos?id=eq.${id}`, { method: 'PATCH', headers: SH, body: JSON.stringify({ ativo }) });
+    await carregarCardapioAdmin();
+  } catch(e) { console.error('toggleProduto:', e); }
+}
+
+async function moverProduto(id, dir) {
+  const catId = produtosCache.find(p => p.id === id)?.categoria_id;
+  const mesaCat = produtosCache.filter(p => p.categoria_id === catId).sort((a,b) => (a.ordem||0) - (b.ordem||0));
+  const idx = mesaCat.findIndex(p => p.id === id);
+  const targetIdx = idx + dir;
+  if (targetIdx < 0 || targetIdx >= mesaCat.length) return;
+  const a = mesaCat[idx], b = mesaCat[targetIdx];
+  try {
+    await Promise.all([
+      fetch(`${SUPA_URL}/rest/v1/cardapio_produtos?id=eq.${a.id}`, { method: 'PATCH', headers: SH, body: JSON.stringify({ ordem: b.ordem }) }),
+      fetch(`${SUPA_URL}/rest/v1/cardapio_produtos?id=eq.${b.id}`, { method: 'PATCH', headers: SH, body: JSON.stringify({ ordem: a.ordem }) })
+    ]);
+    await carregarCardapioAdmin();
+  } catch(e) { console.error('moverProduto:', e); }
+}
 
 // CEP mask admin
 const admCepInput=document.getElementById('adm-cep');

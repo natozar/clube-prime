@@ -108,6 +108,23 @@ html,body{height:100%;background:#0A0A0A;font-family:'Montserrat',sans-serif;col
 @keyframes spin{to{transform:rotate(360deg)}}
 
 body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
+.cardapio-cat{margin-bottom:16px}
+.cardapio-cat-header{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--gold-dark);padding:8px 0;border-bottom:1px solid rgba(201,168,76,.1);margin-bottom:8px;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+.cardapio-item{display:flex;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04);gap:10px}
+.cardapio-item-info{flex:1;min-width:0}
+.cardapio-item-nome{font-size:13px;color:var(--white)}
+.cardapio-item-apres{font-size:10px;color:var(--gray)}
+.cardapio-item-badge{display:inline-block;border-radius:6px;padding:1px 6px;font-size:8px;margin-left:6px;font-weight:700}
+.badge-promo{background:var(--red);color:#fff}
+.badge-novo{background:var(--blue);color:#fff}
+.cardapio-qty{display:flex;align-items:center;gap:4px;flex-shrink:0}
+.cardapio-qty button{width:28px;height:28px;border-radius:50%;border:1px solid rgba(201,168,76,.3);background:var(--dark3);color:var(--gold);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.cardapio-qty button:active{background:rgba(201,168,76,.15)}
+.cardapio-qty span{min-width:20px;text-align:center;font-size:14px;font-weight:700;color:var(--white)}
+.fav-btn{background:none;border:none;font-size:18px;cursor:pointer;padding:4px;opacity:.4;transition:opacity .2s}
+.fav-btn.active{opacity:1}
+.filtro-tag.active{background:var(--gold)!important;color:#000!important;border-color:var(--gold)!important}
+.tipo-entrega.active{background:var(--gold)!important;color:#000!important;border-color:var(--gold)!important}
 .bnav{position:fixed;bottom:0;left:0;right:0;background:#111;border-top:1px solid rgba(201,168,76,.2);display:flex;padding:8px 0 calc(8px + env(safe-area-inset-bottom));z-index:50}
 .bn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px 0;border:none;background:none;color:var(--gray);font-family:'Montserrat',sans-serif;font-size:9px;letter-spacing:1px;text-transform:uppercase;transition:color .2s}
 .bn.active{color:var(--gold)}.bn-icon{font-size:20px;line-height:1}
@@ -469,6 +486,86 @@ body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
   </div>
 </div>
 
+<!-- TELA: CARDÁPIO -->
+<div class="screen" id="screen-cardapio">
+  <div class="app-header"><div class="logo logo-sm"></div><div style="text-align:right"><div class="h-name">Cardápio</div><div class="h-level">monte seu pedido</div></div></div>
+  <div style="padding:12px 16px 0">
+    <!-- BUSCA E FILTROS -->
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <input class="fi" id="cardapio-busca" placeholder="Buscar produto..." oninput="filtrarCardapioCliente()" style="flex:1;padding:10px 14px;font-size:12px">
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">
+      <button class="btn bo bsm filtro-tag active" onclick="setFiltroTag('todos',this)" style="font-size:8px;padding:5px 10px;border-radius:20px">Todos</button>
+      <button class="btn bo bsm filtro-tag" onclick="setFiltroTag('promocao',this)" style="font-size:8px;padding:5px 10px;border-radius:20px">Promoções</button>
+      <button class="btn bo bsm filtro-tag" onclick="setFiltroTag('novidade',this)" style="font-size:8px;padding:5px 10px;border-radius:20px">Novidades</button>
+      <button class="btn bo bsm filtro-tag" onclick="setFiltroTag('favoritos',this)" style="font-size:8px;padding:5px 10px;border-radius:20px">Favoritos</button>
+    </div>
+  </div>
+  <!-- LISTA DE PRODUTOS POR CATEGORIA -->
+  <div id="cardapio-lista" style="padding:0 16px 120px">
+    <div style="text-align:center;padding:40px;color:var(--gray);font-size:12px">Carregando cardápio...</div>
+  </div>
+  <!-- BARRA DO CARRINHO (FIXA) -->
+  <div id="carrinho-bar" style="display:none;position:fixed;bottom:calc(52px + env(safe-area-inset-bottom));left:0;right:0;background:linear-gradient(135deg,#1a1200,#2a1f00);border-top:2px solid var(--gold);padding:12px 20px;z-index:40;cursor:pointer" onclick="abrirPedido()">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="background:var(--gold);color:#000;font-weight:700;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px" id="carrinho-qtd">0</div>
+        <span style="color:var(--white);font-size:13px;font-weight:600">itens no pedido</span>
+      </div>
+      <span style="color:var(--gold);font-size:12px;font-weight:700;letter-spacing:1px">VER PEDIDO →</span>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PEDIDO -->
+<div class="mo" id="mo-pedido">
+  <div class="md" style="max-height:90vh;overflow-y:auto">
+    <div class="md-handle"></div>
+    <div class="md-title">Revisar Pedido</div>
+    <!-- REPETIR ÚLTIMO PEDIDO -->
+    <div id="ultimo-pedido-box" style="display:none;margin-bottom:14px">
+      <button class="btn bo" style="width:100%;font-size:10px" onclick="repetirUltimoPedido()">🔄 Repetir último pedido</button>
+    </div>
+    <!-- ITENS DO PEDIDO -->
+    <div id="pedido-itens-lista"></div>
+    <!-- OBSERVAÇÃO GERAL -->
+    <div class="fl" style="margin-top:14px">
+      <label class="flabel">Observação geral</label>
+      <textarea class="fi" id="pedido-obs" rows="2" placeholder="Ex: sem tempero, corte especial..." style="resize:vertical;font-size:12px"></textarea>
+    </div>
+    <!-- DATA E HORA -->
+    <div style="display:flex;gap:8px">
+      <div class="fl" style="flex:1"><label class="flabel">Data de entrega</label><input class="fi" type="date" id="pedido-data" style="font-size:12px"></div>
+      <div class="fl" style="flex:1"><label class="flabel">Horário</label>
+        <select class="fsel" id="pedido-horario" style="width:100%;font-size:12px">
+          <option value="">Selecione...</option>
+          <option value="08:00–10:00">08:00–10:00</option>
+          <option value="10:00–12:00">10:00–12:00</option>
+          <option value="12:00–14:00">12:00–14:00</option>
+          <option value="14:00–16:00">14:00–16:00</option>
+          <option value="16:00–18:00">16:00–18:00</option>
+        </select>
+      </div>
+    </div>
+    <!-- TIPO DE ENTREGA -->
+    <div class="fl">
+      <label class="flabel">Tipo</label>
+      <div style="display:flex;gap:8px">
+        <button class="btn bg tipo-entrega active" id="tipo-entrega" onclick="setTipoEntrega('entrega',this)" style="flex:1;font-size:10px">🚚 Entrega</button>
+        <button class="btn bo tipo-entrega" id="tipo-retirada" onclick="setTipoEntrega('retirada',this)" style="flex:1;font-size:10px">🏪 Retirada</button>
+      </div>
+    </div>
+    <!-- AÇÕES -->
+    <div class="md-actions" style="margin-top:14px;flex-direction:column;gap:8px">
+      <button class="btn bg" style="width:100%;padding:14px;font-size:13px;display:flex;align-items:center;justify-content:center;gap:8px" onclick="enviarPedidoWhatsApp()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#000"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.136.564 4.14 1.542 5.879L.057 23.428a.75.75 0 0 0 .916.916l5.549-1.485A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.907 0-3.694-.5-5.24-1.375l-.374-.217-3.894 1.043 1.043-3.894-.217-.374A9.953 9.953 0 0 1 2 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10z"/></svg>
+        ENVIAR PELO WHATSAPP
+      </button>
+      <button class="btn bo" style="width:100%;font-size:10px" onclick="document.getElementById('mo-pedido').classList.remove('open')">Voltar ao cardápio</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL EXCLUSÃO -->
 <div class="mo" id="mo-del">
   <div class="md"><div class="md-handle"></div><div class="md-title" style="color:var(--red)">Excluir Conta</div><div class="md-text">Você perderá <strong style="color:var(--gold)" id="del-pontos">0 pontos</strong> permanentemente.</div><div class="md-actions"><button class="btn bo" onclick="document.getElementById('mo-del').classList.remove('open')">Cancelar</button><button class="btn bd">Confirmar</button></div></div>
@@ -477,6 +574,7 @@ body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
 <!-- BOTTOM NAV -->
 <nav class="bnav" id="bnav" style="display:none">
   <button class="bn active" onclick="S('cartao',this)"><span class="bn-icon">🃏</span>Cartão</button>
+  <button class="bn" onclick="S('cardapio',this)"><span class="bn-icon">🛒</span>Cardápio</button>
   <button class="bn" onclick="S('pontos',this)"><span class="bn-icon">⭐</span>Pontos</button>
   <button class="bn" onclick="S('ind',this)"><span class="bn-icon">🔗</span>Indicar</button>
   <button class="bn" onclick="S('perfil',this)"><span class="bn-icon">👤</span>Perfil</button>
@@ -674,6 +772,7 @@ function S(n,btn){
   document.querySelectorAll('.bn').forEach(b=>b.classList.remove('active'));
   document.getElementById('screen-'+n).classList.add('active');
   btn.classList.add('active');
+  if(n==='cardapio') carregarCardapioCliente();
 }
 // ID e código do cliente (em produção vem do banco)
 let clienteId = null;
@@ -1097,6 +1196,243 @@ if(cpfInput)cpfInput.addEventListener('input',function(){
   v=v.replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2');
   this.value=v;
 });
+// ── CARDÁPIO CLIENTE ──────────────────────────────────────
+let cardapioCategorias = [];
+let cardapioProdutos = [];
+let pedidoAtual = {}; // { produtoId: { qty, obs } }
+let filtroTagAtual = 'todos';
+let tipoEntregaAtual = 'entrega';
+let favoritosCliente = JSON.parse(localStorage.getItem('clube_favoritos') || '[]');
+
+async function carregarCardapioCliente() {
+  try {
+    const [rCat, rProd] = await Promise.all([
+      fetch(`${SUPA_URL}/rest/v1/cardapio_categorias?select=*&ativo=eq.true&order=ordem`, { headers: SH }),
+      fetch(`${SUPA_URL}/rest/v1/cardapio_produtos?select=*&ativo=eq.true&order=ordem`, { headers: SH })
+    ]);
+    cardapioCategorias = await rCat.json();
+    cardapioProdutos = await rProd.json();
+    if (!Array.isArray(cardapioCategorias)) cardapioCategorias = [];
+    if (!Array.isArray(cardapioProdutos)) cardapioProdutos = [];
+    renderizarCardapioCliente();
+  } catch(e) { console.error('carregarCardapioCliente:', e); }
+}
+
+function renderizarCardapioCliente() {
+  const el = document.getElementById('cardapio-lista');
+  const busca = (document.getElementById('cardapio-busca')?.value || '').toLowerCase();
+  let prods = cardapioProdutos;
+  if (busca) prods = prods.filter(p => p.nome.toLowerCase().includes(busca));
+  if (filtroTagAtual === 'promocao') prods = prods.filter(p => p.destaque === 'promocao');
+  else if (filtroTagAtual === 'novidade') prods = prods.filter(p => p.destaque === 'novidade');
+  else if (filtroTagAtual === 'favoritos') prods = prods.filter(p => favoritosCliente.includes(p.id));
+
+  if (!prods.length) {
+    el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--gray);font-size:12px">Nenhum produto encontrado</div>';
+    return;
+  }
+
+  let html = '';
+  cardapioCategorias.forEach(cat => {
+    const catProds = prods.filter(p => p.categoria_id === cat.id);
+    if (!catProds.length) return;
+    html += `<div class="cardapio-cat">
+      <div class="cardapio-cat-header">${cat.nome} <span style="font-size:10px;opacity:.5">${catProds.length}</span></div>`;
+    catProds.forEach(p => {
+      const qty = pedidoAtual[p.id]?.qty || 0;
+      const obs = pedidoAtual[p.id]?.obs || '';
+      const isFav = favoritosCliente.includes(p.id);
+      const badge = p.destaque === 'promocao' ? '<span class="cardapio-item-badge badge-promo">PROMO</span>'
+        : p.destaque === 'novidade' ? '<span class="cardapio-item-badge badge-novo">NOVO</span>' : '';
+      html += `<div class="cardapio-item">
+        <button class="fav-btn ${isFav?'active':''}" onclick="toggleFavorito(${p.id},this)">${isFav?'❤️':'🤍'}</button>
+        <div class="cardapio-item-info">
+          <div class="cardapio-item-nome">${p.nome}${badge}</div>
+          <div class="cardapio-item-apres">${p.apresentacao||''}</div>
+          ${qty > 0 ? `<input class="fi" style="margin-top:6px;padding:6px 10px;font-size:11px" placeholder="Obs: sem tempero, corte fino..." value="${obs.replace(/"/g,'&quot;')}" onchange="setObsItem(${p.id},this.value)">` : ''}
+        </div>
+        <div class="cardapio-qty">
+          <button onclick="alterarQtd(${p.id},-1)">−</button>
+          <span>${qty}</span>
+          <button onclick="alterarQtd(${p.id},1)">+</button>
+        </div>
+      </div>`;
+    });
+    html += '</div>';
+  });
+  el.innerHTML = html;
+  atualizarCarrinhoBar();
+}
+
+function alterarQtd(prodId, delta) {
+  if (!pedidoAtual[prodId]) pedidoAtual[prodId] = { qty: 0, obs: '' };
+  pedidoAtual[prodId].qty = Math.max(0, pedidoAtual[prodId].qty + delta);
+  if (pedidoAtual[prodId].qty === 0) delete pedidoAtual[prodId];
+  renderizarCardapioCliente();
+}
+
+function setObsItem(prodId, obs) {
+  if (pedidoAtual[prodId]) pedidoAtual[prodId].obs = obs;
+}
+
+function toggleFavorito(prodId, btn) {
+  const idx = favoritosCliente.indexOf(prodId);
+  if (idx >= 0) { favoritosCliente.splice(idx, 1); btn.classList.remove('active'); btn.textContent = '🤍'; }
+  else { favoritosCliente.push(prodId); btn.classList.add('active'); btn.textContent = '❤️'; }
+  localStorage.setItem('clube_favoritos', JSON.stringify(favoritosCliente));
+}
+
+function setFiltroTag(tag, btn) {
+  filtroTagAtual = tag;
+  document.querySelectorAll('.filtro-tag').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderizarCardapioCliente();
+}
+
+function filtrarCardapioCliente() { renderizarCardapioCliente(); }
+
+function atualizarCarrinhoBar() {
+  const total = Object.values(pedidoAtual).reduce((s, v) => s + v.qty, 0);
+  const bar = document.getElementById('carrinho-bar');
+  const badge = document.getElementById('carrinho-qtd');
+  if (total > 0) { bar.style.display = 'block'; badge.textContent = total; }
+  else { bar.style.display = 'none'; }
+}
+
+function setTipoEntrega(tipo, btn) {
+  tipoEntregaAtual = tipo;
+  document.querySelectorAll('.tipo-entrega').forEach(b => { b.classList.remove('active'); b.classList.remove('bg'); b.classList.add('bo'); });
+  btn.classList.add('active'); btn.classList.add('bg'); btn.classList.remove('bo');
+}
+
+function abrirPedido() {
+  if (!clienteId) { alert('Faça login para enviar pedidos!'); return; }
+  // Verificar perfil completo
+  const dados = JSON.parse(localStorage.getItem('clube_cliente_dados') || '{}');
+  if (!dados.rua || !dados.numero || !dados.bairro || !dados.cidade) {
+    alert('Complete seu endereço no Perfil antes de fazer pedidos!');
+    return;
+  }
+  // Verificar se há último pedido
+  const ultimo = localStorage.getItem('clube_ultimo_pedido');
+  document.getElementById('ultimo-pedido-box').style.display = ultimo ? 'block' : 'none';
+  // Renderizar itens
+  renderizarItensPedido();
+  // Data mínima = amanhã
+  const amanha = new Date(); amanha.setDate(amanha.getDate() + 1);
+  document.getElementById('pedido-data').min = amanha.toISOString().split('T')[0];
+  document.getElementById('pedido-data').value = amanha.toISOString().split('T')[0];
+  document.getElementById('mo-pedido').classList.add('open');
+}
+
+function renderizarItensPedido() {
+  const el = document.getElementById('pedido-itens-lista');
+  const ids = Object.keys(pedidoAtual).filter(id => pedidoAtual[id].qty > 0);
+  if (!ids.length) { el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Nenhum item selecionado</div>'; return; }
+  el.innerHTML = ids.map(id => {
+    const p = cardapioProdutos.find(pr => pr.id === Number(id));
+    const item = pedidoAtual[id];
+    if (!p) return '';
+    return `<div style="display:flex;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);gap:10px">
+      <div class="cardapio-qty" style="flex-shrink:0">
+        <button onclick="alterarQtdPedido(${id},-1)">−</button>
+        <span>${item.qty}</span>
+        <button onclick="alterarQtdPedido(${id},1)">+</button>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;color:var(--white)">${p.nome}</div>
+        <div style="font-size:10px;color:var(--gray)">${p.apresentacao||''}</div>
+        ${item.obs ? `<div style="font-size:10px;color:var(--gold);margin-top:2px">↳ ${item.obs}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function alterarQtdPedido(prodId, delta) {
+  if (pedidoAtual[prodId]) {
+    pedidoAtual[prodId].qty = Math.max(0, pedidoAtual[prodId].qty + delta);
+    if (pedidoAtual[prodId].qty === 0) delete pedidoAtual[prodId];
+  }
+  renderizarItensPedido();
+  atualizarCarrinhoBar();
+}
+
+function repetirUltimoPedido() {
+  const ultimo = JSON.parse(localStorage.getItem('clube_ultimo_pedido') || '{}');
+  if (ultimo.itens) {
+    pedidoAtual = {};
+    ultimo.itens.forEach(item => {
+      pedidoAtual[item.produto_id] = { qty: item.qty, obs: item.obs || '' };
+    });
+    renderizarItensPedido();
+    renderizarCardapioCliente();
+  }
+}
+
+async function enviarPedidoWhatsApp() {
+  const ids = Object.keys(pedidoAtual).filter(id => pedidoAtual[id].qty > 0);
+  if (!ids.length) { alert('Adicione itens ao pedido!'); return; }
+  const data = document.getElementById('pedido-data').value;
+  const horario = document.getElementById('pedido-horario').value;
+  if (!data) { alert('Selecione a data de entrega!'); return; }
+  if (!horario) { alert('Selecione o horário!'); return; }
+
+  const dados = JSON.parse(localStorage.getItem('clube_cliente_dados') || '{}');
+  const saldo = localStorage.getItem('clube_cliente_saldo') || '0';
+  const obsGeral = document.getElementById('pedido-obs').value.trim();
+
+  // Montar itens para salvar
+  const itensSalvar = ids.map(id => {
+    const p = cardapioProdutos.find(pr => pr.id === Number(id));
+    return { produto_id: Number(id), nome: p?.nome || '', qty: pedidoAtual[id].qty, obs: pedidoAtual[id].obs || '' };
+  });
+
+  // Salvar no Supabase
+  try {
+    await fetch(`${SUPA_URL}/rest/v1/pedidos`, {
+      method: 'POST', headers: SH,
+      body: JSON.stringify({
+        cliente_id: clienteId,
+        itens: itensSalvar,
+        observacao_geral: obsGeral,
+        data_entrega: data,
+        horario_entrega: horario,
+        tipo_entrega: tipoEntregaAtual
+      })
+    });
+  } catch(e) { console.warn('Erro ao salvar pedido no Supabase:', e); }
+
+  // Salvar último pedido no localStorage
+  localStorage.setItem('clube_ultimo_pedido', JSON.stringify({ itens: itensSalvar }));
+
+  // Montar mensagem WhatsApp
+  const endereco = [dados.rua, dados.numero, dados.bairro, dados.cidade, dados.uf].filter(Boolean).join(', ');
+  let msg = `🥩 *PEDIDO — Empório Família Rodrigues*\n`;
+  msg += `👤 ${dados.nome || clienteNome} | Cartão: ${clienteCodigo}\n`;
+  msg += `📱 ${dados.telefone || ''}\n`;
+  msg += `📍 ${endereco}\n`;
+  msg += `⭐ Saldo: ${Number(saldo).toLocaleString('pt-BR')} pts\n\n`;
+  msg += `📋 *ITENS:*\n`;
+  itensSalvar.forEach(item => {
+    const p = cardapioProdutos.find(pr => pr.id === item.produto_id);
+    msg += `• ${item.qty}x ${item.nome}`;
+    if (p?.apresentacao) msg += ` (${p.apresentacao})`;
+    msg += `\n`;
+    if (item.obs) msg += `  ↳ Obs: ${item.obs}\n`;
+  });
+  if (obsGeral) msg += `\n📝 Obs geral: ${obsGeral}\n`;
+  msg += `\n📅 ${tipoEntregaAtual === 'entrega' ? 'Entrega' : 'Retirada'}: ${data.split('-').reverse().join('/')} às ${horario}`;
+  msg += `\n🚚 Tipo: ${tipoEntregaAtual === 'entrega' ? 'Entrega' : 'Retirada na loja'}`;
+
+  const url = 'https://wa.me/551632360028?text=' + encodeURIComponent(msg);
+  window.open(url, '_blank');
+
+  // Limpar pedido
+  pedidoAtual = {};
+  document.getElementById('mo-pedido').classList.remove('open');
+  renderizarCardapioCliente();
+}
+
 // CEP mask
 const cepInput=document.getElementById('inp-cep');
 if(cepInput)cepInput.addEventListener('input',function(){
