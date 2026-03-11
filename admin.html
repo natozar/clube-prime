@@ -330,7 +330,7 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom))}
       </div>
       <!-- PRODUTOS -->
       <div class="sec-card">
-        <div class="sec-title">🥩 Produtos <button class="btn bg bsm" onclick="abrirModalProd()">+ Produto</button></div>
+        <div class="sec-title">🥩 Produtos <button class="btn bg bsm" onclick="abrirModalProd()">+ Produto</button> <button class="btn bo bsm" onclick="ordenarProdutosAZ()" style="font-size:10px">Ordenar A→Z</button></div>
         <div class="search-bar">
           <select class="fsel" id="filtro-cat-prod" onchange="renderizarProdutos()" style="width:160px"><option value="">Todas as categorias</option></select>
           <input class="si" id="busca-prod" placeholder="Buscar produto..." oninput="renderizarProdutos()">
@@ -1220,6 +1220,35 @@ async function moverProduto(id, dir) {
     ]);
     await carregarCardapioAdmin();
   } catch(e) { console.error('moverProduto:', e); }
+}
+
+// Ordenar todos os produtos A→Z no banco (atualiza campo ordem)
+async function ordenarProdutosAZ() {
+  if (!confirm('Ordenar todos os produtos alfabeticamente dentro de cada categoria?')) return;
+  try {
+    const cats = [...new Set(produtosCache.map(p => p.categoria_id))];
+    const updates = [];
+    cats.forEach(catId => {
+      const prods = produtosCache.filter(p => p.categoria_id === catId)
+        .sort((a,b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+      prods.forEach((p, i) => {
+        if (p.ordem !== i + 1) {
+          updates.push(
+            fetch(`${SUPA_URL}/rest/v1/cardapio_produtos?id=eq.${p.id}`, {
+              method: 'PATCH', headers: SH, body: JSON.stringify({ ordem: i + 1 })
+            })
+          );
+        }
+      });
+    });
+    if (updates.length) {
+      await Promise.all(updates);
+      await carregarCardapioAdmin();
+      alert('Produtos ordenados A→Z com sucesso!');
+    } else {
+      alert('Produtos já estão em ordem alfabética.');
+    }
+  } catch(e) { console.error('ordenarProdutosAZ:', e); alert('Erro ao ordenar: ' + e.message); }
 }
 
 // CEP mask admin
