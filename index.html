@@ -1313,7 +1313,7 @@ function renderizarCardapioCliente() {
 
   let html = '';
   cardapioCategorias.forEach(cat => {
-    const catProds = prods.filter(p => p.categoria_id === cat.id);
+    const catProds = prods.filter(p => p.categoria_id === cat.id).sort((a,b) => (a.ordem||0) - (b.ordem||0) || a.nome.localeCompare(b.nome, 'pt-BR'));
     if (!catProds.length) return;
     html += `<div class="cardapio-cat">
       <div class="cardapio-cat-header">${cat.nome} <span style="font-size:10px;opacity:.5">${catProds.length}</span></div>`;

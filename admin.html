@@ -1085,7 +1085,7 @@ function renderizarProdutos() {
   const el = document.getElementById('prod-lista');
   const filtCat = document.getElementById('filtro-cat-prod')?.value || '';
   const busca = (document.getElementById('busca-prod')?.value || '').toLowerCase();
-  let lista = produtosCache;
+  let lista = [...produtosCache].sort((a,b) => (a.ordem||0) - (b.ordem||0) || a.nome.localeCompare(b.nome, 'pt-BR'));
   if (filtCat) lista = lista.filter(p => String(p.categoria_id) === filtCat);
   if (busca) lista = lista.filter(p => p.nome.toLowerCase().includes(busca));
   if (!lista.length) { el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Nenhum produto encontrado</div>'; return; }
