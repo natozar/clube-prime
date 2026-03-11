@@ -530,9 +530,9 @@ async function listarClientes() {
 // Carregar estatísticas do dashboard (KPIs)
 async function carregarEstatisticas() {
   try {
-    // 1. Total de membros
-    const rClientes = await fetch(`${SUPA_URL}/rest/v1/clientes?select=id,indicado_por,created_at`, { headers: SH });
-    const clientes = await rClientes.json();
+    // 1. Total de membros (select=* para compatibilidade com qualquer schema)
+    const rClientes = await fetch(`${SUPA_URL}/rest/v1/clientes?select=*`, { headers: SH });
+    const clientes = rClientes.ok ? await rClientes.json() : [];
     const totalMembros = Array.isArray(clientes) ? clientes.length : 0;
 
     // 2. Membros do mês atual
@@ -542,7 +542,7 @@ async function carregarEstatisticas() {
 
     // 3. Total de compras (transações do tipo compra)
     const rTrans = await fetch(`${SUPA_URL}/rest/v1/transacoes?select=valor_reais,tipo,created_at&tipo=eq.compra`, { headers: SH });
-    const trans = await rTrans.json();
+    const trans = rTrans.ok ? await rTrans.json() : [];
     const totalCompras = Array.isArray(trans) ? trans.reduce((s,t) => s + (t.valor_reais || 0), 0) : 0;
     const comprasMes = Array.isArray(trans) ? trans.filter(t => t.created_at && t.created_at.startsWith(mesAtual)).reduce((s,t) => s + (t.valor_reais || 0), 0) : 0;
 
@@ -551,7 +551,7 @@ async function carregarEstatisticas() {
 
     // 5. Pontos em circulação
     const rPontos = await fetch(`${SUPA_URL}/rest/v1/pontos?select=saldo`, { headers: SH });
-    const pontos = await rPontos.json();
+    const pontos = rPontos.ok ? await rPontos.json() : [];
     const totalPontos = Array.isArray(pontos) ? pontos.reduce((s,p) => s + (p.saldo || 0), 0) : 0;
 
     // Atualizar KPIs do Painel
