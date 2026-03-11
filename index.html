@@ -1287,7 +1287,7 @@ async function carregarCardapioCliente() {
   try {
     const [rCat, rProd] = await Promise.all([
       fetch(`${SUPA_URL}/rest/v1/cardapio_categorias?select=*&ativo=eq.true&order=ordem`, { headers: SH }),
-      fetch(`${SUPA_URL}/rest/v1/cardapio_produtos?select=*&ativo=eq.true&order=ordem`, { headers: SH })
+      fetch(`${SUPA_URL}/rest/v1/cardapio_produtos?select=*&ativo=eq.true&order=ordem,nome`, { headers: SH })
     ]);
     cardapioCategorias = await rCat.json();
     cardapioProdutos = await rProd.json();

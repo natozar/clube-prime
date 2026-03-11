@@ -1050,7 +1050,7 @@ async function carregarCardapioAdmin() {
   try {
     const [rCat, rProd] = await Promise.all([
       fetch(`${SUPA_URL}/rest/v1/cardapio_categorias?select=*&order=ordem`, { headers: SH }),
-      fetch(`${SUPA_URL}/rest/v1/cardapio_produtos?select=*&order=ordem`, { headers: SH })
+      fetch(`${SUPA_URL}/rest/v1/cardapio_produtos?select=*&order=ordem,nome`, { headers: SH })
     ]);
     categoriasCache = await rCat.json();
     produtosCache = await rProd.json();
@@ -1208,7 +1208,7 @@ async function toggleProduto(id, ativo) {
 
 async function moverProduto(id, dir) {
   const catId = produtosCache.find(p => p.id === id)?.categoria_id;
-  const mesaCat = produtosCache.filter(p => p.categoria_id === catId).sort((a,b) => (a.ordem||0) - (b.ordem||0));
+  const mesaCat = produtosCache.filter(p => p.categoria_id === catId).sort((a,b) => (a.ordem||0) - (b.ordem||0) || a.nome.localeCompare(b.nome));
   const idx = mesaCat.findIndex(p => p.id === id);
   const targetIdx = idx + dir;
   if (targetIdx < 0 || targetIdx >= mesaCat.length) return;
