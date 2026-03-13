@@ -1,3 +1,7 @@
 User-agent: *
 Allow: /
+Disallow: /admin.html
+Disallow: /sql-*.sql
+Disallow: /supabase/
+
 Sitemap: https://carnesrodrigues.com.br/sitemap.xml
