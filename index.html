@@ -141,7 +141,15 @@ body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
 .card-logo{width:68px;height:68px}
 .card-divider{height:1px;background:linear-gradient(90deg,transparent,rgba(201,168,76,.4),transparent);margin:0 0 16px;position:relative;z-index:2}
 .card-mid{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;position:relative;z-index:2}
-.qr-box{background:#fff;padding:8px;border-radius:10px;width:110px;height:110px;display:flex;align-items:center;justify-content:center}
+.qr-box{background:#fff;padding:8px;border-radius:10px;width:110px;height:110px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .15s ease}
+.qr-box:active{transform:scale(.95)}
+.qr-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,.97);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s ease}
+.qr-overlay.active{opacity:1;pointer-events:auto}
+.qr-overlay-box{background:#fff;padding:20px;border-radius:16px;box-shadow:0 4px 30px rgba(0,0,0,.12)}
+.qr-overlay-info{text-align:center;margin-top:20px;color:#1a1a1a}
+.qr-overlay-nome{font-size:18px;font-weight:700;letter-spacing:1px}
+.qr-overlay-codigo{font-size:13px;color:#888;margin-top:4px}
+.qr-overlay-hint{font-size:11px;color:#aaa;margin-top:24px;letter-spacing:1px}
 .card-bot{display:flex;justify-content:space-between;align-items:flex-end;position:relative;z-index:2}
 .prog-wrap{padding:0 16px 4px}
 .prog-header{display:flex;justify-content:space-between;margin-bottom:7px}
@@ -345,7 +353,7 @@ body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
     <div class="card-divider"></div>
     <div class="card-mid">
       <div><div style="font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--gray)">saldo de pontos</div><div class="pts-val" style="font-family:'Cormorant Garamond',serif;font-size:38px;color:var(--gold-light);font-weight:700;line-height:1">0</div><div style="font-size:9px;color:var(--gold-dark);letter-spacing:1px">pts acumulados</div></div>
-      <div class="qr-box" id="qr-box"><canvas id="qr-canvas" width="50" height="50"></canvas></div>
+      <div class="qr-box" id="qr-box" onclick="abrirQRExpandido()"><canvas id="qr-canvas" width="50" height="50"></canvas></div>
     </div>
     <div class="card-bot">
       <div><div style="font-size:12px;font-weight:600;color:var(--white);letter-spacing:1px;text-transform:uppercase" id="card-nome">Carlos R.</div><div style="font-size:9px;color:var(--gray);margin-top:2px" id="card-codigo">#---</div></div>
@@ -629,19 +637,45 @@ function gerarCodigo(nome) {
 const refCodigo = new URLSearchParams(window.location.search).get('ref');
 
 // Preencher tela com dados do cliente
+let qrUrl = ''; // URL do QR para reutilizar no expandido
+
 function gerarQRCode(codigo) {
   const box = document.getElementById('qr-box');
   if (!box) return;
   box.innerHTML = '';
-  const url = window.location.origin + window.location.pathname + '?scan=' + codigo;
+  qrUrl = window.location.origin + window.location.pathname + '?scan=' + codigo;
   new QRCode(box, {
-    text: url,
+    text: qrUrl,
     width: 94,
     height: 94,
     colorDark: '#000000',
     colorLight: '#ffffff',
     correctLevel: QRCode.CorrectLevel.M
   });
+}
+
+function abrirQRExpandido() {
+  if (!qrUrl) return;
+  const overlay = document.getElementById('qr-overlay');
+  const box = document.getElementById('qr-overlay-box');
+  const nome = document.getElementById('qr-overlay-nome');
+  const codigo = document.getElementById('qr-overlay-codigo');
+  box.innerHTML = '';
+  new QRCode(box, {
+    text: qrUrl,
+    width: 280,
+    height: 280,
+    colorDark: '#000000',
+    colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.H
+  });
+  nome.textContent = clienteNome || '';
+  codigo.textContent = clienteCodigo ? '#' + clienteCodigo : '';
+  overlay.classList.add('active');
+}
+
+function fecharQRExpandido() {
+  document.getElementById('qr-overlay').classList.remove('active');
 }
 
 async function preencherTela(cliente, saldo) {
@@ -1539,5 +1573,16 @@ async function buscaCep(){
   }catch(e){alert('Erro ao buscar CEP');}
 }
 </script>
+
+<!-- QR Code Expandido -->
+<div class="qr-overlay" id="qr-overlay" onclick="fecharQRExpandido()">
+  <div class="qr-overlay-box" id="qr-overlay-box"></div>
+  <div class="qr-overlay-info">
+    <div class="qr-overlay-nome" id="qr-overlay-nome"></div>
+    <div class="qr-overlay-codigo" id="qr-overlay-codigo"></div>
+  </div>
+  <div class="qr-overlay-hint">TOQUE PARA FECHAR</div>
+</div>
+
 </body>
 </html>
