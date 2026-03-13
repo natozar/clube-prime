@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cdn.onesignal.com; connect-src 'self' https://*.supabase.co https://onesignal.com https://api.onesignal.com; style-src 'self' 'unsafe-inline';">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
 <meta name="theme-color" content="#0A0A0A">
@@ -130,44 +131,29 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom))}
 /* ADMIN CLIENTES */
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
 </head>
 <body>
 
-<!-- PIN SCREEN -->
+<!-- LOGIN SCREEN -->
 <div id="pin-screen" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:24px">
   <div class="logo pin-logo"></div>
-  <div id="pin-step">
-  <div class="pin-title">Área Restrita</div>
-  <div class="pin-sub">Digite o PIN de acesso</div>
-  <div class="pin-display">
-    <div class="pin-dot" id="d0"></div><div class="pin-dot" id="d1"></div>
-    <div class="pin-dot" id="d2"></div><div class="pin-dot" id="d3"></div>
+  <div id="login-step" style="padding:32px 24px;text-align:center;width:100%;max-width:340px">
+    <div style="font-size:13px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:24px">🔐 Área Administrativa</div>
+    <div style="font-size:12px;color:var(--gray);margin-bottom:16px">Faça login com suas credenciais</div>
+    <input id="inp-email" type="email" autocomplete="email"
+      style="width:100%;background:var(--dark2);border:1px solid rgba(201,168,76,.3);border-radius:10px;padding:12px 16px;color:var(--white);font-size:14px;text-align:center;outline:none;margin-bottom:12px"
+      placeholder="Email">
+    <input id="inp-senha" type="password" autocomplete="current-password"
+      style="width:100%;background:var(--dark2);border:1px solid rgba(201,168,76,.3);border-radius:10px;padding:12px 16px;color:var(--white);font-size:14px;text-align:center;outline:none;letter-spacing:2px"
+      placeholder="Senha"
+      onkeydown="if(event.key==='Enter')fazerLogin()">
+    <div style="margin-top:16px">
+      <button onclick="fazerLogin()" id="btn-login" style="background:var(--gold);color:#000;border:none;border-radius:10px;padding:12px 32px;font-size:13px;font-weight:700;letter-spacing:1px;cursor:pointer;width:100%">ENTRAR</button>
+    </div>
+    <div class="pin-error" id="login-error" style="margin-top:12px"></div>
   </div>
-  <div class="pin-keypad">
-    <div class="pin-key" onclick="pinKey('1')">1</div><div class="pin-key" onclick="pinKey('2')">2</div><div class="pin-key" onclick="pinKey('3')">3</div>
-    <div class="pin-key" onclick="pinKey('4')">4</div><div class="pin-key" onclick="pinKey('5')">5</div><div class="pin-key" onclick="pinKey('6')">6</div>
-    <div class="pin-key" onclick="pinKey('7')">7</div><div class="pin-key" onclick="pinKey('8')">8</div><div class="pin-key" onclick="pinKey('9')">9</div>
-    <div></div><div class="pin-key" onclick="pinKey('0')">0</div><div class="pin-key" onclick="pinDel()" style="font-size:18px">⌫</div>
-  </div>
-  <div class="pin-error" id="pin-error"></div>
-</div>
-
-<!-- STEP 2: Senha secreta -->
-<div id="senha-step" style="display:none;padding:32px 24px;text-align:center">
-  <div style="font-size:13px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:24px">🔐 Verificação</div>
-  <div style="font-size:12px;color:var(--gray);margin-bottom:16px">Digite a senha de acesso</div>
-  <input id="inp-senha" type="password" autocomplete="off"
-    style="width:100%;max-width:280px;background:var(--dark2);border:1px solid rgba(201,168,76,.3);border-radius:10px;padding:12px 16px;color:var(--white);font-size:16px;text-align:center;outline:none;letter-spacing:4px"
-    placeholder="••••••••"
-    onkeydown="if(event.key==='Enter')verificarSenha()">
-  <div style="margin-top:16px">
-    <button onclick="verificarSenha()" style="background:var(--gold);color:#000;border:none;border-radius:10px;padding:12px 32px;font-size:13px;font-weight:700;letter-spacing:1px;cursor:pointer">CONFIRMAR</button>
-  </div>
-  <div class="pin-error" id="senha-error" style="margin-top:12px"></div>
-  <div style="margin-top:16px">
-    <a onclick="voltarPin()" style="color:var(--gray);font-size:11px;cursor:pointer">← Voltar ao PIN</a>
-  </div>
-</div>
 </div>
 
 <!-- ADMIN APP (oculto até PIN correto) -->
@@ -426,19 +412,24 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom))}
     <button class="an" onclick="A('painel',this)"><span class="an-icon">📊</span>Painel</button>
     <button class="an" onclick="A('cardapio',this)"><span class="an-icon">🍖</span>Cardápio</button>
     <button class="an" onclick="A('admin',this)"><span class="an-icon">⚙️</span>Admin</button>
+    <button class="an" onclick="fazerLogout()" style="color:#e74c3c"><span class="an-icon">🚪</span>Sair</button>
   </nav>
 </div>
 
 <script>
 // PIN
-const PIN='1974';         // PIN numérico — 4 dígitos
-const SENHA='emporio2025'; // Senha secreta — trocar antes de lançar
-let pinEntry='';
+// ── SUPABASE AUTH ─────────────────────────────────────────
+const supabaseClient = supabase.createClient(SUPA_URL, SUPA_KEY);
+let authToken = null; // JWT token do admin autenticado
 
 // ── SUPABASE ──────────────────────────────────────────────
 const SUPA_URL = 'https://mrourzdxrahpysscckxm.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1yb3VyemR4cmFocHlzc2Nja3htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODMzMTUsImV4cCI6MjA4ODU1OTMxNX0.A4ueyDJgOu4cbxcHxsMTDBNHkxAOUlWFoYuv88LdnU4';
 const SH = { apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}`, 'Content-Type': 'application/json' };
+
+// Sanitização contra XSS
+function sanitize(html) { return typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(html) : html; }
+function safeInnerHTML(el, html) { el.innerHTML = sanitize(html); }
 
 // ── ONESIGNAL ─────────────────────────────────────────────
 const ONESIGNAL_APP_ID = '204a1304-2cc4-44b8-af83-f35ceaabd504';
@@ -463,7 +454,7 @@ async function notificarCliente(clienteId, pontos, novoSaldo) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${SUPA_KEY}`
+        'Authorization': `Bearer ${authToken || SUPA_KEY}`
       },
       body: JSON.stringify({
         type: 'cliente',
@@ -482,7 +473,7 @@ async function enviarCampanha(titulo, mensagem, url) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${SUPA_KEY}`
+        'Authorization': `Bearer ${authToken || SUPA_KEY}`
       },
       body: JSON.stringify({
         type: 'campanha',
@@ -691,44 +682,85 @@ async function carregarDadosAdmin() {
   await listarAniversariantes();
   await carregarEstatisticas();
 }
-function pinKey(n){
-  if(pinEntry.length>=4)return;
-  pinEntry+=n;
-  document.getElementById('d'+(pinEntry.length-1)).classList.add('filled');
-  if(pinEntry.length===4){
-    if(pinEntry===PIN){
-      setTimeout(()=>{
-        document.getElementById('pin-step').style.display='none';
-        document.getElementById('senha-step').style.display='block';
-        document.getElementById('inp-senha').focus();
-      },200);
-    }else{
-      document.getElementById('pin-error').textContent='PIN incorreto. Tente novamente.';
-      setTimeout(()=>{pinEntry='';for(let i=0;i<4;i++)document.getElementById('d'+i).classList.remove('filled');document.getElementById('pin-error').textContent=''},800);
+// ── AUTH ──────────────────────────────────────────────
+async function fazerLogin() {
+  const email = document.getElementById('inp-email').value.trim();
+  const senha = document.getElementById('inp-senha').value;
+  const errEl = document.getElementById('login-error');
+  const btn = document.getElementById('btn-login');
+  
+  if (!email || !senha) { errEl.textContent = 'Preencha email e senha'; setTimeout(()=>errEl.textContent='',3000); return; }
+  
+  btn.textContent = 'ENTRANDO...'; btn.disabled = true;
+  
+  try {
+    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password: senha });
+    
+    if (error) {
+      errEl.textContent = 'Email ou senha incorretos';
+      setTimeout(()=>errEl.textContent='',3000);
+      btn.textContent = 'ENTRAR'; btn.disabled = false;
+      return;
     }
-  }
-}
-function verificarSenha(){
-  const s = document.getElementById('inp-senha').value;
-  if(s === SENHA){
-    document.getElementById('pin-screen').style.display='none';
-    document.getElementById('admin-app').style.display='block';
+    
+    authToken = data.session.access_token;
+    
+    // Verificar se é admin
+    const { data: adminCheck } = await supabaseClient.from('admin_profiles').select('id').eq('id', data.user.id).single();
+    
+    if (!adminCheck) {
+      errEl.textContent = 'Acesso negado. Usuário não é administrador.';
+      await supabaseClient.auth.signOut();
+      authToken = null;
+      setTimeout(()=>errEl.textContent='',4000);
+      btn.textContent = 'ENTRAR'; btn.disabled = false;
+      return;
+    }
+    
+    // Login OK
+    document.getElementById('pin-screen').style.display = 'none';
+    document.getElementById('admin-app').style.display = 'block';
     carregarDadosAdmin();
-  } else {
-    const err = document.getElementById('senha-error');
-    err.textContent = 'Senha incorreta';
-    document.getElementById('inp-senha').value='';
-    setTimeout(()=>err.textContent='',2000);
+    
+    // Auto-refresh do token
+    supabaseClient.auth.onAuthStateChange((event, session) => {
+      if (session) { authToken = session.access_token; }
+      else { authToken = null; fazerLogout(); }
+    });
+    
+  } catch(e) {
+    errEl.textContent = 'Erro de conexão. Tente novamente.';
+    setTimeout(()=>errEl.textContent='',3000);
+    btn.textContent = 'ENTRAR'; btn.disabled = false;
   }
 }
-function voltarPin(){
-  document.getElementById('senha-step').style.display='none';
-  document.getElementById('pin-step').style.display='block';
-  pinEntry='';
-  document.querySelectorAll('.pin-dot').forEach(d=>d.classList.remove('filled'));
-  document.getElementById('pin-error').textContent='';
+
+async function fazerLogout() {
+  await supabaseClient.auth.signOut();
+  authToken = null;
+  document.getElementById('admin-app').style.display = 'none';
+  document.getElementById('pin-screen').style.display = 'flex';
+  document.getElementById('inp-email').value = '';
+  document.getElementById('inp-senha').value = '';
 }
-function pinDel(){if(pinEntry.length>0){pinEntry=pinEntry.slice(0,-1);document.getElementById('d'+pinEntry.length).classList.remove('filled');}}
+
+// Verificar sessão existente ao carregar
+async function verificarSessaoExistente() {
+  try {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (session) {
+      authToken = session.access_token;
+      const { data: adminCheck } = await supabaseClient.from('admin_profiles').select('id').eq('id', session.user.id).single();
+      if (adminCheck) {
+        document.getElementById('pin-screen').style.display = 'none';
+        document.getElementById('admin-app').style.display = 'block';
+        carregarDadosAdmin();
+        return;
+      }
+    }
+  } catch(e) {}
+}
+verificarSessaoExistente();
 
 // OPERADOR
 let valor='';
