@@ -417,15 +417,14 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom))}
 </div>
 
 <script>
-// PIN
-// ── SUPABASE AUTH ─────────────────────────────────────────
-const supabaseClient = supabase.createClient(SUPA_URL, SUPA_KEY);
-let authToken = null; // JWT token do admin autenticado
-
 // ── SUPABASE ──────────────────────────────────────────────
 const SUPA_URL = 'https://mrourzdxrahpysscckxm.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1yb3VyemR4cmFocHlzc2Nja3htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODMzMTUsImV4cCI6MjA4ODU1OTMxNX0.A4ueyDJgOu4cbxcHxsMTDBNHkxAOUlWFoYuv88LdnU4';
 const SH = { apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}`, 'Content-Type': 'application/json' };
+
+// ── SUPABASE AUTH ─────────────────────────────────────────
+const supabaseClient = supabase.createClient(SUPA_URL, SUPA_KEY);
+let authToken = null; // JWT token do admin autenticado
 
 // Sanitização contra XSS
 function sanitize(html) { return typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(html) : html; }
