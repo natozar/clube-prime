@@ -741,10 +741,6 @@ async function preencherTela(cliente, saldo) {
 
 async function goApp() {
   const chk = document.getElementById('chk-termos');
-  if (chk && !chk.checked) {
-    alert('Por favor, aceite os Termos de Uso e Política de Privacidade para continuar.');
-    return;
-  }
   const nome = document.getElementById('inp-nome').value.trim();
   const paisEl = document.getElementById('inp-pais');
   const pais = paisEl ? paisEl.value.replace('-CA','').replace('+','') : '55';
@@ -752,8 +748,8 @@ async function goApp() {
   const tel = pais + telRaw;
   const nasc = document.getElementById('inp-nasc').value;
 
-  if (!nome || !tel) {
-    alert('Preencha nome e WhatsApp para continuar!');
+  if (!tel) {
+    alert('Preencha o WhatsApp para continuar!');
     return;
   }
 
@@ -766,22 +762,38 @@ async function goApp() {
     let cliente = await buscarCliente(tel);
 
     if (cliente) {
-      // Já cadastrado — buscar saldo
+      // Já cadastrado — basta o telefone para entrar (nome não é obrigatório)
       const r = await fetch(`${SUPA_URL}/rest/v1/pontos?cliente_id=eq.${cliente.id}`, { headers: SH });
       const pts = await r.json();
       preencherTela(cliente, pts[0]?.saldo || 0);
       localStorage.setItem('clube_cliente_id', cliente.id);
       localStorage.setItem('clube_cliente_tel', tel);
+      // Criar sessão segura
+      salvarSessaoCliente(cliente);
     } else {
-      // Novo cadastro
+      // Novo cadastro — nome é obrigatório
+      if (!nome) {
+        alert('Para o primeiro cadastro, preencha seu nome completo!');
+        btn.textContent = 'Entrar no Clube Prime →';
+        btn.disabled = false;
+        return;
+      }
+      // Aceitar termos é obrigatório para novos cadastros
+      if (chk && !chk.checked) {
+        alert('Por favor, aceite os Termos de Uso e Política de Privacidade para continuar.');
+        btn.textContent = 'Entrar no Clube Prime →';
+        btn.disabled = false;
+        return;
+      }
       const codigo = gerarCodigo(nome);
-      // refCodigo salvo para registrar indicação após cadastro
       cliente = await cadastrarCliente({ nome, telefone: tel, nascimento: nasc || null, codigo, status: 'ativo' });
 
       if (cliente) {
         preencherTela(cliente, 0);
         localStorage.setItem('clube_cliente_id', cliente.id);
         localStorage.setItem('clube_cliente_tel', tel);
+        // Criar sessão segura
+        salvarSessaoCliente(cliente);
       }
     }
   } catch(e) {
@@ -834,21 +846,41 @@ window.addEventListener('load', async () => {
     // Renovar sessão se perto de expirar
     renovarSessaoSeNecessario();
   } else if (!sessao && (tel || clienteLocal)) {
-    // Sessão expirada — limpar dados antigos, forçar novo login
+    // Sessão expirada — limpar dados antigos, mostrar tela de login
     limparSessaoCliente();
     console.log('Sessão expirada — necessário novo login');
+    // Destacar que basta informar o telefone para entrar novamente
+    const hintEl = document.querySelector('.cad-hint');
+    if (hintEl) {
+      hintEl.innerHTML = '<strong style="color:#C9A84C">Bem-vindo de volta!</strong> Informe apenas seu WhatsApp para acessar seu cartão.';
+    }
+    // Focar no campo de telefone
+    const telInput = document.getElementById('inp-tel');
+    if (telInput) setTimeout(() => telInput.focus(), 500);
   }
 });
 async function acessarCartao() {
-  const tel = document.getElementById('inp-tel').value.trim();
-  if (!tel) { alert('Digite seu WhatsApp para acessar seu cartão!'); return; }
-  const cliente = await buscarCliente(tel);
-  if (cliente) {
-    const r = await fetch(`${SUPA_URL}/rest/v1/pontos?cliente_id=eq.${cliente.id}`, { headers: SH });
-    const pts = await r.json();
-    preencherTela(cliente, pts[0]?.saldo || 0);
-  } else {
-    alert('Número não encontrado. Faça seu cadastro!');
+  const paisEl = document.getElementById('inp-pais');
+  const pais = paisEl ? paisEl.value.replace('-CA','').replace('+','') : '55';
+  const telRaw = document.getElementById('inp-tel').value.trim().replace(/\D/g,'');
+  const tel = pais + telRaw;
+  if (!telRaw) { alert('Digite seu WhatsApp para acessar seu cartão!'); return; }
+  try {
+    const cliente = await buscarCliente(tel);
+    if (cliente) {
+      const r = await fetch(`${SUPA_URL}/rest/v1/pontos?cliente_id=eq.${cliente.id}`, { headers: SH });
+      const pts = await r.json();
+      preencherTela(cliente, pts[0]?.saldo || 0);
+      localStorage.setItem('clube_cliente_id', cliente.id);
+      localStorage.setItem('clube_cliente_tel', tel);
+      // Criar sessão segura para manter logado
+      salvarSessaoCliente(cliente);
+    } else {
+      alert('Número não encontrado. Faça seu cadastro!');
+    }
+  } catch(e) {
+    console.error('acessarCartao error:', e);
+    alert('Erro ao buscar. Verifique sua conexão.');
   }
 }
 
