@@ -178,7 +178,13 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom))}
     <div class="client-found" id="client-found" style="display:none">
       <div class="cli-av" id="cli-av-iniciais">--</div>
       <div style="flex:1"><div style="font-size:14px;font-weight:600;color:var(--white)" id="cli-nome">—</div><div style="font-size:10px;color:var(--gray);margin-top:2px" id="cli-meta">—</div><div style="font-family:'Cormorant Garamond',serif;font-size:17px;color:var(--gold);margin-top:3px;font-weight:700" id="cli-pontos">0 pontos</div></div>
-      <div style="font-size:9px;color:var(--green);letter-spacing:1px">✓ ATIVO</div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+        <div style="font-size:9px;color:var(--green);letter-spacing:1px">✓ ATIVO</div>
+        <div style="display:flex;gap:4px" id="cli-pin-area">
+          <span id="cli-pin-badge" style="font-size:8px;padding:2px 6px;border-radius:6px;display:none"></span>
+          <button class="btn bo" style="font-size:8px;padding:3px 8px;border-radius:6px" id="btn-reset-pin" onclick="resetarPinCliente()" title="Resetar PIN do cliente">🔐 Resetar PIN</button>
+        </div>
+      </div>
     </div>
     <div style="padding:0 16px 12px;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gold-dark)">Valor da compra</div>
     <div class="value-display">
@@ -524,9 +530,13 @@ async function listarClientes() {
     const alertEl = document.getElementById('alertas-lista');
     if(el) {
       el.innerHTML = !lista.length ? '<p style="opacity:.5;padding:8px">Nenhum cliente cadastrado</p>'
-        : lista.map(c=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #333">
-          <div><div style="font-weight:600">${c.nome}</div><div style="opacity:.6;font-size:12px">${c.codigo} · ${c.telefone}</div></div>
-          <div style="font-size:12px;opacity:.7">${c.codigo}</div></div>`).join('');
+        : lista.map(c=>{
+          const temPin = c.pin_hash ? '<span style="font-size:8px;background:#27ae60;color:#fff;padding:1px 5px;border-radius:4px">PIN</span>' : '<span style="font-size:8px;background:#555;color:#aaa;padding:1px 5px;border-radius:4px">Sem PIN</span>';
+          const btnReset = c.pin_hash ? `<button class="btn bo" style="font-size:8px;padding:2px 6px;border-radius:4px" onclick="resetarPinClientePorId(${c.id},'${sanitize(c.nome)}')">🔐 Reset</button>` : '';
+          return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #333">
+          <div><div style="font-weight:600">${sanitize(c.nome)}</div><div style="opacity:.6;font-size:12px">${sanitize(c.codigo)} · ${sanitize(c.telefone)}</div></div>
+          <div style="display:flex;align-items:center;gap:6px">${temPin}${btnReset}</div></div>`;
+        }).join('');
     }
     if(rankEl) {
       rankEl.innerHTML = lista.slice(0,10).map((c,i)=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #333">
@@ -891,6 +901,80 @@ async function carregarCliente(textoScan) {
   document.getElementById('cli-pontos').textContent = saldo + ' pontos';
   document.getElementById('client-found').style.display='flex';
   document.getElementById('scan-area').style.display='none';
+
+  // Mostrar status do PIN
+  const pinBadge = document.getElementById('cli-pin-badge');
+  if (pinBadge) {
+    if (cliente.pin_hash) {
+      pinBadge.textContent = 'PIN ativo';
+      pinBadge.style.background = '#27ae60';
+      pinBadge.style.color = '#fff';
+    } else {
+      pinBadge.textContent = 'Sem PIN';
+      pinBadge.style.background = '#555';
+      pinBadge.style.color = '#aaa';
+    }
+    pinBadge.style.display = '';
+  }
+}
+
+// ── RESET DE PIN ─────────────────────────────────────────
+
+// Resetar PIN do cliente selecionado (aba Caixa)
+async function resetarPinCliente() {
+  if (!clienteAtual) { alert('Nenhum cliente selecionado'); return; }
+  await resetarPinClientePorId(clienteAtual.id, clienteAtual.nome);
+  // Atualizar badge no card
+  clienteAtual.pin_hash = null;
+  const pinBadge = document.getElementById('cli-pin-badge');
+  if (pinBadge) {
+    pinBadge.textContent = 'Sem PIN';
+    pinBadge.style.background = '#555';
+    pinBadge.style.color = '#aaa';
+  }
+}
+
+// Resetar PIN de qualquer cliente por ID (usado na listagem e no caixa)
+async function resetarPinClientePorId(cId, nomeCliente) {
+  if (!confirm(`Resetar o PIN de segurança de ${nomeCliente}?\n\nO cliente receberá uma notificação para criar um novo PIN.`)) return;
+
+  try {
+    // 1. Limpar PIN no banco e marcar reset pedido
+    const r = await fetch(`${SUPA_URL}/rest/v1/clientes?id=eq.${cId}`, {
+      method: 'PATCH',
+      headers: { ...SH, Authorization: `Bearer ${authToken || SUPA_KEY}`, Prefer: 'return=representation' },
+      body: JSON.stringify({ pin_hash: null, pin_reset_pedido: true })
+    });
+
+    if (!r.ok) {
+      alert('Erro ao resetar PIN. Tente novamente.');
+      return;
+    }
+
+    // 2. Enviar push notification para o cliente criar novo PIN
+    try {
+      await fetch(ONESIGNAL_PUSH_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken || SUPA_KEY}`
+        },
+        body: JSON.stringify({
+          type: 'pin_reset',
+          clienteId: String(cId)
+        })
+      });
+    } catch(e) { console.warn('Push de reset PIN falhou:', e); }
+
+    alert(`PIN de ${nomeCliente} foi resetado!\n\nO cliente será notificado para criar um novo PIN.`);
+
+    // Atualizar listagem
+    listarClientes();
+
+  } catch(e) {
+    console.error('resetarPinCliente:', e);
+    alert('Erro ao resetar PIN.');
+  }
 }
 
 // ── SCANNER QR CODE ──────────────────────────────────────

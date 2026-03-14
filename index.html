@@ -824,6 +824,11 @@ async function preencherTela(cliente, saldo) {
   // Verificar PIN de segurança do cliente
   const temPin = await verificarPinCliente(cliente.id);
   atualizarPinPerfil(temPin);
+
+  // Se admin pediu reset do PIN, forçar criação de novo PIN
+  if (pinResetPedido && !temPin) {
+    setTimeout(() => abrirCriarPinObrigatorio(), 1000);
+  }
 }
 
 async function goApp() {
@@ -1514,13 +1519,19 @@ function hashPin(pin) {
 }
 
 // Verificar se cliente tem PIN cadastrado (busca do banco)
+let pinResetPedido = false; // flag de reset solicitado pelo admin
+
 async function verificarPinCliente(cId) {
   try {
-    const r = await fetch(`${SUPA_URL}/rest/v1/clientes?id=eq.${cId}&select=pin_hash`, { headers: SH });
+    const r = await fetch(`${SUPA_URL}/rest/v1/clientes?id=eq.${cId}&select=pin_hash,pin_reset_pedido`, { headers: SH });
     const d = await r.json();
-    if (d[0] && d[0].pin_hash) {
-      clientePinHash = d[0].pin_hash;
-      return true;
+    if (d[0]) {
+      // Verificar se admin pediu reset
+      pinResetPedido = d[0].pin_reset_pedido === true;
+      if (d[0].pin_hash) {
+        clientePinHash = d[0].pin_hash;
+        return true;
+      }
     }
     clientePinHash = null;
     return false;
@@ -1535,8 +1546,9 @@ async function salvarPinNoBanco(cId, pinHash) {
     const r = await fetch(`${SUPA_URL}/rest/v1/clientes?id=eq.${cId}`, {
       method: 'PATCH',
       headers: { ...SH, Prefer: 'return=representation' },
-      body: JSON.stringify({ pin_hash: pinHash })
+      body: JSON.stringify({ pin_hash: pinHash, pin_reset_pedido: false })
     });
+    if (r.ok) pinResetPedido = false;
     return r.ok;
   } catch(e) { return false; }
 }
@@ -1555,6 +1567,22 @@ function sugerirCriacaoPin() {
   if (!clientePinHash) {
     setTimeout(() => abrirCriarPin(), 1500);
   }
+}
+
+// Abrir criação de PIN obrigatória (após reset pelo admin)
+function abrirCriarPinObrigatorio() {
+  limparPin('pin-d');
+  document.getElementById('pin-criar-erro').textContent = '';
+  // Alterar texto para indicar que é um reset
+  const titleEl = document.querySelector('#mo-pin-criar .md-title');
+  if (titleEl) titleEl.textContent = 'Crie um novo PIN';
+  const descEl = document.querySelector('#mo-pin-criar .md-text');
+  if (descEl) descEl.textContent = 'Seu PIN foi resetado pelo administrador. Por segurança, crie um novo PIN de 4 dígitos para proteger seus pontos.';
+  // Esconder botão "depois" — criação é obrigatória após reset
+  const btnDepois = document.querySelector('#mo-pin-criar .btn.bo');
+  if (btnDepois) btnDepois.style.display = 'none';
+  document.getElementById('mo-pin-criar').classList.add('open');
+  setTimeout(() => document.getElementById('pin-d1').focus(), 300);
 }
 
 // Pular criação de PIN (lembrar por 7 dias)
@@ -1599,6 +1627,13 @@ async function salvarPinSeguranca() {
     clientePinHash = pinHash;
     document.getElementById('mo-pin-criar').classList.remove('open');
     atualizarPinPerfil(true);
+    // Restaurar modal ao estado padrão (caso tenha sido aberto como obrigatório)
+    const titleEl = document.querySelector('#mo-pin-criar .md-title');
+    if (titleEl) titleEl.textContent = 'Crie seu PIN de segurança';
+    const descEl = document.querySelector('#mo-pin-criar .md-text');
+    if (descEl) descEl.textContent = 'Crie um PIN de 4 dígitos para proteger seus pontos. Ele será pedido nos resgates e operações sensíveis.';
+    const btnDepois = document.querySelector('#mo-pin-criar .btn.bo');
+    if (btnDepois) btnDepois.style.display = '';
     alert('PIN criado com sucesso! Ele será pedido nos resgates.');
   } else {
     erroEl.textContent = 'Erro ao salvar. Tente novamente.';
