@@ -423,8 +423,35 @@ const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsI
 const SH = { apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}`, 'Content-Type': 'application/json' };
 
 // ── SUPABASE AUTH ─────────────────────────────────────────
-const supabaseClient = supabase.createClient(SUPA_URL, SUPA_KEY);
+const supabaseClient = supabase.createClient(SUPA_URL, SUPA_KEY, {
+  auth: {
+    persistSession: true,           // Manter sessão entre recarregamentos (padrão)
+    autoRefreshToken: true,          // Renovar JWT automaticamente antes de expirar
+    detectSessionInUrl: true,        // Detectar tokens de OAuth na URL
+    storageKey: 'clube-admin-auth',  // Chave única para evitar conflito com cliente
+    storage: window.localStorage     // Persistir no localStorage
+  }
+});
 let authToken = null; // JWT token do admin autenticado
+
+// ── SESSÃO ADMIN — MONITORAMENTO GLOBAL ─────────────────
+// Registrar listener de auth state GLOBALMENTE (não só no login)
+// Isso garante que o refresh token funcione mesmo após recarregar a página
+supabaseClient.auth.onAuthStateChange((event, session) => {
+  if (session) {
+    authToken = session.access_token;
+    // Renovação automática funcionando
+    if (event === 'TOKEN_REFRESHED') {
+      console.log('Token admin renovado automaticamente');
+    }
+  } else {
+    // Sessão perdida (expirou ou logout)
+    if (authToken) {
+      authToken = null;
+      fazerLogout();
+    }
+  }
+});
 
 // Sanitização contra XSS
 function sanitize(html) { return typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(html) : html; }
@@ -720,12 +747,7 @@ async function fazerLogin() {
     document.getElementById('pin-screen').style.display = 'none';
     document.getElementById('admin-app').style.display = 'block';
     carregarDadosAdmin();
-    
-    // Auto-refresh do token
-    supabaseClient.auth.onAuthStateChange((event, session) => {
-      if (session) { authToken = session.access_token; }
-      else { authToken = null; fazerLogout(); }
-    });
+    // onAuthStateChange já registrado globalmente — refresh automático ativo
     
   } catch(e) {
     errEl.textContent = 'Erro de conexão. Tente novamente.';
@@ -743,21 +765,42 @@ async function fazerLogout() {
   document.getElementById('inp-senha').value = '';
 }
 
-// Verificar sessão existente ao carregar
+// Verificar sessão existente ao carregar (mantém admin logado entre recarregamentos)
 async function verificarSessaoExistente() {
   try {
-    const { data: { session } } = await supabaseClient.auth.getSession();
+    const { data: { session }, error } = await supabaseClient.auth.getSession();
+    if (error) {
+      console.warn('Erro ao verificar sessão admin:', error.message);
+      return;
+    }
     if (session) {
+      // Sessão encontrada — verificar se token ainda é válido
+      // Se o token expirou, o Supabase faz refresh automático via refreshToken
       authToken = session.access_token;
-      const { data: adminCheck } = await supabaseClient.from('admin_profiles').select('id').eq('id', session.user.id).single();
+
+      // Verificar se ainda é admin no banco
+      const { data: adminCheck, error: adminErr } = await supabaseClient
+        .from('admin_profiles')
+        .select('id')
+        .eq('id', session.user.id)
+        .single();
+
       if (adminCheck) {
         document.getElementById('pin-screen').style.display = 'none';
         document.getElementById('admin-app').style.display = 'block';
         carregarDadosAdmin();
+        console.log('Sessão admin restaurada com sucesso');
         return;
+      } else {
+        // Usuário não é mais admin — deslogar
+        console.warn('Usuário não é mais admin — fazendo logout');
+        await supabaseClient.auth.signOut();
+        authToken = null;
       }
     }
-  } catch(e) {}
+  } catch(e) {
+    console.warn('Erro ao restaurar sessão admin:', e);
+  }
 }
 verificarSessaoExistente();
 

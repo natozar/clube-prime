@@ -682,10 +682,16 @@ async function preencherTela(cliente, saldo) {
   clienteId = cliente.id;
   clienteCodigo = cliente.codigo;
   clienteNome = cliente.nome.split(' ')[0];
-  // Salvar sempre localmente — garante que nunca perde sessão
+  // Salvar dados localmente + sessão segura
   localStorage.setItem('clube_cliente_dados', JSON.stringify(cliente));
   localStorage.setItem('clube_cliente_saldo', String(saldo));
   localStorage.setItem('clube_cliente_tel', cliente.telefone);
+  // Criar/renovar sessão segura se não existir
+  if (!validarSessaoCliente()) {
+    salvarSessaoCliente(cliente);
+  } else {
+    renovarSessaoSeNecessario();
+  }
 
   // OneSignal — vincula este dispositivo ao ID do cliente para receber notificações
   if (window.OneSignalDeferred) {
@@ -787,11 +793,14 @@ async function goApp() {
   }
 }
 
-// Auto-login se já cadastrado
+// Auto-login seguro — verifica token de sessão antes de restaurar
 window.addEventListener('load', async () => {
+  const sessao = validarSessaoCliente();
   const tel = localStorage.getItem('clube_cliente_tel');
   const clienteLocal = localStorage.getItem('clube_cliente_dados');
-  if (tel || clienteLocal) {
+
+  // Só faz auto-login se a sessão for válida (não expirada)
+  if (sessao && (tel || clienteLocal)) {
     // Mostrar tela do cliente imediatamente com dados locais (evita piscar cadastro)
     if (clienteLocal) {
       try {
@@ -801,9 +810,10 @@ window.addEventListener('load', async () => {
       } catch(e) {}
     }
     // Atualizar em background com dados do banco
-    if (tel) {
+    const telSessao = sessao.telefone || tel;
+    if (telSessao) {
       try {
-        const cliente = await buscarCliente(tel);
+        const cliente = await buscarCliente(telSessao);
         if (cliente) {
           const r = await fetch(`${SUPA_URL}/rest/v1/pontos?cliente_id=eq.${cliente.id}`, { headers: SH });
           const pts = await r.json();
@@ -821,6 +831,12 @@ window.addEventListener('load', async () => {
         console.log('Offline — usando dados locais');
       }
     }
+    // Renovar sessão se perto de expirar
+    renovarSessaoSeNecessario();
+  } else if (!sessao && (tel || clienteLocal)) {
+    // Sessão expirada — limpar dados antigos, forçar novo login
+    limparSessaoCliente();
+    console.log('Sessão expirada — necessário novo login');
   }
 });
 async function acessarCartao() {
@@ -847,6 +863,84 @@ function S(n,btn){
 let clienteId = null;
 let clienteCodigo = 'CR847';
 let clienteNome = 'Carlos';
+
+// ── SESSÃO SEGURA DO CLIENTE ─────────────────────────────
+// Gera token de sessão único (hash simples baseado em dados + timestamp)
+function gerarTokenSessao(clienteId, telefone) {
+  const raw = clienteId + '|' + telefone + '|' + Date.now() + '|' + Math.random().toString(36).slice(2);
+  let hash = 0;
+  for (let i = 0; i < raw.length; i++) {
+    hash = ((hash << 5) - hash) + raw.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash).toString(36) + '-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+}
+
+// Salvar sessão segura no localStorage
+function salvarSessaoCliente(cliente) {
+  const token = gerarTokenSessao(cliente.id, cliente.telefone);
+  const sessao = {
+    token,
+    clienteId: cliente.id,
+    telefone: cliente.telefone,
+    criadoEm: Date.now(),
+    expiraEm: Date.now() + (30 * 24 * 60 * 60 * 1000), // 30 dias
+    ultimoAcesso: Date.now()
+  };
+  localStorage.setItem('clube_sessao', JSON.stringify(sessao));
+  return sessao;
+}
+
+// Validar sessão existente
+function validarSessaoCliente() {
+  try {
+    const raw = localStorage.getItem('clube_sessao');
+    if (!raw) return null;
+    const sessao = JSON.parse(raw);
+    // Verificar expiração
+    if (!sessao.expiraEm || Date.now() > sessao.expiraEm) {
+      limparSessaoCliente();
+      return null;
+    }
+    // Verificar integridade (token + clienteId devem existir)
+    if (!sessao.token || !sessao.clienteId || !sessao.telefone) {
+      limparSessaoCliente();
+      return null;
+    }
+    // Atualizar último acesso
+    sessao.ultimoAcesso = Date.now();
+    localStorage.setItem('clube_sessao', JSON.stringify(sessao));
+    return sessao;
+  } catch(e) {
+    limparSessaoCliente();
+    return null;
+  }
+}
+
+// Limpar sessão (logout)
+function limparSessaoCliente() {
+  localStorage.removeItem('clube_sessao');
+  localStorage.removeItem('clube_cliente_id');
+  localStorage.removeItem('clube_cliente_tel');
+  localStorage.removeItem('clube_cliente_dados');
+  localStorage.removeItem('clube_cliente_saldo');
+}
+
+// Renovar sessão (estende por mais 30 dias se estiver perto de expirar)
+function renovarSessaoSeNecessario() {
+  try {
+    const raw = localStorage.getItem('clube_sessao');
+    if (!raw) return;
+    const sessao = JSON.parse(raw);
+    const diasRestantes = (sessao.expiraEm - Date.now()) / (24 * 60 * 60 * 1000);
+    // Renovar se faltam menos de 7 dias
+    if (diasRestantes < 7) {
+      sessao.expiraEm = Date.now() + (30 * 24 * 60 * 60 * 1000);
+      sessao.ultimoAcesso = Date.now();
+      localStorage.setItem('clube_sessao', JSON.stringify(sessao));
+    }
+  } catch(e) {}
+}
 
 function getLinkConvite() {
   return window.location.origin + window.location.pathname.replace('index.html','') + '?ref=' + clienteCodigo;
