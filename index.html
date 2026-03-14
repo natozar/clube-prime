@@ -501,6 +501,14 @@ body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
       <button class="btn bg" style="margin-top:6px" onclick="salvarEndereco()">Salvar endereço</button>
     </div>
 
+    <!-- PIN DE SEGURANÇA -->
+    <div class="sec-card" style="margin:0 0 14px">
+      <div class="sec-title">🔐 PIN de Segurança</div>
+      <div style="font-size:11px;color:var(--gray);line-height:1.5;margin-bottom:10px" id="pin-perfil-status">Verificando...</div>
+      <button class="btn bg bsm" id="btn-pin-perfil" onclick="abrirAlterarPin()" style="display:none">Alterar PIN</button>
+      <button class="btn bg bsm" id="btn-pin-criar-perfil" onclick="abrirCriarPin()" style="display:none">Criar PIN</button>
+    </div>
+
     <!-- ZONA DE PERIGO -->
     <div class="sec-card" style="margin:0">
       <div class="dz"><div class="dzt">⚠️ Zona de perigo</div><div class="dzx">Ao excluir sua conta, todos os pontos e histórico serão removidos. Processado em até 15 dias (LGPD).</div><button class="btn bd" onclick="document.getElementById('mo-del').classList.add('open')">Excluir minha conta</button></div>
@@ -603,6 +611,81 @@ body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
         ENVIAR PELO WHATSAPP
       </button>
       <button class="btn bo" style="width:100%;font-size:10px" onclick="document.getElementById('mo-pedido').classList.remove('open')">Voltar ao cardápio</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CRIAR PIN DE SEGURANÇA -->
+<div class="mo" id="mo-pin-criar">
+  <div class="md" style="text-align:center">
+    <div class="md-handle"></div>
+    <div style="font-size:40px;margin-bottom:8px">🔐</div>
+    <div class="md-title" style="color:var(--gold-light);justify-content:center;display:flex">Crie seu PIN de segurança</div>
+    <div class="md-text">Crie um PIN de 4 dígitos para proteger seus pontos. Ele será pedido nos resgates e operações sensíveis.</div>
+    <div style="display:flex;gap:10px;justify-content:center;margin-bottom:14px">
+      <input class="fi pin-input" id="pin-d1" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" oninput="pinAutoNext(this,'pin-d2')" onfocus="this.select()">
+      <input class="fi pin-input" id="pin-d2" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" oninput="pinAutoNext(this,'pin-d3')" onkeydown="pinBackspace(event,this,'pin-d1')" onfocus="this.select()">
+      <input class="fi pin-input" id="pin-d3" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" oninput="pinAutoNext(this,'pin-d4')" onkeydown="pinBackspace(event,this,'pin-d2')" onfocus="this.select()">
+      <input class="fi pin-input" id="pin-d4" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" onkeydown="pinBackspace(event,this,'pin-d3')" onfocus="this.select()">
+    </div>
+    <div id="pin-criar-erro" style="color:#e74c3c;font-size:11px;min-height:16px;margin-bottom:8px"></div>
+    <div class="md-actions" style="justify-content:center;flex-direction:column;gap:8px">
+      <button class="btn bg" style="width:100%" id="btn-salvar-pin" onclick="salvarPinSeguranca()">Salvar PIN</button>
+      <button class="btn bo" style="width:100%;font-size:10px;opacity:.7" onclick="pularCriacaoPin()">Depois eu crio</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL VERIFICAR PIN (para resgate) -->
+<div class="mo" id="mo-pin-verificar">
+  <div class="md" style="text-align:center">
+    <div class="md-handle"></div>
+    <div style="font-size:40px;margin-bottom:8px">🔑</div>
+    <div class="md-title" style="color:var(--gold-light);justify-content:center;display:flex">Digite seu PIN</div>
+    <div class="md-text">Informe seu PIN de 4 dígitos para confirmar o resgate.</div>
+    <div style="display:flex;gap:10px;justify-content:center;margin-bottom:14px">
+      <input class="fi pin-input" id="vpin-d1" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" oninput="pinAutoNext(this,'vpin-d2')" onfocus="this.select()">
+      <input class="fi pin-input" id="vpin-d2" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" oninput="pinAutoNext(this,'vpin-d3')" onkeydown="pinBackspace(event,this,'vpin-d1')" onfocus="this.select()">
+      <input class="fi pin-input" id="vpin-d3" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" oninput="pinAutoNext(this,'vpin-d4')" onkeydown="pinBackspace(event,this,'vpin-d2')" onfocus="this.select()">
+      <input class="fi pin-input" id="vpin-d4" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" onkeydown="pinBackspace(event,this,'vpin-d3')" onfocus="this.select()">
+    </div>
+    <div id="pin-verificar-erro" style="color:#e74c3c;font-size:11px;min-height:16px;margin-bottom:8px"></div>
+    <div class="md-actions" style="justify-content:center;flex-direction:column;gap:8px">
+      <button class="btn bg" style="width:100%" id="btn-confirmar-pin" onclick="confirmarPinResgate()">Confirmar</button>
+      <button class="btn bo" style="width:100%" onclick="fecharModalPin('mo-pin-verificar')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ALTERAR PIN -->
+<div class="mo" id="mo-pin-alterar">
+  <div class="md" style="text-align:center">
+    <div class="md-handle"></div>
+    <div style="font-size:40px;margin-bottom:8px">🔄</div>
+    <div class="md-title" style="color:var(--gold-light);justify-content:center;display:flex">Alterar PIN</div>
+    <div class="md-text" id="pin-alterar-desc">Digite o PIN atual e o novo PIN.</div>
+    <div style="margin-bottom:12px">
+      <div style="font-size:10px;color:var(--gray);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px" id="pin-alt-label-atual">PIN Atual</div>
+      <div style="display:flex;gap:10px;justify-content:center">
+        <input class="fi pin-input" id="apin-a1" type="tel" maxlength="1" inputmode="numeric" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" oninput="pinAutoNext(this,'apin-a2')" onfocus="this.select()">
+        <input class="fi pin-input" id="apin-a2" type="tel" maxlength="1" inputmode="numeric" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" oninput="pinAutoNext(this,'apin-a3')" onkeydown="pinBackspace(event,this,'apin-a1')" onfocus="this.select()">
+        <input class="fi pin-input" id="apin-a3" type="tel" maxlength="1" inputmode="numeric" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" oninput="pinAutoNext(this,'apin-a4')" onkeydown="pinBackspace(event,this,'apin-a2')" onfocus="this.select()">
+        <input class="fi pin-input" id="apin-a4" type="tel" maxlength="1" inputmode="numeric" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" onkeydown="pinBackspace(event,this,'apin-a3')" onfocus="this.select()">
+      </div>
+    </div>
+    <div style="margin-bottom:14px">
+      <div style="font-size:10px;color:var(--gray);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">Novo PIN</div>
+      <div style="display:flex;gap:10px;justify-content:center">
+        <input class="fi pin-input" id="apin-n1" type="tel" maxlength="1" inputmode="numeric" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" oninput="pinAutoNext(this,'apin-n2')" onfocus="this.select()">
+        <input class="fi pin-input" id="apin-n2" type="tel" maxlength="1" inputmode="numeric" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" oninput="pinAutoNext(this,'apin-n3')" onkeydown="pinBackspace(event,this,'apin-n1')" onfocus="this.select()">
+        <input class="fi pin-input" id="apin-n3" type="tel" maxlength="1" inputmode="numeric" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" oninput="pinAutoNext(this,'apin-n4')" onkeydown="pinBackspace(event,this,'apin-n2')" onfocus="this.select()">
+        <input class="fi pin-input" id="apin-n4" type="tel" maxlength="1" inputmode="numeric" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" onkeydown="pinBackspace(event,this,'apin-n3')" onfocus="this.select()">
+      </div>
+    </div>
+    <div id="pin-alterar-erro" style="color:#e74c3c;font-size:11px;min-height:16px;margin-bottom:8px"></div>
+    <div class="md-actions" style="justify-content:center;flex-direction:column;gap:8px">
+      <button class="btn bg" style="width:100%" onclick="alterarPinSeguranca()">Salvar novo PIN</button>
+      <button class="btn bo" style="width:100%" onclick="fecharModalPin('mo-pin-alterar')">Cancelar</button>
     </div>
   </div>
 </div>
@@ -737,6 +820,10 @@ async function preencherTela(cliente, saldo) {
   document.getElementById('screen-cad').classList.remove('active');
   document.getElementById('screen-cartao').classList.add('active');
   document.getElementById('bnav').style.display = 'flex';
+
+  // Verificar PIN de segurança do cliente
+  const temPin = await verificarPinCliente(cliente.id);
+  atualizarPinPerfil(temPin);
 }
 
 async function goApp() {
@@ -765,11 +852,13 @@ async function goApp() {
       // Já cadastrado — basta o telefone para entrar (nome não é obrigatório)
       const r = await fetch(`${SUPA_URL}/rest/v1/pontos?cliente_id=eq.${cliente.id}`, { headers: SH });
       const pts = await r.json();
-      preencherTela(cliente, pts[0]?.saldo || 0);
+      await preencherTela(cliente, pts[0]?.saldo || 0);
       localStorage.setItem('clube_cliente_id', cliente.id);
       localStorage.setItem('clube_cliente_tel', tel);
       // Criar sessão segura
       salvarSessaoCliente(cliente);
+      // Sugerir criação de PIN se não tem e não foi lembrado recentemente
+      if (!clientePinHash && devesugerirPin()) sugerirCriacaoPin();
     } else {
       // Novo cadastro — nome é obrigatório
       if (!nome) {
@@ -870,11 +959,13 @@ async function acessarCartao() {
     if (cliente) {
       const r = await fetch(`${SUPA_URL}/rest/v1/pontos?cliente_id=eq.${cliente.id}`, { headers: SH });
       const pts = await r.json();
-      preencherTela(cliente, pts[0]?.saldo || 0);
+      await preencherTela(cliente, pts[0]?.saldo || 0);
       localStorage.setItem('clube_cliente_id', cliente.id);
       localStorage.setItem('clube_cliente_tel', tel);
       // Criar sessão segura para manter logado
       salvarSessaoCliente(cliente);
+      // Sugerir criação de PIN se não tem
+      if (!clientePinHash && devesugerirPin()) sugerirCriacaoPin();
     } else {
       alert('Número não encontrado. Faça seu cadastro!');
     }
@@ -1355,22 +1446,292 @@ async function solicitarResgate(cId, recompensa, pontos) {
   } catch(e) { return false; }
 }
 
-// Wrapper chamado pelo botão Resgatar
+// Wrapper chamado pelo botão Resgatar — agora exige PIN se cadastrado
 async function fazerResgate() {
   if (!clienteId) return alert('Erro: cliente não identificado');
   const regras = getRegrasCliente();
   if (!confirm(`Deseja resgatar R$${regras.valorCupom} usando ${regras.metaPontos.toLocaleString('pt-BR')} pontos?\n\nCondições:\n• Válido para compras acima de R$${regras.compraMinima}\n• Prazo: ${regras.validadeCupom} dias para usar\n• Cupom expirado = perda dos pontos`)) return;
-  const btn = document.getElementById('btn-resgatar');
-  if (btn) { btn.disabled = true; btn.textContent = 'Aguarde...'; }
-  const ok = await solicitarResgate(clienteId, `Desconto R$${regras.valorCupom}`, regras.metaPontos);
-  if (ok) {
-    alert('Resgate solicitado! Aguarde aprovação.\n\n⏰ Você terá ' + regras.validadeCupom + ' dias para usar o cupom.');
-    if (btn) btn.style.display = 'none';
-  } else {
-    alert('Erro ao solicitar resgate. Tente novamente.');
-  }
-  if (btn) { btn.disabled = false; btn.textContent = 'Resgatar'; }
+
+  // Pedir PIN antes de prosseguir (se o cliente tiver PIN)
+  pedirPinParaResgate(async () => {
+    const btn = document.getElementById('btn-resgatar');
+    if (btn) { btn.disabled = true; btn.textContent = 'Aguarde...'; }
+    const ok = await solicitarResgate(clienteId, `Desconto R$${regras.valorCupom}`, regras.metaPontos);
+    if (ok) {
+      alert('Resgate solicitado! Aguarde aprovação.\n\n⏰ Você terá ' + regras.validadeCupom + ' dias para usar o cupom.');
+      if (btn) btn.style.display = 'none';
+    } else {
+      alert('Erro ao solicitar resgate. Tente novamente.');
+    }
+    if (btn) { btn.disabled = false; btn.textContent = 'Resgatar'; }
+  });
 }
+// ── PIN DE SEGURANÇA ─────────────────────────────────────
+let clientePinHash = null; // hash do PIN carregado do banco
+let pinResgateCallback = null; // callback após verificação do PIN no resgate
+
+// Navegação automática entre inputs do PIN
+function pinAutoNext(current, nextId) {
+  current.value = current.value.replace(/\D/g, '');
+  if (current.value.length === 1) {
+    const next = document.getElementById(nextId);
+    if (next) next.focus();
+  }
+}
+function pinBackspace(event, current, prevId) {
+  if (event.key === 'Backspace' && current.value === '') {
+    const prev = document.getElementById(prevId);
+    if (prev) { prev.focus(); prev.select(); }
+  }
+}
+
+// Ler os 4 campos de PIN e retornar string
+function lerPin(prefix) {
+  return [1,2,3,4].map(i => {
+    const el = document.getElementById(prefix + i);
+    return el ? el.value : '';
+  }).join('');
+}
+
+// Limpar campos de PIN
+function limparPin(prefix) {
+  [1,2,3,4].forEach(i => {
+    const el = document.getElementById(prefix + i);
+    if (el) el.value = '';
+  });
+}
+
+// Hash simples do PIN (para não salvar em texto puro)
+function hashPin(pin) {
+  let hash = 0;
+  const salt = 'clube-prime-2024';
+  const str = salt + pin + salt;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return 'ph_' + Math.abs(hash).toString(36);
+}
+
+// Verificar se cliente tem PIN cadastrado (busca do banco)
+async function verificarPinCliente(cId) {
+  try {
+    const r = await fetch(`${SUPA_URL}/rest/v1/clientes?id=eq.${cId}&select=pin_hash`, { headers: SH });
+    const d = await r.json();
+    if (d[0] && d[0].pin_hash) {
+      clientePinHash = d[0].pin_hash;
+      return true;
+    }
+    clientePinHash = null;
+    return false;
+  } catch(e) {
+    return false;
+  }
+}
+
+// Salvar PIN no banco (coluna pin_hash na tabela clientes)
+async function salvarPinNoBanco(cId, pinHash) {
+  try {
+    const r = await fetch(`${SUPA_URL}/rest/v1/clientes?id=eq.${cId}`, {
+      method: 'PATCH',
+      headers: { ...SH, Prefer: 'return=representation' },
+      body: JSON.stringify({ pin_hash: pinHash })
+    });
+    return r.ok;
+  } catch(e) { return false; }
+}
+
+// Abrir modal de criar PIN
+function abrirCriarPin() {
+  limparPin('pin-d');
+  document.getElementById('pin-criar-erro').textContent = '';
+  document.getElementById('mo-pin-criar').classList.add('open');
+  setTimeout(() => document.getElementById('pin-d1').focus(), 300);
+}
+
+// Sugerir criação de PIN após login por telefone
+function sugerirCriacaoPin() {
+  // Só mostra se o cliente não tem PIN ainda
+  if (!clientePinHash) {
+    setTimeout(() => abrirCriarPin(), 1500);
+  }
+}
+
+// Pular criação de PIN (lembrar por 7 dias)
+function pularCriacaoPin() {
+  localStorage.setItem('clube_pin_lembrar', Date.now().toString());
+  document.getElementById('mo-pin-criar').classList.remove('open');
+}
+
+// Verificar se deve sugerir PIN (não insistir toda hora)
+function devesugerirPin() {
+  const ultimo = localStorage.getItem('clube_pin_lembrar');
+  if (!ultimo) return true;
+  const dias = (Date.now() - parseInt(ultimo)) / (24 * 60 * 60 * 1000);
+  return dias >= 7; // Sugerir novamente após 7 dias
+}
+
+// Salvar PIN de segurança (ao criar)
+async function salvarPinSeguranca() {
+  const pin = lerPin('pin-d');
+  const erroEl = document.getElementById('pin-criar-erro');
+
+  if (pin.length !== 4) {
+    erroEl.textContent = 'Digite os 4 dígitos do PIN';
+    return;
+  }
+  if (/^(.)\1{3}$/.test(pin)) {
+    erroEl.textContent = 'PIN muito fraco. Evite números repetidos.';
+    return;
+  }
+  if (pin === '1234' || pin === '4321' || pin === '0000') {
+    erroEl.textContent = 'PIN muito comum. Escolha outro.';
+    return;
+  }
+
+  const btn = document.getElementById('btn-salvar-pin');
+  btn.textContent = 'Salvando...'; btn.disabled = true;
+
+  const pinHash = hashPin(pin);
+  const ok = await salvarPinNoBanco(clienteId, pinHash);
+
+  if (ok) {
+    clientePinHash = pinHash;
+    document.getElementById('mo-pin-criar').classList.remove('open');
+    atualizarPinPerfil(true);
+    alert('PIN criado com sucesso! Ele será pedido nos resgates.');
+  } else {
+    erroEl.textContent = 'Erro ao salvar. Tente novamente.';
+  }
+  btn.textContent = 'Salvar PIN'; btn.disabled = false;
+}
+
+// Fechar modal de PIN
+function fecharModalPin(id) {
+  document.getElementById(id).classList.remove('open');
+  pinResgateCallback = null;
+}
+
+// Abrir modal de alterar PIN
+function abrirAlterarPin() {
+  limparPin('apin-a');
+  limparPin('apin-n');
+  document.getElementById('pin-alterar-erro').textContent = '';
+  // Se não tem PIN, esconde campo "PIN Atual"
+  if (!clientePinHash) {
+    document.getElementById('pin-alt-label-atual').style.display = 'none';
+    ['apin-a1','apin-a2','apin-a3','apin-a4'].forEach(id => document.getElementById(id).parentElement.style.display = 'none');
+    document.getElementById('pin-alterar-desc').textContent = 'Crie seu novo PIN de 4 dígitos.';
+  } else {
+    document.getElementById('pin-alt-label-atual').style.display = '';
+    ['apin-a1','apin-a2','apin-a3','apin-a4'].forEach(id => document.getElementById(id).parentElement.style.display = '');
+    document.getElementById('pin-alterar-desc').textContent = 'Digite o PIN atual e o novo PIN.';
+  }
+  document.getElementById('mo-pin-alterar').classList.add('open');
+  setTimeout(() => {
+    const first = clientePinHash ? 'apin-a1' : 'apin-n1';
+    document.getElementById(first).focus();
+  }, 300);
+}
+
+// Alterar PIN
+async function alterarPinSeguranca() {
+  const erroEl = document.getElementById('pin-alterar-erro');
+  const pinAtual = lerPin('apin-a');
+  const pinNovo = lerPin('apin-n');
+
+  // Verificar PIN atual (se existir)
+  if (clientePinHash) {
+    if (pinAtual.length !== 4) {
+      erroEl.textContent = 'Digite os 4 dígitos do PIN atual';
+      return;
+    }
+    if (hashPin(pinAtual) !== clientePinHash) {
+      erroEl.textContent = 'PIN atual incorreto';
+      return;
+    }
+  }
+
+  if (pinNovo.length !== 4) {
+    erroEl.textContent = 'Digite os 4 dígitos do novo PIN';
+    return;
+  }
+  if (/^(.)\1{3}$/.test(pinNovo)) {
+    erroEl.textContent = 'PIN muito fraco. Evite números repetidos.';
+    return;
+  }
+
+  const novoHash = hashPin(pinNovo);
+  const ok = await salvarPinNoBanco(clienteId, novoHash);
+
+  if (ok) {
+    clientePinHash = novoHash;
+    document.getElementById('mo-pin-alterar').classList.remove('open');
+    atualizarPinPerfil(true);
+    alert('PIN alterado com sucesso!');
+  } else {
+    erroEl.textContent = 'Erro ao salvar. Tente novamente.';
+  }
+}
+
+// Atualizar seção de PIN no perfil
+function atualizarPinPerfil(temPin) {
+  const statusEl = document.getElementById('pin-perfil-status');
+  const btnAlterar = document.getElementById('btn-pin-perfil');
+  const btnCriar = document.getElementById('btn-pin-criar-perfil');
+  if (temPin) {
+    statusEl.textContent = 'PIN ativo — seu PIN protege seus resgates de pontos.';
+    statusEl.style.color = '#27ae60';
+    btnAlterar.style.display = '';
+    btnCriar.style.display = 'none';
+  } else {
+    statusEl.textContent = 'Nenhum PIN cadastrado. Crie um para proteger seus pontos.';
+    statusEl.style.color = 'var(--gray)';
+    btnAlterar.style.display = 'none';
+    btnCriar.style.display = '';
+  }
+}
+
+// Verificar PIN antes do resgate
+function pedirPinParaResgate(callback) {
+  if (!clientePinHash) {
+    // Sem PIN — prosseguir direto
+    callback();
+    return;
+  }
+  // Com PIN — abrir modal de verificação
+  pinResgateCallback = callback;
+  limparPin('vpin-d');
+  document.getElementById('pin-verificar-erro').textContent = '';
+  document.getElementById('mo-pin-verificar').classList.add('open');
+  setTimeout(() => document.getElementById('vpin-d1').focus(), 300);
+}
+
+// Confirmar PIN no resgate
+function confirmarPinResgate() {
+  const pin = lerPin('vpin-d');
+  const erroEl = document.getElementById('pin-verificar-erro');
+
+  if (pin.length !== 4) {
+    erroEl.textContent = 'Digite os 4 dígitos do PIN';
+    return;
+  }
+
+  if (hashPin(pin) !== clientePinHash) {
+    erroEl.textContent = 'PIN incorreto. Tente novamente.';
+    limparPin('vpin-d');
+    setTimeout(() => document.getElementById('vpin-d1').focus(), 100);
+    return;
+  }
+
+  // PIN correto — fechar modal e executar callback
+  document.getElementById('mo-pin-verificar').classList.remove('open');
+  if (pinResgateCallback) {
+    pinResgateCallback();
+    pinResgateCallback = null;
+  }
+}
+
 // Preencher campos do perfil com dados do cliente
 function preencherPerfil(cliente) {
   const el = (id) => document.getElementById(id);
