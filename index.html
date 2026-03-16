@@ -402,26 +402,12 @@ body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
     <div id="extrato-lista" style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Nenhuma transação ainda</div>
   </div>
   <div class="sec-card">
-    <div class="sec-title">🎁 Resgatar</div>
-    <div class="rg-card" id="card-resgate">
-      <div class="rg-icon">💰</div>
-      <div class="rg-info">
-        <div class="rg-title" id="rg-titulo">Desconto R$ 100</div>
-        <div class="rg-desc" id="rg-desc">Compras acima de R$200 · Válido por 30 dias</div>
-      </div>
-      <div style="text-align:right">
-        <div class="rg-pts" id="rg-pts-meta">5.000pts</div>
-        <div class="rg-req" id="resgate-status" style="color:var(--gray)">carregando...</div>
-        <button class="btn bg bsm" id="btn-resgatar" style="margin-top:5px;display:none" onclick="fazerResgate()">Resgatar</button>
-      </div>
-    </div>
+    <div class="sec-title">🎁 Vitrine de Recompensas</div>
+    <div id="vitrine-recompensas" style="text-align:center;padding:12px;color:var(--gray);font-size:12px">Carregando recompensas...</div>
   </div>
   <div class="sec-card">
-    <div class="sec-title">📋 Histórico de Resgates</div>
-    <table class="tbl"><thead><tr><th>Cupom</th><th>Pts</th><th>Data</th><th>Status</th></tr></thead>
-    <tbody id="historico-resgates-body">
-      <tr><td colspan="4" style="text-align:center;color:var(--gray);padding:12px;font-size:11px">Nenhum resgate ainda</td></tr>
-    </tbody></table>
+    <div class="sec-title">📋 Meus Cupons</div>
+    <div id="meus-cupons" style="text-align:center;padding:12px;color:var(--gray);font-size:12px">Nenhum cupom ainda</div>
   </div>
 </div>
 
@@ -1346,30 +1332,155 @@ async function carregarExtrato(clienteId) {
   }).join('');
 }
 
-// Atualizar status do botão de resgate
-function atualizarStatusResgate(pts) {
-  const status = document.getElementById('resgate-status');
-  const btn = document.getElementById('btn-resgatar');
-  if (!status || !btn) return;
-  const regras = getRegrasCliente();
-  const META = regras.metaPontos;
-  // Atualizar textos dinâmicos do card
-  const tituloEl = document.getElementById('rg-titulo');
-  const descEl = document.getElementById('rg-desc');
-  const ptsMetaEl = document.getElementById('rg-pts-meta');
-  if (tituloEl) tituloEl.textContent = 'Desconto R$ ' + regras.valorCupom;
-  if (descEl) descEl.textContent = 'Compras acima de R$' + regras.compraMinima + ' · Válido por ' + regras.validadeCupom + ' dias';
-  if (ptsMetaEl) ptsMetaEl.textContent = META.toLocaleString('pt-BR') + 'pts';
-  if (pts >= META) {
-    status.textContent = 'disponível ✓';
-    status.style.color = 'var(--green)';
-    btn.style.display = 'block';
-  } else {
-    const faltam = META - pts;
-    status.textContent = 'faltam ' + faltam.toLocaleString('pt-BR') + ' pts';
-    status.style.color = 'var(--red)';
-    btn.style.display = 'none';
+// ── VITRINE DE RECOMPENSAS ────────────────────────────────
+let recompensasCliente = [];
+let saldoAtualCliente = 0;
+
+async function carregarVitrine(saldo) {
+  saldoAtualCliente = saldo || 0;
+  const el = document.getElementById('vitrine-recompensas');
+  if (!el) return;
+  try {
+    const r = await fetch(`${SUPA_URL}/rest/v1/recompensas?ativo=eq.true&order=pontos_necessarios.asc`, { headers: SH });
+    recompensasCliente = await r.json();
+    if (!Array.isArray(recompensasCliente) || !recompensasCliente.length) {
+      el.innerHTML = '<p style="color:var(--gray);font-size:12px">Nenhuma recompensa disponível no momento</p>';
+      return;
+    }
+    el.innerHTML = recompensasCliente.map(rc => {
+      const disponivel = saldo >= rc.pontos_necessarios;
+      const faltam = rc.pontos_necessarios - saldo;
+      return `
+      <div style="padding:12px 0;border-bottom:1px solid rgba(201,168,76,.12);display:flex;align-items:center;gap:12px">
+        <div style="font-size:28px;min-width:40px;text-align:center">🎁</div>
+        <div style="flex:1">
+          <div style="font-weight:600;color:var(--gold-light);font-size:14px">${rc.nome}</div>
+          <div style="font-size:11px;color:var(--gray);margin-top:2px">${rc.descricao || ''}</div>
+        </div>
+        <div style="text-align:right;min-width:90px">
+          <div style="font-size:14px;font-weight:700;color:var(--gold)">${rc.pontos_necessarios.toLocaleString('pt-BR')} pts</div>
+          ${disponivel
+            ? `<button onclick="iniciarResgate(${rc.id})" style="margin-top:4px;background:var(--gold);color:#000;border:none;padding:6px 12px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px">RESGATAR</button>`
+            : `<div style="font-size:10px;color:var(--red);margin-top:4px">faltam ${faltam.toLocaleString('pt-BR')} pts</div>`
+          }
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    console.error('carregarVitrine:', e);
+    el.innerHTML = '<p style="color:var(--red);font-size:12px">Erro ao carregar recompensas</p>';
   }
+}
+
+async function carregarMeusCupons() {
+  const el = document.getElementById('meus-cupons');
+  if (!el || !clienteId) return;
+  try {
+    const r = await fetch(`${SUPA_URL}/rest/v1/resgate?cliente_id=eq.${clienteId}&order=created_at.desc&select=*,recompensas(nome)`, { headers: SH });
+    const lista = await r.json();
+    if (!Array.isArray(lista) || !lista.length) {
+      el.innerHTML = '<p style="color:var(--gray);font-size:12px">Nenhum cupom ainda</p>';
+      return;
+    }
+    el.innerHTML = lista.map(rg => {
+      const dt = new Date(rg.created_at).toLocaleDateString('pt-BR');
+      const nome = rg.recompensas?.nome || rg.recompensa || '—';
+      const statusMap = {
+        pendente: {cor:'#f39c12',txt:'Pendente',icon:'⏳'},
+        aprovado: {cor:'#27ae60',txt:'Aprovado',icon:'✅'},
+        utilizado: {cor:'var(--gray)',txt:'Utilizado',icon:'☑️'},
+        recusado: {cor:'#c0392b',txt:'Recusado',icon:'❌'},
+        expirado: {cor:'var(--gray)',txt:'Expirado',icon:'⏰'}
+      };
+      const st = statusMap[rg.status] || {cor:'var(--gray)',txt:rg.status,icon:'❓'};
+      const cupom = rg.codigo_cupom || '—';
+      const validade = rg.validade ? new Date(rg.validade).toLocaleDateString('pt-BR') : '';
+      return `
+      <div style="padding:10px 0;border-bottom:1px solid rgba(201,168,76,.1)">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-weight:600;color:var(--gold-light);font-size:13px">${st.icon} ${nome}</div>
+            <div style="font-size:11px;color:var(--gray);margin-top:2px">${rg.pontos_usados.toLocaleString('pt-BR')} pts · ${dt}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-family:'Fira Code',monospace;font-size:14px;font-weight:700;color:${st.cor};letter-spacing:2px">${cupom}</div>
+            <div style="font-size:10px;color:${st.cor}">${st.txt}${validade ? ' · até ' + validade : ''}</div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    console.error('carregarMeusCupons:', e);
+  }
+}
+
+function gerarCodigoCupom() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = 'CP-';
+  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
+}
+
+function iniciarResgate(recompensaId) {
+  const rc = recompensasCliente.find(r => r.id === recompensaId);
+  if (!rc) return;
+  if (saldoAtualCliente < rc.pontos_necessarios) { alert('Pontos insuficientes.'); return; }
+  if (!confirm(`Resgatar "${rc.nome}" por ${rc.pontos_necessarios.toLocaleString('pt-BR')} pontos?\n\nUm cupom será gerado para você apresentar na loja.`)) return;
+  pedirPinParaResgate(() => executarResgate(rc));
+}
+
+async function executarResgate(rc) {
+  if (!clienteId) return;
+  const codigo = gerarCodigoCupom();
+  const regras = getRegrasCliente();
+  const validade = new Date();
+  validade.setDate(validade.getDate() + (regras.validadeCupom || 30));
+  try {
+    // 1. Criar resgate com cupom
+    const rr = await fetch(`${SUPA_URL}/rest/v1/resgate`, {
+      method: 'POST', headers: { ...SH, Prefer: 'return=representation' },
+      body: JSON.stringify({
+        cliente_id: clienteId,
+        recompensa_id: rc.id,
+        recompensa: rc.nome,
+        pontos_usados: rc.pontos_necessarios,
+        codigo_cupom: codigo,
+        validade: validade.toISOString(),
+        status: 'aprovado'
+      })
+    });
+    if (!rr.ok) throw new Error('Erro ao criar resgate');
+
+    // 2. Descontar pontos
+    const rp = await fetch(`${SUPA_URL}/rest/v1/pontos?cliente_id=eq.${clienteId}`, { headers: SH });
+    const dp = await rp.json();
+    if (dp[0]) {
+      const novoSaldo = Math.max(0, dp[0].saldo - rc.pontos_necessarios);
+      await fetch(`${SUPA_URL}/rest/v1/pontos?cliente_id=eq.${clienteId}`, {
+        method: 'PATCH', headers: SH,
+        body: JSON.stringify({ saldo: novoSaldo, total_usado: dp[0].total_usado + rc.pontos_necessarios })
+      });
+      saldoAtualCliente = novoSaldo;
+      document.querySelectorAll('.pts-val, #saldo-pts').forEach(el => el.textContent = novoSaldo.toLocaleString('pt-BR'));
+    }
+
+    // 3. Mostrar cupom
+    alert(`Resgate confirmado!\n\nSeu cupom: ${codigo}\n\nApresente este código na loja para retirar:\n"${rc.nome}"\n\nVálido até ${validade.toLocaleDateString('pt-BR')}`);
+
+    // 4. Atualizar vitrine e cupons
+    await carregarVitrine(saldoAtualCliente);
+    await carregarMeusCupons();
+  } catch(e) {
+    console.error('executarResgate:', e);
+    alert('Erro ao processar resgate. Tente novamente.');
+  }
+}
+
+// Compat: manter função para código legado
+function atualizarStatusResgate(pts) {
+  saldoAtualCliente = pts;
+  carregarVitrine(pts);
+  carregarMeusCupons();
 }
 
 // Carregar estatísticas reais do banco
@@ -1432,45 +1543,7 @@ async function buscarTransacoes(clienteId) {
   } catch(e) { return []; }
 }
 
-// Buscar resgates do cliente
-async function buscarResgates(clienteId) {
-  try {
-    const r = await fetch(`${SUPA_URL}/rest/v1/resgate?cliente_id=eq.${clienteId}&order=created_at.desc`, { headers: SH });
-    return await r.json();
-  } catch(e) { return []; }
-}
-
-// Solicitar resgate
-async function solicitarResgate(cId, recompensa, pontos) {
-  try {
-    const r = await fetch(`${SUPA_URL}/rest/v1/resgate`, {
-      method: 'POST', headers: { ...SH, Prefer: 'return=representation' },
-      body: JSON.stringify({ cliente_id: cId, recompensa, pontos_usados: pontos, status: 'pendente' })
-    });
-    return r.ok;
-  } catch(e) { return false; }
-}
-
-// Wrapper chamado pelo botão Resgatar — agora exige PIN se cadastrado
-async function fazerResgate() {
-  if (!clienteId) return alert('Erro: cliente não identificado');
-  const regras = getRegrasCliente();
-  if (!confirm(`Deseja resgatar R$${regras.valorCupom} usando ${regras.metaPontos.toLocaleString('pt-BR')} pontos?\n\nCondições:\n• Válido para compras acima de R$${regras.compraMinima}\n• Prazo: ${regras.validadeCupom} dias para usar\n• Cupom expirado = perda dos pontos`)) return;
-
-  // Pedir PIN antes de prosseguir (se o cliente tiver PIN)
-  pedirPinParaResgate(async () => {
-    const btn = document.getElementById('btn-resgatar');
-    if (btn) { btn.disabled = true; btn.textContent = 'Aguarde...'; }
-    const ok = await solicitarResgate(clienteId, `Desconto R$${regras.valorCupom}`, regras.metaPontos);
-    if (ok) {
-      alert('Resgate solicitado! Aguarde aprovação.\n\n⏰ Você terá ' + regras.validadeCupom + ' dias para usar o cupom.');
-      if (btn) btn.style.display = 'none';
-    } else {
-      alert('Erro ao solicitar resgate. Tente novamente.');
-    }
-    if (btn) { btn.disabled = false; btn.textContent = 'Resgatar'; }
-  });
-}
+// (Funções de resgate movidas para seção VITRINE DE RECOMPENSAS acima)
 // ── PIN DE SEGURANÇA ─────────────────────────────────────
 let clientePinHash = null; // hash do PIN carregado do banco
 let pinResgateCallback = null; // callback após verificação do PIN no resgate

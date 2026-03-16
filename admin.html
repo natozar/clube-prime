@@ -243,8 +243,24 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom))}
         <div id="clientes-lista"><div style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Nenhum cliente cadastrado ainda</div></div>>
       </div>
       <div class="sec-card">
-        <div class="sec-title">⏳ Resgates Pendentes <span id="badge-resgates" style="background:var(--red);color:#fff;border-radius:10px;padding:1px 7px;font-size:9px;display:none">0</span></div>
-        <div id="resgates-lista" style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Nenhum resgate pendente</div>
+        <div class="sec-title">🎫 Validar Cupom</div>
+        <div style="font-size:11px;color:var(--gray);margin-bottom:10px">Busque o código do cupom que o cliente apresentar na loja</div>
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <input class="fi" id="busca-cupom" placeholder="Ex: CP-A3B7X2" style="flex:1;text-transform:uppercase;font-family:'Fira Code',monospace;letter-spacing:2px">
+          <button class="btn bg" onclick="buscarCupom()" style="white-space:nowrap">Buscar</button>
+        </div>
+        <div id="cupom-resultado"></div>
+      </div>
+      <div class="sec-card">
+        <div class="sec-title">📋 Resgates Recentes</div>
+        <div id="resgates-lista" style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Carregando...</div>
+      </div>
+
+      <!-- CATÁLOGO DE RECOMPENSAS -->
+      <div class="sec-card">
+        <div class="sec-title">🎁 Catálogo de Recompensas <button class="btn bg bsm" onclick="abrirModalRecompensa()">+ Recompensa</button></div>
+        <div style="font-size:11px;color:var(--gray);margin-bottom:12px">Produtos/prêmios que os clientes podem trocar por pontos</div>
+        <div id="recompensas-lista" style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Carregando...</div>
       </div>
 
       <!-- REGRAS DE PONTUAÇÃO -->
@@ -328,6 +344,22 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom))}
           <input class="si" id="busca-prod" placeholder="Buscar produto..." oninput="renderizarProdutos()">
         </div>
         <div id="prod-lista"><div style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Carregando...</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL RECOMPENSA -->
+  <div class="mo" id="mo-recomp">
+    <div class="md">
+      <div class="md-handle"></div>
+      <div class="md-title" id="mo-recomp-title">Nova Recompensa</div>
+      <input type="hidden" id="recomp-edit-id">
+      <div class="fl"><label class="flabel">Nome do prêmio *</label><input class="fi" id="recomp-nome" placeholder="Ex: Kit Churrasco Premium"></div>
+      <div class="fl"><label class="flabel">Descrição</label><input class="fi" id="recomp-desc" placeholder="Ex: 1kg picanha + 1kg linguiça + tempero"></div>
+      <div class="fl"><label class="flabel">Pontos necessários *</label><input class="fi" id="recomp-pontos" type="number" min="100" step="100" placeholder="Ex: 3000"></div>
+      <div class="md-actions" style="margin-top:12px">
+        <button class="btn bo" onclick="document.getElementById('mo-recomp').classList.remove('open')">Cancelar</button>
+        <button class="btn bg" onclick="salvarRecompensa()">Salvar</button>
       </div>
     </div>
   </div>
@@ -642,52 +674,106 @@ async function registrarCompra(clienteId, valorReais) {
   }
 }
 
-// Listar resgates pendentes
+// Listar resgates recentes
 async function listarResgatesPendentes() {
   try {
-    const r = await fetch(`${SUPA_URL}/rest/v1/resgate?status=eq.pendente&select=*,clientes(nome,codigo)&order=created_at.desc`, { headers: SH });
+    const r = await fetch(`${SUPA_URL}/rest/v1/resgate?select=*,clientes(nome,codigo),recompensas(nome)&order=created_at.desc&limit=20`, { headers: SH });
     const lista = await r.json();
     const el = document.getElementById('resgates-lista');
-    if(!el) return lista;
-    if(!lista.length){ el.innerHTML='<p style="opacity:.5;padding:8px">Nenhum resgate pendente</p>'; return lista; }
-    el.innerHTML = lista.map(r=>`
-      <div style="padding:10px 0;border-bottom:1px solid #333">
-        <div style="display:flex;justify-content:space-between;margin-bottom:6px">
-          <strong>${r.clientes?.nome || '—'}</strong>
-          <span style="opacity:.6;font-size:12px">${new Date(r.created_at).toLocaleDateString('pt-BR')}</span>
+    if (!el) return lista;
+    if (!Array.isArray(lista) || !lista.length) {
+      el.innerHTML = '<p style="opacity:.5;padding:8px">Nenhum resgate ainda</p>';
+      return lista;
+    }
+    const statusMap = {
+      aprovado: { cor: '#27ae60', txt: 'Ativo' },
+      utilizado: { cor: 'var(--gray)', txt: 'Utilizado' },
+      recusado: { cor: '#c0392b', txt: 'Recusado' },
+      pendente: { cor: '#f39c12', txt: 'Pendente' },
+      expirado: { cor: '#666', txt: 'Expirado' }
+    };
+    el.innerHTML = lista.map(rg => {
+      const st = statusMap[rg.status] || { cor: '#888', txt: rg.status };
+      const dt = new Date(rg.created_at).toLocaleDateString('pt-BR');
+      const nome = rg.recompensas?.nome || rg.recompensa || '—';
+      const cupom = rg.codigo_cupom || '—';
+      return `
+      <div style="padding:8px 0;border-bottom:1px solid #333;display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-weight:600">${rg.clientes?.nome || '—'}</div>
+          <div style="font-size:11px;color:var(--gray)">${nome} · ${rg.pontos_usados} pts · ${dt}</div>
         </div>
-        <div style="opacity:.7;font-size:13px;margin-bottom:8px">${r.recompensa} · ${r.pontos_usados} pts</div>
-        <div style="display:flex;gap:8px">
-          <button onclick="atualizarResgate(${r.id},'aprovado',${r.cliente_id},${r.pontos_usados})" style="background:#27ae60;color:#fff;border:none;padding:6px 14px;border-radius:6px;cursor:pointer">✓ Aprovar</button>
-          <button onclick="atualizarResgate(${r.id},'recusado',${r.cliente_id},0)" style="background:#c0392b;color:#fff;border:none;padding:6px 14px;border-radius:6px;cursor:pointer">✗ Recusar</button>
+        <div style="text-align:right">
+          <div style="font-family:'Fira Code',monospace;font-size:12px;letter-spacing:1px;color:var(--gold)">${cupom}</div>
+          <div style="font-size:10px;color:${st.cor};font-weight:600">${st.txt}</div>
         </div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
     return lista;
-  } catch(e) { console.error('listarResgatesPendentes',e); return []; }
+  } catch(e) { console.error('listarResgatesPendentes', e); return []; }
 }
 
-// Aprovar ou recusar resgate
-async function atualizarResgate(id, status, clienteId, pontos) {
+// Buscar cupom para validação
+async function buscarCupom() {
+  const input = document.getElementById('busca-cupom');
+  const el = document.getElementById('cupom-resultado');
+  const codigo = input.value.trim().toUpperCase();
+  if (!codigo) { el.innerHTML = ''; return; }
+  try {
+    const r = await fetch(`${SUPA_URL}/rest/v1/resgate?codigo_cupom=eq.${codigo}&select=*,clientes(nome,codigo,telefone),recompensas(nome)`, { headers: SH });
+    const lista = await r.json();
+    if (!Array.isArray(lista) || !lista.length) {
+      el.innerHTML = '<div style="padding:12px;background:rgba(192,57,43,.1);border-radius:8px;color:#e74c3c;font-size:13px">Cupom não encontrado</div>';
+      return;
+    }
+    const rg = lista[0];
+    const nome = rg.recompensas?.nome || rg.recompensa || '—';
+    const validade = rg.validade ? new Date(rg.validade).toLocaleDateString('pt-BR') : '—';
+    const expirado = rg.validade && new Date(rg.validade) < new Date();
+    if (rg.status === 'utilizado') {
+      el.innerHTML = `<div style="padding:12px;background:rgba(100,100,100,.1);border-radius:8px;font-size:13px;color:var(--gray)">
+        Este cupom já foi utilizado em ${rg.aprovado_em ? new Date(rg.aprovado_em).toLocaleDateString('pt-BR') : '—'}
+      </div>`;
+    } else if (expirado) {
+      el.innerHTML = `<div style="padding:12px;background:rgba(192,57,43,.1);border-radius:8px;font-size:13px;color:#e74c3c">
+        Cupom expirado em ${validade}
+      </div>`;
+    } else {
+      el.innerHTML = `
+      <div style="padding:14px;background:rgba(39,174,96,.08);border:1px solid rgba(39,174,96,.3);border-radius:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div>
+            <div style="font-weight:700;font-size:15px;color:var(--gold-light)">${nome}</div>
+            <div style="font-size:12px;color:var(--gray);margin-top:2px">${rg.pontos_usados.toLocaleString('pt-BR')} pts</div>
+          </div>
+          <div style="font-family:'Fira Code',monospace;font-size:18px;font-weight:700;color:#27ae60;letter-spacing:2px">${codigo}</div>
+        </div>
+        <div style="font-size:12px;color:var(--gray);margin-bottom:10px">
+          Cliente: <strong>${rg.clientes?.nome || '—'}</strong> · Válido até ${validade}
+        </div>
+        <button onclick="marcarCupomUtilizado(${rg.id})" style="width:100%;background:#27ae60;color:#fff;border:none;padding:10px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:.5px">
+          ✓ MARCAR COMO UTILIZADO
+        </button>
+      </div>`;
+    }
+  } catch(e) {
+    el.innerHTML = '<div style="padding:12px;color:#e74c3c">Erro ao buscar cupom</div>';
+  }
+}
+
+// Marcar cupom como utilizado
+async function marcarCupomUtilizado(id) {
+  if (!confirm('Confirma que o cliente retirou o produto/prêmio?')) return;
   try {
     const rr = await fetch(`${SUPA_URL}/rest/v1/resgate?id=eq.${id}`, {
       method: 'PATCH', headers: SH,
-      body: JSON.stringify({ status, aprovado_em: new Date().toISOString() })
+      body: JSON.stringify({ status: 'utilizado', aprovado_em: new Date().toISOString() })
     });
-    if (!rr.ok) throw new Error('Erro ao atualizar resgate');
-    if (status === 'aprovado') {
-      const r = await fetch(`${SUPA_URL}/rest/v1/pontos?cliente_id=eq.${clienteId}`, { headers: SH });
-      const d = await r.json();
-      const atual = d[0];
-      if (!atual) throw new Error('Saldo do cliente não encontrado');
-      const novoSaldo = Math.max(0, atual.saldo - pontos);
-      await fetch(`${SUPA_URL}/rest/v1/pontos?cliente_id=eq.${clienteId}`, {
-        method: 'PATCH', headers: SH,
-        body: JSON.stringify({ saldo: novoSaldo, total_usado: atual.total_usado + pontos })
-      });
-    }
-    listarResgatesPendentes(); // Atualiza a lista após aprovar/recusar
-    return true;
-  } catch(e) { console.error('atualizarResgate:', e); alert('Erro: ' + e.message); return false; }
+    if (!rr.ok) throw new Error('Erro ao atualizar');
+    document.getElementById('cupom-resultado').innerHTML = '<div style="padding:12px;background:rgba(39,174,96,.1);border-radius:8px;color:#27ae60;font-size:13px;font-weight:600">Cupom validado com sucesso!</div>';
+    document.getElementById('busca-cupom').value = '';
+    await listarResgatesPendentes();
+  } catch(e) { alert('Erro: ' + e.message); }
 }
 
 // Cadastrar novo cliente pelo admin
@@ -715,6 +801,7 @@ async function carregarDadosAdmin() {
   carregarRegras();
   await listarClientes();
   await listarResgatesPendentes();
+  await listarRecompensas();
   await listarAniversariantes();
   await carregarEstatisticas();
 }
@@ -1276,6 +1363,77 @@ function atualizarSelectsCat() {
     sel.innerHTML = opts + ativas.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
     sel.value = val;
   });
+}
+
+// ── RECOMPENSAS (CRUD) ───────────────────────────────────
+let recompensasCache = [];
+
+async function listarRecompensas() {
+  try {
+    const r = await fetch(`${SUPA_URL}/rest/v1/recompensas?select=*&order=pontos_necessarios.asc`, { headers: SH });
+    const lista = await r.json();
+    recompensasCache = Array.isArray(lista) ? lista : [];
+    const el = document.getElementById('recompensas-lista');
+    if (!el) return;
+    if (!recompensasCache.length) {
+      el.innerHTML = '<p style="opacity:.5;padding:8px">Nenhuma recompensa cadastrada</p>';
+      return;
+    }
+    el.innerHTML = recompensasCache.map(rc => `
+      <div style="padding:10px 0;border-bottom:1px solid #333;display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-weight:600;color:${rc.ativo ? 'var(--gold-light)' : 'var(--gray)'}">${rc.ativo ? '' : '⏸ '}${rc.nome}</div>
+          <div style="font-size:11px;color:var(--gray);margin-top:2px">${rc.descricao || '—'}</div>
+        </div>
+        <div style="text-align:right;min-width:120px">
+          <div style="font-size:16px;font-weight:700;color:var(--gold)">${rc.pontos_necessarios.toLocaleString('pt-BR')} pts</div>
+          <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:4px">
+            <button onclick="editarRecompensa(${rc.id})" style="background:none;border:1px solid var(--gold-dark);color:var(--gold);padding:3px 8px;border-radius:4px;cursor:pointer;font-size:10px">Editar</button>
+            <button onclick="toggleRecompensa(${rc.id},${rc.ativo})" style="background:none;border:1px solid ${rc.ativo ? '#c0392b' : '#27ae60'};color:${rc.ativo ? '#c0392b' : '#27ae60'};padding:3px 8px;border-radius:4px;cursor:pointer;font-size:10px">${rc.ativo ? 'Desativar' : 'Ativar'}</button>
+          </div>
+        </div>
+      </div>`).join('');
+  } catch(e) { console.error('listarRecompensas:', e); }
+}
+
+function abrirModalRecompensa(id) {
+  document.getElementById('recomp-edit-id').value = id || '';
+  const rc = id ? recompensasCache.find(r => r.id === id) : null;
+  document.getElementById('recomp-nome').value = rc ? rc.nome : '';
+  document.getElementById('recomp-desc').value = rc ? (rc.descricao || '') : '';
+  document.getElementById('recomp-pontos').value = rc ? rc.pontos_necessarios : '';
+  document.getElementById('mo-recomp-title').textContent = id ? 'Editar Recompensa' : 'Nova Recompensa';
+  document.getElementById('mo-recomp').classList.add('open');
+}
+
+function editarRecompensa(id) { abrirModalRecompensa(id); }
+
+async function salvarRecompensa() {
+  const id = document.getElementById('recomp-edit-id').value;
+  const nome = document.getElementById('recomp-nome').value.trim();
+  const desc = document.getElementById('recomp-desc').value.trim();
+  const pontos = parseInt(document.getElementById('recomp-pontos').value);
+  if (!nome || !pontos || pontos <= 0) { alert('Preencha nome e pontos.'); return; }
+  const body = { nome, descricao: desc || null, pontos_necessarios: pontos };
+  try {
+    if (id) {
+      await fetch(`${SUPA_URL}/rest/v1/recompensas?id=eq.${id}`, { method: 'PATCH', headers: SH, body: JSON.stringify(body) });
+    } else {
+      await fetch(`${SUPA_URL}/rest/v1/recompensas`, { method: 'POST', headers: SH, body: JSON.stringify(body) });
+    }
+    document.getElementById('mo-recomp').classList.remove('open');
+    await listarRecompensas();
+  } catch(e) { alert('Erro ao salvar: ' + e.message); }
+}
+
+async function toggleRecompensa(id, atual) {
+  if (!confirm(atual ? 'Desativar esta recompensa?' : 'Reativar esta recompensa?')) return;
+  try {
+    await fetch(`${SUPA_URL}/rest/v1/recompensas?id=eq.${id}`, {
+      method: 'PATCH', headers: SH, body: JSON.stringify({ ativo: !atual })
+    });
+    await listarRecompensas();
+  } catch(e) { alert('Erro: ' + e.message); }
 }
 
 function abrirModalCat(id) {
