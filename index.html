@@ -1220,8 +1220,9 @@ document.getElementById('notif-deny-btn').addEventListener('click', () => {
 const SUPA_URL = 'https://mrourzdxrahpysscckxm.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1yb3VyemR4cmFocHlzc2Nja3htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODMzMTUsImV4cCI6MjA4ODU1OTMxNX0.A4ueyDJgOu4cbxcHxsMTDBNHkxAOUlWFoYuv88LdnU4';
 const SH = { apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}`, 'Content-Type': 'application/json' };
-// Sanitização contra XSS
-function sanitize(str) { return typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(str) : str; }
+// Sanitização contra XSS (fallback seguro caso DOMPurify falhe no carregamento)
+function escapeHTML(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+function sanitize(str) { return typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(str) : escapeHTML(String(str)); }
 
 // ── REGRAS DE PONTUAÇÃO (sincronizadas com admin) ──────
 const REGRAS_DEFAULT = {
@@ -1354,8 +1355,8 @@ async function carregarVitrine(saldo) {
       <div style="padding:12px 0;border-bottom:1px solid rgba(201,168,76,.12);display:flex;align-items:center;gap:12px">
         <div style="font-size:28px;min-width:40px;text-align:center">🎁</div>
         <div style="flex:1">
-          <div style="font-weight:600;color:var(--gold-light);font-size:14px">${rc.nome}</div>
-          <div style="font-size:11px;color:var(--gray);margin-top:2px">${rc.descricao || ''}</div>
+          <div style="font-weight:600;color:var(--gold-light);font-size:14px">${sanitize(rc.nome)}</div>
+          <div style="font-size:11px;color:var(--gray);margin-top:2px">${sanitize(rc.descricao || '')}</div>
         </div>
         <div style="text-align:right;min-width:90px">
           <div style="font-size:14px;font-weight:700;color:var(--gold)">${rc.pontos_necessarios.toLocaleString('pt-BR')} pts</div>
@@ -1399,7 +1400,7 @@ async function carregarMeusCupons() {
       <div style="padding:10px 0;border-bottom:1px solid rgba(201,168,76,.1)">
         <div style="display:flex;justify-content:space-between;align-items:center">
           <div>
-            <div style="font-weight:600;color:var(--gold-light);font-size:13px">${st.icon} ${nome}</div>
+            <div style="font-weight:600;color:var(--gold-light);font-size:13px">${st.icon} ${sanitize(nome)}</div>
             <div style="font-size:11px;color:var(--gray);margin-top:2px">${rg.pontos_usados.toLocaleString('pt-BR')} pts · ${dt}</div>
           </div>
           <div style="text-align:right">
@@ -1949,7 +1950,7 @@ function renderizarCardapioCliente() {
     const catProds = prods.filter(p => p.categoria_id === cat.id).sort((a,b) => (a.ordem||0) - (b.ordem||0) || a.nome.localeCompare(b.nome, 'pt-BR'));
     if (!catProds.length) return;
     html += `<div class="cardapio-cat">
-      <div class="cardapio-cat-header">${cat.nome} <span style="font-size:10px;opacity:.5">${catProds.length}</span></div>`;
+      <div class="cardapio-cat-header">${sanitize(cat.nome)} <span style="font-size:10px;opacity:.5">${catProds.length}</span></div>`;
     catProds.forEach(p => {
       const qty = pedidoAtual[p.id]?.qty || 0;
       const obs = pedidoAtual[p.id]?.obs || '';
@@ -1959,8 +1960,8 @@ function renderizarCardapioCliente() {
       html += `<div class="cardapio-item">
         <button class="fav-btn ${isFav?'active':''}" onclick="toggleFavorito(${p.id},this)">${isFav?'❤️':'🤍'}</button>
         <div class="cardapio-item-info">
-          <div class="cardapio-item-nome">${p.nome}${badge}</div>
-          <div class="cardapio-item-apres">${p.apresentacao||''}</div>
+          <div class="cardapio-item-nome">${sanitize(p.nome)}${badge}</div>
+          <div class="cardapio-item-apres">${sanitize(p.apresentacao||'')}</div>
           ${qty > 0 ? `<input class="fi" style="margin-top:6px;padding:6px 10px;font-size:11px" placeholder="Obs: sem tempero, corte fino..." value="${obs.replace(/"/g,'&quot;')}" onchange="setObsItem(${p.id},this.value)">` : ''}
         </div>
         <div class="cardapio-qty">
@@ -2052,9 +2053,9 @@ function renderizarItensPedido() {
         <button onclick="alterarQtdPedido(${id},1)">+</button>
       </div>
       <div style="flex:1;min-width:0">
-        <div style="font-size:13px;color:var(--white)">${p.nome}</div>
-        <div style="font-size:10px;color:var(--gray)">${p.apresentacao||''}</div>
-        ${item.obs ? `<div style="font-size:10px;color:var(--gold);margin-top:2px">↳ ${item.obs}</div>` : ''}
+        <div style="font-size:13px;color:var(--white)">${sanitize(p.nome)}</div>
+        <div style="font-size:10px;color:var(--gray)">${sanitize(p.apresentacao||'')}</div>
+        ${item.obs ? `<div style="font-size:10px;color:var(--gold);margin-top:2px">↳ ${sanitize(item.obs)}</div>` : ''}
       </div>
     </div>`;
   }).join('');
