@@ -865,8 +865,7 @@ async function goApp() {
         btn.disabled = false;
         return;
       }
-      const codigo = gerarCodigo(nome);
-      cliente = await cadastrarCliente({ nome, telefone: tel, nascimento: nasc || null, codigo, status: 'ativo' });
+      cliente = await cadastrarCliente({ nome, telefone: tel });
 
       if (cliente) {
         preencherTela(cliente, 0);
@@ -1271,34 +1270,25 @@ async function buscarCliente(telefone) {
   }
 }
 
-// Cadastrar novo cliente
+// Cadastrar novo cliente via RPC server-side (cria cliente + pontos atomicamente)
 async function cadastrarCliente(dados) {
   try {
-    const r = await fetch(`${SUPA_URL}/rest/v1/clientes`, {
-      method: 'POST', headers: { ...SH, Prefer: 'return=representation' },
-      body: JSON.stringify(dados)
+    const r = await fetch(`${SUPA_URL}/rest/v1/rpc/cadastrar_cliente_com_pontos`, {
+      method: 'POST', headers: SH,
+      body: JSON.stringify({
+        p_nome: dados.nome,
+        p_telefone: dados.telefone,
+        p_indicado_por: null // indicação pode ser adicionada futuramente
+      })
     });
     const d = await r.json();
-    if (!r.ok) {
-      console.error('Erro ao cadastrar cliente:', d);
-      throw new Error(d.message || d.details || 'Erro no cadastro');
+    if (!d || !d.ok) {
+      throw new Error(d?.erro || 'Erro no cadastro');
     }
-    const cliente = Array.isArray(d) ? d[0] : d;
-    if (!cliente || !cliente.id) throw new Error('Resposta inesperada do servidor');
-    // Criar saldo de pontos zerado
-    const rp = await fetch(`${SUPA_URL}/rest/v1/pontos`, {
-      method: 'POST', headers: { ...SH, Prefer: 'return=representation' },
-      body: JSON.stringify({ cliente_id: cliente.id, saldo: 0, total_ganho: 0, total_usado: 0 })
-    });
-    if (!rp.ok) {
-      const dp = await rp.json();
-      console.error('Erro ao criar pontos:', dp);
-      // Não bloqueia — cliente foi criado, pontos podem ser criados depois
-    }
-    return cliente;
+    return d.cliente;
   } catch(e) {
     console.error('cadastrarCliente exception:', e);
-    throw e; // Propaga para o goApp() tratar e exibir mensagem real
+    throw e;
   }
 }
 
@@ -1437,38 +1427,31 @@ async function executarResgate(rc) {
   const validade = new Date();
   validade.setDate(validade.getDate() + (regras.validadeCupom || 30));
   try {
-    // 1. Criar resgate com cupom
-    const rr = await fetch(`${SUPA_URL}/rest/v1/resgate`, {
-      method: 'POST', headers: { ...SH, Prefer: 'return=representation' },
+    // Resgate atômico via RPC server-side (valida saldo + desconta + cria resgate)
+    const rr = await fetch(`${SUPA_URL}/rest/v1/rpc/executar_resgate_cliente`, {
+      method: 'POST', headers: SH,
       body: JSON.stringify({
-        cliente_id: clienteId,
-        recompensa_id: rc.id,
-        recompensa: rc.nome,
-        pontos_usados: rc.pontos_necessarios,
-        codigo_cupom: codigo,
-        validade: validade.toISOString(),
-        status: 'aprovado'
+        p_cliente_id: clienteId,
+        p_recompensa_id: rc.id,
+        p_codigo_cupom: codigo,
+        p_validade: validade.toISOString()
       })
     });
-    if (!rr.ok) throw new Error('Erro ao criar resgate');
+    const resultado = await rr.json();
 
-    // 2. Descontar pontos
-    const rp = await fetch(`${SUPA_URL}/rest/v1/pontos?cliente_id=eq.${clienteId}`, { headers: SH });
-    const dp = await rp.json();
-    if (dp[0]) {
-      const novoSaldo = Math.max(0, dp[0].saldo - rc.pontos_necessarios);
-      await fetch(`${SUPA_URL}/rest/v1/pontos?cliente_id=eq.${clienteId}`, {
-        method: 'PATCH', headers: SH,
-        body: JSON.stringify({ saldo: novoSaldo, total_usado: dp[0].total_usado + rc.pontos_necessarios })
-      });
-      saldoAtualCliente = novoSaldo;
-      document.querySelectorAll('.pts-val, #saldo-pts').forEach(el => el.textContent = novoSaldo.toLocaleString('pt-BR'));
+    if (!resultado || !resultado.ok) {
+      alert(resultado?.erro || 'Erro ao processar resgate. Tente novamente.');
+      return;
     }
 
-    // 3. Mostrar cupom
-    alert(`Resgate confirmado!\n\nSeu cupom: ${codigo}\n\nApresente este código na loja para retirar:\n"${rc.nome}"\n\nVálido até ${validade.toLocaleDateString('pt-BR')}`);
+    // Atualizar saldo local
+    saldoAtualCliente = resultado.novo_saldo;
+    document.querySelectorAll('.pts-val, #saldo-pts').forEach(el => el.textContent = resultado.novo_saldo.toLocaleString('pt-BR'));
 
-    // 4. Atualizar vitrine e cupons
+    // Mostrar cupom
+    alert(`Resgate confirmado!\n\nSeu cupom: ${resultado.codigo_cupom}\n\nApresente este código na loja para retirar:\n"${resultado.recompensa}"\n\nVálido até ${validade.toLocaleDateString('pt-BR')}`);
+
+    // Atualizar vitrine e cupons
     await carregarVitrine(saldoAtualCliente);
     await carregarMeusCupons();
   } catch(e) {
@@ -1614,16 +1597,16 @@ async function verificarPinCliente(cId) {
   }
 }
 
-// Salvar PIN no banco (coluna pin_hash na tabela clientes)
+// Salvar PIN no banco via RPC server-side (com validação)
 async function salvarPinNoBanco(cId, pinHash) {
   try {
-    const r = await fetch(`${SUPA_URL}/rest/v1/clientes?id=eq.${cId}`, {
-      method: 'PATCH',
-      headers: { ...SH, Prefer: 'return=representation' },
-      body: JSON.stringify({ pin_hash: pinHash, pin_reset_pedido: false })
+    const r = await fetch(`${SUPA_URL}/rest/v1/rpc/salvar_pin_cliente`, {
+      method: 'POST', headers: SH,
+      body: JSON.stringify({ p_cliente_id: cId, p_pin_hash: pinHash })
     });
-    if (r.ok) pinResetPedido = false;
-    return r.ok;
+    const d = await r.json();
+    if (d && d.ok) { pinResetPedido = false; return true; }
+    return false;
   } catch(e) { return false; }
 }
 
@@ -1743,20 +1726,31 @@ function abrirAlterarPin() {
   }, 300);
 }
 
-// Alterar PIN
+// Alterar PIN (verifica PIN atual via server-side)
 async function alterarPinSeguranca() {
   const erroEl = document.getElementById('pin-alterar-erro');
   const pinAtual = lerPin('apin-a');
   const pinNovo = lerPin('apin-n');
 
-  // Verificar PIN atual (se existir)
+  // Verificar PIN atual via server-side (se existir)
   if (clientePinHash) {
     if (pinAtual.length !== 4) {
       erroEl.textContent = 'Digite os 4 dígitos do PIN atual';
       return;
     }
-    if (hashPin(pinAtual) !== clientePinHash) {
-      erroEl.textContent = 'PIN atual incorreto';
+    erroEl.textContent = 'Verificando PIN atual...';
+    try {
+      const rv = await fetch(`${SUPA_URL}/rest/v1/rpc/verificar_pin_cliente`, {
+        method: 'POST', headers: SH,
+        body: JSON.stringify({ p_cliente_id: clienteId, p_pin_hash: hashPin(pinAtual) })
+      });
+      const dv = await rv.json();
+      if (!dv || !dv.ok) {
+        erroEl.textContent = dv?.bloqueado ? (dv.erro || 'Muitas tentativas. Aguarde 15 minutos.') : 'PIN atual incorreto';
+        return;
+      }
+    } catch(e) {
+      erroEl.textContent = 'Erro de conexão. Tente novamente.';
       return;
     }
   }
@@ -1770,6 +1764,7 @@ async function alterarPinSeguranca() {
     return;
   }
 
+  erroEl.textContent = 'Salvando...';
   const novoHash = hashPin(pinNovo);
   const ok = await salvarPinNoBanco(clienteId, novoHash);
 
@@ -1816,8 +1811,8 @@ function pedirPinParaResgate(callback) {
   setTimeout(() => document.getElementById('vpin-d1').focus(), 300);
 }
 
-// Confirmar PIN no resgate
-function confirmarPinResgate() {
+// Confirmar PIN no resgate (verificação server-side com rate limiting)
+async function confirmarPinResgate() {
   const pin = lerPin('vpin-d');
   const erroEl = document.getElementById('pin-verificar-erro');
 
@@ -1826,18 +1821,35 @@ function confirmarPinResgate() {
     return;
   }
 
-  if (hashPin(pin) !== clientePinHash) {
-    erroEl.textContent = 'PIN incorreto. Tente novamente.';
-    limparPin('vpin-d');
-    setTimeout(() => document.getElementById('vpin-d1').focus(), 100);
-    return;
-  }
+  erroEl.textContent = 'Verificando...';
 
-  // PIN correto — fechar modal e executar callback
-  document.getElementById('mo-pin-verificar').classList.remove('open');
-  if (pinResgateCallback) {
-    pinResgateCallback();
-    pinResgateCallback = null;
+  try {
+    const r = await fetch(`${SUPA_URL}/rest/v1/rpc/verificar_pin_cliente`, {
+      method: 'POST', headers: SH,
+      body: JSON.stringify({ p_cliente_id: clienteId, p_pin_hash: hashPin(pin) })
+    });
+    const d = await r.json();
+
+    if (d && d.ok) {
+      // PIN correto — fechar modal e executar callback
+      erroEl.textContent = '';
+      document.getElementById('mo-pin-verificar').classList.remove('open');
+      if (pinResgateCallback) {
+        pinResgateCallback();
+        pinResgateCallback = null;
+      }
+    } else if (d && d.bloqueado) {
+      erroEl.textContent = d.erro || 'Muitas tentativas. Aguarde 15 minutos.';
+      limparPin('vpin-d');
+    } else {
+      const restantes = d && d.tentativas_restantes !== undefined ? ` (${d.tentativas_restantes} restantes)` : '';
+      erroEl.textContent = (d?.erro || 'PIN incorreto.') + restantes;
+      limparPin('vpin-d');
+      setTimeout(() => document.getElementById('vpin-d1').focus(), 100);
+    }
+  } catch(e) {
+    erroEl.textContent = 'Erro de conexão. Tente novamente.';
+    limparPin('vpin-d');
   }
 }
 

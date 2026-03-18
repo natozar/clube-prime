@@ -459,9 +459,12 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom))}
 const SUPA_URL = 'https://mrourzdxrahpysscckxm.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1yb3VyemR4cmFocHlzc2Nja3htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODMzMTUsImV4cCI6MjA4ODU1OTMxNX0.A4ueyDJgOu4cbxcHxsMTDBNHkxAOUlWFoYuv88LdnU4';
 const SH = { apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}`, 'Content-Type': 'application/json' };
-// Headers autenticados para operações de escrita (usa token do admin quando disponível)
+// Headers autenticados para operações de escrita (EXIGE token do admin)
 function authHeaders() {
-  return { apikey: SUPA_KEY, Authorization: `Bearer ${authToken || SUPA_KEY}`, 'Content-Type': 'application/json' };
+  if (!authToken) {
+    throw new Error('Sessão expirada. Faça login novamente.');
+  }
+  return { apikey: SUPA_KEY, Authorization: `Bearer ${authToken}`, 'Content-Type': 'application/json' };
 }
 
 // ── SUPABASE AUTH ─────────────────────────────────────────
@@ -523,7 +526,7 @@ async function notificarCliente(clienteId, pontos, novoSaldo) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authToken || SUPA_KEY}`
+        'Authorization': `Bearer ${authToken}`
       },
       body: JSON.stringify({
         type: 'cliente',
@@ -542,7 +545,7 @@ async function enviarCampanha(titulo, mensagem, url) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authToken || SUPA_KEY}`
+        'Authorization': `Bearer ${authToken}`
       },
       body: JSON.stringify({
         type: 'campanha',
@@ -1034,7 +1037,7 @@ async function resetarPinClientePorId(cId, nomeCliente) {
     // 1. Limpar PIN no banco e marcar reset pedido
     const r = await fetch(`${SUPA_URL}/rest/v1/clientes?id=eq.${cId}`, {
       method: 'PATCH',
-      headers: { ...SH, Authorization: `Bearer ${authToken || SUPA_KEY}`, Prefer: 'return=representation' },
+      headers: { ...authHeaders(), Prefer: 'return=representation' },
       body: JSON.stringify({ pin_hash: null, pin_reset_pedido: true })
     });
 
@@ -1049,7 +1052,7 @@ async function resetarPinClientePorId(cId, nomeCliente) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken || SUPA_KEY}`
+          'Authorization': `Bearer ${authToken}`
         },
         body: JSON.stringify({
           type: 'pin_reset',
