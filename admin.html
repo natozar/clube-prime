@@ -515,6 +515,15 @@ OneSignalDeferred.push(async function(OneSignal) {
     notifyButton: { enable: false },
     allowLocalhostAsSecureOrigin: true,
   });
+  // Registrar este dispositivo como admin para receber notificações de novos clientes
+  try {
+    await OneSignal.User.addTag('role', 'admin');
+    // Pedir permissão de notificação se ainda não concedida
+    const permission = await OneSignal.Notifications.permission;
+    if (!permission) {
+      await OneSignal.Notifications.requestPermission();
+    }
+  } catch(e) { console.warn('OneSignal admin tag:', e); }
 });
 
 // Envia push notification para um cliente específico via Edge Function (server-side)

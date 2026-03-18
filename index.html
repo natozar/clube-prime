@@ -871,6 +871,8 @@ async function goApp() {
         preencherTela(cliente, 0);
         localStorage.setItem('clube_cliente_id', cliente.id);
         localStorage.setItem('clube_cliente_tel', tel);
+        // Notificar admin sobre novo cadastro (fire-and-forget)
+        notificarAdminNovoCliente(nome, tel);
         // Criar sessão segura
         salvarSessaoCliente(cliente);
       }
@@ -1219,6 +1221,17 @@ document.getElementById('notif-deny-btn').addEventListener('click', () => {
 const SUPA_URL = 'https://mrourzdxrahpysscckxm.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1yb3VyemR4cmFocHlzc2Nja3htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODMzMTUsImV4cCI6MjA4ODU1OTMxNX0.A4ueyDJgOu4cbxcHxsMTDBNHkxAOUlWFoYuv88LdnU4';
 const SH = { apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}`, 'Content-Type': 'application/json' };
+const ONESIGNAL_PUSH_URL = `${SUPA_URL}/functions/v1/onesignal-push`;
+
+// Notificar admin sobre novo cliente (fire-and-forget, não bloqueia o cadastro)
+function notificarAdminNovoCliente(nome, telefone) {
+  fetch(ONESIGNAL_PUSH_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}` },
+    body: JSON.stringify({ type: 'novo_cliente', nomeCliente: nome, telefoneCliente: telefone })
+  }).catch(() => {}); // silencioso — não deve afetar a experiência do cliente
+}
+
 // Sanitização contra XSS (fallback seguro caso DOMPurify falhe no carregamento)
 function escapeHTML(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 function sanitize(str) { return typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(str) : escapeHTML(String(str)); }
