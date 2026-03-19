@@ -327,7 +327,13 @@ body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
   </select>
   <input class="fi" id="inp-tel" type="tel" placeholder="99999-0000" style="flex:1">
 </div></div>
-      <div class="fl"><label class="flabel">Data de nascimento *</label><input class="fi" id="inp-nasc" type="date"></div>
+      <div class="fl"><label class="flabel">Data de nascimento *</label>
+        <div style="display:flex;gap:6px">
+          <select class="fi" id="inp-nasc-dia" style="flex:1;padding:11px 8px;cursor:pointer"><option value="">Dia</option></select>
+          <select class="fi" id="inp-nasc-mes" style="flex:1.2;padding:11px 8px;cursor:pointer"><option value="">Mês</option></select>
+          <select class="fi" id="inp-nasc-ano" style="flex:1.2;padding:11px 8px;cursor:pointer;font-size:14px;font-weight:600"><option value="">Ano</option></select>
+        </div>
+      </div>
       <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:14px">
         <input type="checkbox" id="chk-termos" style="margin-top:3px;accent-color:#C9A84C;width:16px;height:16px;flex-shrink:0">
         <label for="chk-termos" style="font-size:11px;color:#888;line-height:1.5">Li e concordo com os <a href="termos.html" target="_blank" style="color:#C9A84C">Termos de Uso e Política de Privacidade</a>. Autorizo o uso dos meus dados para operação do Clube Prime conforme a LGPD.</label>
@@ -453,7 +459,13 @@ body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
       <div class="sec-title">👤 Dados Básicos</div>
       <div class="fl"><label class="flabel">Nome completo</label><input class="fi" id="perfil-nome" value=""></div>
       <div class="fl"><label class="flabel">WhatsApp</label><input class="fi" id="perfil-tel" value="" type="tel" readonly></div>
-      <div class="fl"><label class="flabel">Data de nascimento</label><input class="fi" type="date" id="perfil-nasc" value=""></div>
+      <div class="fl"><label class="flabel">Data de nascimento</label>
+        <div style="display:flex;gap:6px">
+          <select class="fi" id="perfil-nasc-dia" style="flex:1;padding:11px 8px;cursor:pointer"><option value="">Dia</option></select>
+          <select class="fi" id="perfil-nasc-mes" style="flex:1.2;padding:11px 8px;cursor:pointer"><option value="">Mês</option></select>
+          <select class="fi" id="perfil-nasc-ano" style="flex:1.2;padding:11px 8px;cursor:pointer;font-size:14px;font-weight:600"><option value="">Ano</option></select>
+        </div>
+      </div>
       <button class="btn bg" style="margin-top:6px" onclick="salvarPerfil()">Salvar</button>
     </div>
 
@@ -824,7 +836,7 @@ async function goApp() {
   const pais = paisEl ? paisEl.value.replace('-CA','').replace('+','') : '55';
   const telRaw = document.getElementById('inp-tel').value.trim().replace(/\D/g,'');
   const tel = pais + telRaw;
-  const nasc = document.getElementById('inp-nasc').value;
+  const nasc = lerDataSelects('inp-nasc');
 
   if (!tel) {
     alert('Preencha o WhatsApp para continuar!');
@@ -1881,7 +1893,7 @@ function preencherPerfil(cliente) {
     const num = t.replace(/^55/,'');
     el('perfil-tel').value = num ? '(' + num.substring(0,2) + ') ' + num.substring(2) : '';
   }
-  if (el('perfil-nasc')) el('perfil-nasc').value = cliente.nascimento || '';
+  if (cliente.nascimento) setarDataSelects('perfil-nasc', cliente.nascimento);
   if (el('perfil-email')) el('perfil-email').value = cliente.email || '';
   if (el('inp-cpf') && cliente.cpf) el('inp-cpf').value = cliente.cpf;
   if (el('inp-cep') && cliente.cep) el('inp-cep').value = cliente.cep;
@@ -1896,7 +1908,7 @@ function preencherPerfil(cliente) {
 async function salvarPerfil() {
   if (!clienteId) return alert('Erro: cliente não identificado');
   const nome = document.getElementById('perfil-nome').value.trim();
-  const nasc = document.getElementById('perfil-nasc').value;
+  const nasc = lerDataSelects('perfil-nasc');
   if (!nome) return alert('Nome não pode ficar vazio');
   const ok = await atualizarCliente(clienteId, { nome, nascimento: nasc || null });
   if (ok) alert('Dados salvos com sucesso!');
@@ -1931,6 +1943,57 @@ async function salvarEndereco() {
   if (ok) alert('Endereço salvo com sucesso!');
   else alert('Erro ao salvar. Tente novamente.');
 }
+
+// ── DATA NASCIMENTO SELECTS ───────────────────────────────
+function popularSelectsData(prefixo) {
+  const diaEl = document.getElementById(prefixo + '-dia');
+  const mesEl = document.getElementById(prefixo + '-mes');
+  const anoEl = document.getElementById(prefixo + '-ano');
+  if (!diaEl || !mesEl || !anoEl) return;
+  // Dias 1-31
+  for (let d = 1; d <= 31; d++) {
+    const opt = document.createElement('option');
+    opt.value = String(d).padStart(2, '0');
+    opt.textContent = String(d).padStart(2, '0');
+    diaEl.appendChild(opt);
+  }
+  // Meses
+  const meses = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  meses.forEach((m, i) => {
+    const opt = document.createElement('option');
+    opt.value = String(i + 1).padStart(2, '0');
+    opt.textContent = m;
+    mesEl.appendChild(opt);
+  });
+  // Anos (decrescente, de ano atual até 1920)
+  const anoAtual = new Date().getFullYear();
+  for (let a = anoAtual; a >= 1920; a--) {
+    const opt = document.createElement('option');
+    opt.value = String(a);
+    opt.textContent = String(a);
+    anoEl.appendChild(opt);
+  }
+}
+function lerDataSelects(prefixo) {
+  const dia = document.getElementById(prefixo + '-dia')?.value;
+  const mes = document.getElementById(prefixo + '-mes')?.value;
+  const ano = document.getElementById(prefixo + '-ano')?.value;
+  if (!dia || !mes || !ano) return '';
+  return ano + '-' + mes + '-' + dia;
+}
+function setarDataSelects(prefixo, dataStr) {
+  if (!dataStr) return;
+  const partes = dataStr.split('-');
+  if (partes.length !== 3) return;
+  const anoEl = document.getElementById(prefixo + '-ano');
+  const mesEl = document.getElementById(prefixo + '-mes');
+  const diaEl = document.getElementById(prefixo + '-dia');
+  if (anoEl) anoEl.value = partes[0];
+  if (mesEl) mesEl.value = partes[1];
+  if (diaEl) diaEl.value = partes[2];
+}
+popularSelectsData('inp-nasc');
+popularSelectsData('perfil-nasc');
 
 // CPF mask
 const cpfInput=document.getElementById('inp-cpf');
