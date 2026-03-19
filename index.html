@@ -865,7 +865,7 @@ async function goApp() {
         btn.disabled = false;
         return;
       }
-      cliente = await cadastrarCliente({ nome, telefone: tel });
+      cliente = await cadastrarCliente({ nome, telefone: tel, nascimento: nasc || null });
 
       if (cliente) {
         preencherTela(cliente, 0);
@@ -1291,9 +1291,15 @@ async function cadastrarCliente(dados) {
       body: JSON.stringify({
         p_nome: dados.nome,
         p_telefone: dados.telefone,
+        p_nascimento: dados.nascimento || null,
         p_indicado_por: null // indicação pode ser adicionada futuramente
       })
     });
+    if (!r.ok) {
+      const errData = await r.json().catch(() => null);
+      console.error('Erro RPC cadastrar_cliente_com_pontos:', errData);
+      throw new Error(errData?.message || errData?.erro || 'Erro no cadastro. Verifique sua conexão.');
+    }
     const d = await r.json();
     if (!d || !d.ok) {
       throw new Error(d?.erro || 'Erro no cadastro');
