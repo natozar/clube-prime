@@ -1039,7 +1039,8 @@ function salvarSessaoCliente(cliente) {
     telefone: cliente.telefone,
     criadoEm: Date.now(),
     expiraEm: Date.now() + (30 * 24 * 60 * 60 * 1000), // 30 dias
-    ultimoAcesso: Date.now()
+    ultimoAcesso: Date.now(),
+    versao: SESSAO_VERSAO
   };
   localStorage.setItem('clube_sessao', JSON.stringify(sessao));
   return sessao;
@@ -1051,6 +1052,11 @@ function validarSessaoCliente() {
     const raw = localStorage.getItem('clube_sessao');
     if (!raw) return null;
     const sessao = JSON.parse(raw);
+    // Verificar versão — forçar logout se sessão antiga (segurança)
+    if (!sessao.versao || sessao.versao < SESSAO_VERSAO) {
+      limparSessaoCliente();
+      return null;
+    }
     // Verificar expiração
     if (!sessao.expiraEm || Date.now() > sessao.expiraEm) {
       limparSessaoCliente();
@@ -1619,47 +1625,64 @@ function limparPin(prefix) {
   });
 }
 
-// Hash simples do PIN (para não salvar em texto puro)
-function hashPin(pin) {
+// Versão da sessão — incrementar para forçar logout de todos os clientes
+const SESSAO_VERSAO = 2;
+
+// Chave de dispositivo — vincula o PIN ao celular do cliente
+function obterChaveDispositivo() {
+  let chave = localStorage.getItem('clube_chave_dispositivo');
+  if (!chave) {
+    chave = 'cd_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2) + '_' + Math.random().toString(36).slice(2);
+    localStorage.setItem('clube_chave_dispositivo', chave);
+  }
+  return chave;
+}
+
+// Hash do PIN vinculado ao dispositivo (chave_dispositivo + pin = hash único por aparelho)
+function hashPin(pin, chaveDispositivo) {
+  const chave = chaveDispositivo || obterChaveDispositivo();
   let hash = 0;
-  const salt = 'clube-prime-2024';
-  const str = salt + pin + salt;
+  const str = 'clube-prime-v2|' + chave + '|' + pin;
   for (let i = 0; i < str.length; i++) {
     hash = ((hash << 5) - hash) + str.charCodeAt(i);
     hash |= 0;
   }
-  return 'ph_' + Math.abs(hash).toString(36);
+  return 'ph2_' + Math.abs(hash).toString(36);
 }
 
 // Verificar se cliente tem PIN cadastrado (busca do banco)
 let pinResetPedido = false; // flag de reset solicitado pelo admin
+let clienteChaveDisp = null; // chave do dispositivo salva no banco
 
 async function verificarPinCliente(cId) {
   try {
-    const r = await fetch(`${SUPA_URL}/rest/v1/clientes?id=eq.${cId}&select=pin_hash,pin_reset_pedido`, { headers: SH });
+    const r = await fetch(`${SUPA_URL}/rest/v1/clientes?id=eq.${cId}&select=pin_hash,pin_reset_pedido,chave_dispositivo`, { headers: SH });
     const d = await r.json();
     if (d[0]) {
-      // Verificar se admin pediu reset
       pinResetPedido = d[0].pin_reset_pedido === true;
+      clienteChaveDisp = d[0].chave_dispositivo || null;
       if (d[0].pin_hash) {
         clientePinHash = d[0].pin_hash;
         return true;
       }
     }
     clientePinHash = null;
+    clienteChaveDisp = null;
     return false;
   } catch(e) {
     return false;
   }
 }
 
-// Salvar PIN no banco (coluna pin_hash na tabela clientes)
-async function salvarPinNoBanco(cId, pinHash) {
+// Salvar PIN no banco (pin_hash + chave_dispositivo na tabela clientes)
+async function salvarPinNoBanco(cId, pinHash, chaveDisp) {
   try {
+    const body = { pin_hash: pinHash, pin_reset_pedido: false };
+    if (chaveDisp) body.chave_dispositivo = chaveDisp;
     const r = await fetch(`${SUPA_URL}/rest/v1/clientes?id=eq.${cId}`, {
       method: 'PATCH',
       headers: { ...SH, Prefer: 'return=representation' },
-      body: JSON.stringify({ pin_hash: pinHash, pin_reset_pedido: false })
+      body: JSON.stringify(body)
     });
     if (r.ok) pinResetPedido = false;
     return r.ok;
@@ -1733,11 +1756,13 @@ async function salvarPinSeguranca() {
   const btn = document.getElementById('btn-salvar-pin');
   btn.textContent = 'Salvando...'; btn.disabled = true;
 
-  const pinHash = hashPin(pin);
-  const ok = await salvarPinNoBanco(clienteId, pinHash);
+  const chaveDisp = obterChaveDispositivo();
+  const pinHash = hashPin(pin, chaveDisp);
+  const ok = await salvarPinNoBanco(clienteId, pinHash, chaveDisp);
 
   if (ok) {
     clientePinHash = pinHash;
+    clienteChaveDisp = chaveDisp;
     document.getElementById('mo-pin-criar').classList.remove('open');
     atualizarPinPerfil(true);
     // Restaurar modal ao estado padrão (caso tenha sido aberto como obrigatório)
@@ -1788,13 +1813,15 @@ async function alterarPinSeguranca() {
   const pinAtual = lerPin('apin-a');
   const pinNovo = lerPin('apin-n');
 
+  const chaveDisp = obterChaveDispositivo();
+
   // Verificar PIN atual (se existir)
   if (clientePinHash) {
     if (pinAtual.length !== 4) {
       erroEl.textContent = 'Digite os 4 dígitos do PIN atual';
       return;
     }
-    if (hashPin(pinAtual) !== clientePinHash) {
+    if (hashPin(pinAtual, chaveDisp) !== clientePinHash) {
       erroEl.textContent = 'PIN atual incorreto';
       return;
     }
@@ -1809,11 +1836,12 @@ async function alterarPinSeguranca() {
     return;
   }
 
-  const novoHash = hashPin(pinNovo);
-  const ok = await salvarPinNoBanco(clienteId, novoHash);
+  const novoHash = hashPin(pinNovo, chaveDisp);
+  const ok = await salvarPinNoBanco(clienteId, novoHash, chaveDisp);
 
   if (ok) {
     clientePinHash = novoHash;
+    clienteChaveDisp = chaveDisp;
     document.getElementById('mo-pin-alterar').classList.remove('open');
     atualizarPinPerfil(true);
     alert('PIN alterado com sucesso!');
@@ -1865,7 +1893,7 @@ function confirmarPinResgate() {
     return;
   }
 
-  if (hashPin(pin) !== clientePinHash) {
+  if (hashPin(pin, obterChaveDispositivo()) !== clientePinHash) {
     erroEl.textContent = 'PIN incorreto. Tente novamente.';
     limparPin('vpin-d');
     setTimeout(() => document.getElementById('vpin-d1').focus(), 100);
@@ -1921,7 +1949,15 @@ async function confirmarPinLogin() {
     return;
   }
 
-  if (hashPin(pin) !== clientePinHash) {
+  // Verificar se este dispositivo é o dono da conta (chave_dispositivo deve bater)
+  const chaveLocal = localStorage.getItem('clube_chave_dispositivo');
+  if (!chaveLocal || !clienteChaveDisp || chaveLocal !== clienteChaveDisp) {
+    erroEl.textContent = 'Este dispositivo não está autorizado para esta conta. Procure o atendimento na loja.';
+    document.getElementById('btn-confirmar-pin-login').disabled = true;
+    return;
+  }
+
+  if (hashPin(pin, chaveLocal) !== clientePinHash) {
     const restantes = PIN_LOGIN_MAX_TENTATIVAS - pinLoginTentativas;
     erroEl.textContent = 'PIN incorreto.';
     tentEl.textContent = `${restantes} tentativa${restantes !== 1 ? 's' : ''} restante${restantes !== 1 ? 's' : ''}`;
@@ -1930,7 +1966,7 @@ async function confirmarPinLogin() {
     return;
   }
 
-  // PIN correto — completar login
+  // PIN correto + dispositivo correto — completar login
   erroEl.textContent = '';
   document.getElementById('mo-pin-login').classList.remove('open');
   await completarLogin(loginPendenteCliente, loginPendenteTel);
@@ -1972,16 +2008,19 @@ async function salvarPinLogin() {
   const btn = document.getElementById('btn-salvar-pin-login');
   btn.textContent = 'Salvando...'; btn.disabled = true;
 
-  const pinHash = hashPin(pin);
-  const ok = await salvarPinNoBanco(loginPendenteCliente.id, pinHash);
+  // Gerar chave única deste dispositivo e vincular ao PIN
+  const chaveDisp = obterChaveDispositivo();
+  const pinHash = hashPin(pin, chaveDisp);
+  const ok = await salvarPinNoBanco(loginPendenteCliente.id, pinHash, chaveDisp);
 
   if (ok) {
     clientePinHash = pinHash;
+    clienteChaveDisp = chaveDisp;
     document.getElementById('mo-pin-criar-login').classList.remove('open');
     await completarLogin(loginPendenteCliente, loginPendenteTel);
     loginPendenteCliente = null;
     loginPendenteTel = null;
-    alert('PIN criado com sucesso! Ele será pedido sempre que acessar sua conta.');
+    alert('PIN criado com sucesso! Ele está vinculado a este celular e será pedido sempre que acessar sua conta.');
   } else {
     erroEl.textContent = 'Erro ao salvar. Tente novamente.';
   }
