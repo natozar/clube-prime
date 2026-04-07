@@ -1084,6 +1084,7 @@ function limparSessaoCliente() {
   localStorage.removeItem('clube_cliente_tel');
   localStorage.removeItem('clube_cliente_dados');
   localStorage.removeItem('clube_cliente_saldo');
+  localStorage.removeItem('clube_chave_dispositivo');
 }
 
 // Renovar sessão (estende por mais 30 dias se estiver perto de expirar)
@@ -1161,56 +1162,61 @@ function atualizarLinkConvite() {
   if(el) el.textContent = getLinkConvite();
 }
 document.querySelectorAll('.mo').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open')}));
-let dp=null;
-const banner=document.getElementById('pwa-banner');
-const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream;
-const isStandalone=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone;
-const dismissed=localStorage.getItem('pwa-d');
-if(!isStandalone&&!(dismissed&&Date.now()-parseInt(dismissed)<86400000)){
-  if(isIOS){setTimeout(()=>banner.classList.add('show'),3000);document.getElementById('install-btn').textContent='Ver como';document.getElementById('install-btn').addEventListener('click',()=>{banner.classList.remove('show');document.getElementById('ios-modal').classList.add('open')});}
-  else{window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e;setTimeout(()=>banner.classList.add('show'),2000)});document.getElementById('install-btn').addEventListener('click',async()=>{if(dp){banner.classList.remove('show');dp.prompt();await dp.userChoice;dp=null}});}
-}
-document.getElementById('dismiss-btn').addEventListener('click',()=>{banner.classList.remove('show');localStorage.setItem('pwa-d',Date.now())});
 // ── SERVICE WORKER ────────────────────────────────────────
 if('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    // GitHub Pages usa subpasta /
-    const swPath = location.pathname.includes('/clube-prime') ? '/sw.js' : '/sw.js';
+    const swPath = location.pathname.includes('/clube-prime') ? '/clube-prime/sw.js' : '/sw.js';
     navigator.serviceWorker.register(swPath).catch(()=>{});
   });
 }
 
-// ── PWA INSTALL POPUP ─────────────────────────────────────
+// ── PWA INSTALL POPUP (consolidado) ──────────────────────
 let deferredPrompt = null;
 const pwaBanner = document.getElementById('pwa-banner');
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
 
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
-  // Não mostrou antes ou passou mais de 3 dias
-  const last = localStorage.getItem('pwa-dismissed');
-  const threeDays = 3 * 24 * 60 * 60 * 1000;
-  if (!last || Date.now() - parseInt(last) > threeDays) {
-    setTimeout(() => pwaBanner.classList.add('show'), 2500);
+if (!isStandalone) {
+  if (isIOS) {
+    // iOS não suporta beforeinstallprompt — instrução manual
+    const lastDismiss = localStorage.getItem('pwa-dismissed');
+    const threeDays = 3 * 24 * 60 * 60 * 1000;
+    if (!lastDismiss || Date.now() - parseInt(lastDismiss) > threeDays) {
+      setTimeout(() => pwaBanner.classList.add('show'), 3000);
+    }
+    document.getElementById('install-btn').textContent = 'Ver como';
+    document.getElementById('install-btn').addEventListener('click', () => {
+      pwaBanner.classList.remove('show');
+      document.getElementById('ios-modal').classList.add('open');
+    });
+  } else {
+    // Android/Desktop — beforeinstallprompt nativo
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const lastDismiss = localStorage.getItem('pwa-dismissed');
+      const threeDays = 3 * 24 * 60 * 60 * 1000;
+      if (!lastDismiss || Date.now() - parseInt(lastDismiss) > threeDays) {
+        setTimeout(() => pwaBanner.classList.add('show'), 2500);
+      }
+    });
+    document.getElementById('install-btn').addEventListener('click', async () => {
+      if (deferredPrompt) {
+        pwaBanner.classList.remove('show');
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        deferredPrompt = null;
+        if (outcome === 'accepted') localStorage.setItem('pwa-installed', '1');
+      }
+    });
   }
-});
-
-document.getElementById('install-btn').addEventListener('click', async () => {
-  if (deferredPrompt) {
-    pwaBanner.classList.remove('show');
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    deferredPrompt = null;
-    if (outcome === 'accepted') localStorage.setItem('pwa-installed', '1');
-  }
-});
+}
 
 document.getElementById('dismiss-btn').addEventListener('click', () => {
   pwaBanner.classList.remove('show');
-  localStorage.setItem('pwa-dismissed', Date.now());
+  localStorage.setItem('pwa-dismissed', Date.now().toString());
 });
 
-// Esconder banner se já instalado
 window.addEventListener('appinstalled', () => {
   pwaBanner.classList.remove('show');
   localStorage.setItem('pwa-installed', '1');
@@ -1677,15 +1683,23 @@ async function verificarPinCliente(cId) {
 // Salvar PIN no banco (pin_hash + chave_dispositivo na tabela clientes)
 async function salvarPinNoBanco(cId, pinHash, chaveDisp) {
   try {
-    const body = { pin_hash: pinHash, pin_reset_pedido: false };
-    if (chaveDisp) body.chave_dispositivo = chaveDisp;
-    const r = await fetch(`${SUPA_URL}/rest/v1/clientes?id=eq.${cId}`, {
-      method: 'PATCH',
-      headers: { ...SH, Prefer: 'return=representation' },
-      body: JSON.stringify(body)
+    // Salvar PIN via RPC server-side (com validação)
+    const r = await fetch(`${SUPA_URL}/rest/v1/rpc/salvar_pin_cliente`, {
+      method: 'POST', headers: SH,
+      body: JSON.stringify({ p_cliente_id: cId, p_pin_hash: pinHash })
     });
-    if (r.ok) pinResetPedido = false;
-    return r.ok;
+    const d = await r.json();
+    const rpcOk = d && d.ok;
+    // Salvar chave_dispositivo via PATCH (campo novo, não coberto pela RPC)
+    if (chaveDisp) {
+      await fetch(`${SUPA_URL}/rest/v1/clientes?id=eq.${cId}`, {
+        method: 'PATCH',
+        headers: { ...SH, Prefer: 'return=minimal' },
+        body: JSON.stringify({ chave_dispositivo: chaveDisp })
+      });
+    }
+    if (rpcOk) pinResetPedido = false;
+    return rpcOk;
   } catch(e) { return false; }
 }
 
@@ -2155,7 +2169,7 @@ function renderizarCardapioCliente() {
     const catProds = prods.filter(p => p.categoria_id === cat.id).sort((a,b) => (a.ordem||0) - (b.ordem||0) || a.nome.localeCompare(b.nome, 'pt-BR'));
     if (!catProds.length) return;
     html += `<div class="cardapio-cat">
-      <div class="cardapio-cat-header">${cat.nome} <span style="font-size:10px;opacity:.5">${catProds.length}</span></div>`;
+      <div class="cardapio-cat-header">${sanitize(cat.nome)} <span style="font-size:10px;opacity:.5">${catProds.length}</span></div>`;
     catProds.forEach(p => {
       const qty = pedidoAtual[p.id]?.qty || 0;
       const obs = pedidoAtual[p.id]?.obs || '';
@@ -2165,8 +2179,8 @@ function renderizarCardapioCliente() {
       html += `<div class="cardapio-item">
         <button class="fav-btn ${isFav?'active':''}" onclick="toggleFavorito(${p.id},this)">${isFav?'❤️':'🤍'}</button>
         <div class="cardapio-item-info">
-          <div class="cardapio-item-nome">${p.nome}${badge}</div>
-          <div class="cardapio-item-apres">${p.apresentacao||''}</div>
+          <div class="cardapio-item-nome">${sanitize(p.nome)}${badge}</div>
+          <div class="cardapio-item-apres">${sanitize(p.apresentacao||'')}</div>
           ${qty > 0 ? `<input class="fi" style="margin-top:6px;padding:6px 10px;font-size:11px" placeholder="Obs: sem tempero, corte fino..." value="${obs.replace(/"/g,'&quot;')}" onchange="setObsItem(${p.id},this.value)">` : ''}
         </div>
         <div class="cardapio-qty">
