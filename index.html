@@ -646,6 +646,27 @@ body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
   </div>
 </div>
 
+<!-- MODAL PIN NO LOGIN (obrigatório) -->
+<div class="mo" id="mo-pin-login">
+  <div class="md" style="text-align:center">
+    <div class="md-handle"></div>
+    <div style="font-size:40px;margin-bottom:8px">🔐</div>
+    <div class="md-title" style="color:var(--gold-light);justify-content:center;display:flex">Digite seu PIN</div>
+    <div class="md-text">Informe seu PIN de 4 dígitos para acessar sua conta.</div>
+    <div style="display:flex;gap:10px;justify-content:center;margin-bottom:14px">
+      <input class="fi pin-input" id="lpin-d1" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" oninput="pinAutoNext(this,'lpin-d2')" onfocus="this.select()">
+      <input class="fi pin-input" id="lpin-d2" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" oninput="pinAutoNext(this,'lpin-d3')" onkeydown="pinBackspace(event,this,'lpin-d1')" onfocus="this.select()">
+      <input class="fi pin-input" id="lpin-d3" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" oninput="pinAutoNext(this,'lpin-d4')" onkeydown="pinBackspace(event,this,'lpin-d2')" onfocus="this.select()">
+      <input class="fi pin-input" id="lpin-d4" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" onkeydown="pinBackspace(event,this,'lpin-d3')" onfocus="this.select()">
+    </div>
+    <div id="pin-login-erro" style="color:#e74c3c;font-size:11px;min-height:16px;margin-bottom:8px"></div>
+    <div class="md-actions" style="justify-content:center;flex-direction:column;gap:8px">
+      <button class="btn bg" style="width:100%" onclick="confirmarPinLogin()">Entrar</button>
+    </div>
+    <div style="margin-top:12px;font-size:10px;color:var(--gray)">Esqueceu o PIN? Entre em contato com o Empório.</div>
+  </div>
+</div>
+
 <!-- MODAL VERIFICAR PIN (para resgate) -->
 <div class="mo" id="mo-pin-verificar">
   <div class="md" style="text-align:center">
@@ -705,12 +726,50 @@ body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
   <div class="md"><div class="md-handle"></div><div class="md-title" style="color:var(--red)">Excluir Conta</div><div class="md-text">Você perderá <strong style="color:var(--gold)" id="del-pontos">0 pontos</strong> permanentemente.</div><div class="md-actions"><button class="btn bo" onclick="document.getElementById('mo-del').classList.remove('open')">Cancelar</button><button class="btn bd">Confirmar</button></div></div>
 </div>
 
+<!-- TELA: BLOG -->
+<div class="screen" id="screen-blog">
+  <div class="app-header"><div class="logo logo-sm"></div><div style="text-align:right"><div class="h-name">Blog</div><div class="h-level">Clube Prime</div></div></div>
+  <div style="padding:16px">
+
+    <!-- COTAÇÃO DESTAQUE -->
+    <div class="sec-card" style="margin:0 0 14px;text-align:center">
+      <div style="font-size:10px;color:var(--gray);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:4px">Arroba do Boi Gordo — CEPEA/Esalq</div>
+      <div id="blog-cotacao-valor" style="font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:700;color:var(--gold)">Carregando...</div>
+      <div id="blog-cotacao-var" style="font-size:12px;margin-top:2px"></div>
+      <a href="/cotacao-arroba-boi-gordo-hoje" style="display:inline-block;margin-top:10px;font-size:10px;color:var(--gold);text-decoration:underline">Ver gráfico completo e análise</a>
+    </div>
+
+    <!-- ARTIGOS -->
+    <div class="sec-card" style="margin:0 0 14px">
+      <div class="sec-title">Últimos Artigos</div>
+      <div id="blog-artigos-lista" style="display:flex;flex-direction:column;gap:12px">
+        <div style="text-align:center;padding:16px;color:var(--gray);font-size:11px">Carregando...</div>
+      </div>
+    </div>
+
+    <!-- CATEGORIAS -->
+    <div class="sec-card" style="margin:0">
+      <div class="sec-title">Explorar por Categoria</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        <a href="/cotacao-arroba-boi-gordo-hoje" class="btn bo bsm" style="text-decoration:none">Cotação</a>
+        <a href="/racas/angus" class="btn bo bsm" style="text-decoration:none">Raças</a>
+        <a href="/churrasco/receita-costela-fogo-de-chao" class="btn bo bsm" style="text-decoration:none">Churrasco</a>
+        <a href="/churrasco/quantidade-carne-por-pessoa" class="btn bo bsm" style="text-decoration:none">Calculadora</a>
+        <a href="/regioes/alta-mogiana" class="btn bo bsm" style="text-decoration:none">Regiões</a>
+        <a href="/guia/carne-de-pasto-vs-confinamento" class="btn bo bsm" style="text-decoration:none">Guias</a>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 <!-- BOTTOM NAV -->
 <nav class="bnav" id="bnav" style="display:none">
   <button class="bn active" onclick="S('cartao',this)"><span class="bn-icon">🃏</span>Cartão</button>
   <button class="bn" onclick="S('cardapio',this)"><span class="bn-icon">🛒</span>Cardápio</button>
   <button class="bn" onclick="S('pontos',this)"><span class="bn-icon">⭐</span>Pontos</button>
   <button class="bn" onclick="S('ind',this)"><span class="bn-icon">🔗</span>Indicar</button>
+  <button class="bn" onclick="S('blog',this)"><span class="bn-icon">📰</span>Blog</button>
   <button class="bn" onclick="S('perfil',this)"><span class="bn-icon">👤</span>Perfil</button>
 </nav>
 
@@ -837,6 +896,14 @@ async function preencherTela(cliente, saldo) {
 
   // Se admin pediu reset do PIN, forçar criação de novo PIN
   if (pinResetPedido && !temPin) {
+    setTimeout(() => abrirCriarPinObrigatorio(), 1000);
+  }
+  // Se tem PIN → pedir para verificar no login
+  else if (temPin) {
+    setTimeout(() => pedirPinLogin(), 500);
+  }
+  // Se não tem PIN → forçar criação (obrigatório)
+  else if (!temPin) {
     setTimeout(() => abrirCriarPinObrigatorio(), 1000);
   }
 }
@@ -997,6 +1064,50 @@ function S(n,btn){
   document.getElementById('screen-'+n).classList.add('active');
   btn.classList.add('active');
   if(n==='cardapio') carregarCardapioCliente();
+  if(n==='blog') carregarBlogUsuario();
+}
+
+let blogUsuarioCarregado = false;
+async function carregarBlogUsuario() {
+  if (blogUsuarioCarregado) return;
+  try {
+    // Cotação mais recente
+    const cotRes = await fetch(`${SUPA_URL}/rest/v1/cotacao_arroba?order=data.desc&limit=1`, { headers: SH });
+    if (cotRes.ok) {
+      const [cot] = await cotRes.json();
+      if (cot) {
+        document.getElementById('blog-cotacao-valor').textContent = 'R$ ' + parseFloat(cot.preco_rs).toFixed(2) + '/@';
+        if (cot.variacao_pct) {
+          const v = parseFloat(cot.variacao_pct);
+          const el = document.getElementById('blog-cotacao-var');
+          el.style.color = v >= 0 ? '#4CAF50' : '#EF5350';
+          el.textContent = (v > 0 ? '+' : '') + v.toFixed(2) + '% no dia';
+        }
+      }
+    }
+    // Artigos
+    const artRes = await fetch(`${SUPA_URL}/rest/v1/seo_artigos?ativo=eq.true&order=publicado_em.desc&limit=10`, { headers: SH });
+    if (artRes.ok) {
+      const artigos = await artRes.json();
+      const catIcons = {cotacao:'📈',raca:'🐂',cruzamento:'🧬',corte:'🥩',regiao:'🗺️',guia:'📖',churrasco:'🔥',familia:'👨‍👩‍👧‍👦'};
+      const el = document.getElementById('blog-artigos-lista');
+      if (artigos.length) {
+        el.innerHTML = artigos.map(a =>
+          '<a href="/' + a.slug + '" style="display:flex;gap:12px;align-items:center;text-decoration:none;padding:10px;background:rgba(201,168,76,.04);border:1px solid rgba(201,168,76,.1);border-radius:10px">' +
+            '<div style="font-size:24px;flex-shrink:0">' + (catIcons[a.categoria]||'📄') + '</div>' +
+            '<div style="flex:1;min-width:0">' +
+              '<div style="font-size:12px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + a.titulo + '</div>' +
+              '<div style="font-size:10px;color:var(--gray);margin-top:2px">' + (a.conteudo_resumo || '') + '</div>' +
+            '</div>' +
+            '<div style="color:var(--gold);font-size:16px;flex-shrink:0">›</div>' +
+          '</a>'
+        ).join('');
+      } else {
+        el.innerHTML = '<div style="text-align:center;padding:16px;color:var(--gray);font-size:11px">Nenhum artigo publicado ainda.</div>';
+      }
+    }
+    blogUsuarioCarregado = true;
+  } catch(e) { console.warn('Blog load error:', e); }
 }
 // ID e código do cliente (em produção vem do banco)
 let clienteId = null;
@@ -1669,16 +1780,62 @@ function sugerirCriacaoPin() {
   }
 }
 
+// Pedir PIN no login (para quem já tem PIN)
+let pinLoginTentativas = 0;
+function pedirPinLogin() {
+  pinLoginTentativas = 0;
+  limparPin('lpin-d');
+  document.getElementById('pin-login-erro').textContent = '';
+  document.getElementById('mo-pin-login').classList.add('open');
+  setTimeout(() => document.getElementById('lpin-d1').focus(), 300);
+}
+
+function confirmarPinLogin() {
+  const pin = lerPin('lpin-d');
+  if (pin.length !== 4) {
+    document.getElementById('pin-login-erro').textContent = 'Digite os 4 dígitos do PIN.';
+    return;
+  }
+  const tentativa = hashPin(pin);
+  if (tentativa === clientePinHash) {
+    // PIN correto
+    document.getElementById('mo-pin-login').classList.remove('open');
+    pinLoginTentativas = 0;
+  } else {
+    // PIN incorreto
+    pinLoginTentativas++;
+    limparPin('lpin-d');
+    document.getElementById('lpin-d1').focus();
+    if (pinLoginTentativas >= 5) {
+      document.getElementById('pin-login-erro').textContent = 'Muitas tentativas erradas. Entre em contato com o Empório.';
+      // Bloquear — voltar para tela de cadastro
+      setTimeout(() => {
+        document.getElementById('mo-pin-login').classList.remove('open');
+        document.getElementById('screen-cartao').classList.remove('active');
+        document.getElementById('screen-cad').classList.add('active');
+        document.getElementById('bnav').style.display = 'none';
+        alert('PIN bloqueado por excesso de tentativas. Entre em contato com o Empório Família Rodrigues.');
+      }, 2000);
+    } else {
+      document.getElementById('pin-login-erro').textContent = 'PIN incorreto. Tentativa ' + pinLoginTentativas + ' de 5.';
+    }
+  }
+}
+
 // Abrir criação de PIN obrigatória (após reset pelo admin)
 function abrirCriarPinObrigatorio() {
   limparPin('pin-d');
   document.getElementById('pin-criar-erro').textContent = '';
-  // Alterar texto para indicar que é um reset
   const titleEl = document.querySelector('#mo-pin-criar .md-title');
-  if (titleEl) titleEl.textContent = 'Crie um novo PIN';
   const descEl = document.querySelector('#mo-pin-criar .md-text');
-  if (descEl) descEl.textContent = 'Seu PIN foi resetado pelo administrador. Por segurança, crie um novo PIN de 4 dígitos para proteger seus pontos.';
-  // Esconder botão "depois" — criação é obrigatória após reset
+  if (pinResetPedido) {
+    if (titleEl) titleEl.textContent = 'Crie um novo PIN';
+    if (descEl) descEl.textContent = 'Seu PIN foi resetado pelo administrador. Por segurança, crie um novo PIN de 4 dígitos para proteger seus pontos.';
+  } else {
+    if (titleEl) titleEl.textContent = 'Crie seu PIN de segurança';
+    if (descEl) descEl.textContent = 'Para proteger sua conta e seus pontos, crie um PIN de 4 dígitos. Ele será pedido toda vez que você acessar o app.';
+  }
+  // Esconder botão "depois" — criação é obrigatória
   const btnDepois = document.querySelector('#mo-pin-criar .btn.bo');
   if (btnDepois) btnDepois.style.display = 'none';
   document.getElementById('mo-pin-criar').classList.add('open');
