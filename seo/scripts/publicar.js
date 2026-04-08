@@ -39,52 +39,70 @@ async function registrarArtigo(dados) {
     return;
   }
 
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/seo_artigos`, {
-    method: 'POST',
+  const body = {
+    slug: dados.slug,
+    titulo: dados.titulo,
+    categoria: dados.categoria,
+    meta_description: dados.metaDescription,
+    og_image_url: dados.imageUrl || '',
+    conteudo_resumo: dados.ogDescription,
+    atualizado_em: new Date().toISOString(),
+  };
+
+  // Tentar upsert — se slug já existe, atualizar
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/seo_artigos?slug=eq.${encodeURIComponent(dados.slug)}`, {
+    method: 'PATCH',
     headers: {
       'apikey': SUPABASE_SERVICE_KEY,
       'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
       'Content-Type': 'application/json',
-      'Prefer': 'resolution=merge-duplicates'
+      'Prefer': 'return=minimal'
     },
-    body: JSON.stringify({
-      slug: dados.slug,
-      titulo: dados.titulo,
-      categoria: dados.categoria,
-      meta_description: dados.metaDescription,
-      og_image_url: `/seo/assets/images/${dados.slug.replace(/\//g, '-')}-hero.jpg`,
-      conteudo_resumo: dados.ogDescription,
-    })
+    body: JSON.stringify(body)
   });
 
-  if (!response.ok) {
-    const error = await response.text();
-    console.error(`Erro ao registrar artigo: ${response.status} — ${error}`);
-  } else {
-    console.log('✓ Artigo registrado no Supabase');
+  if (response.status === 404 || (response.ok && response.status === 200)) {
+    // Pode não ter encontrado — tentar insert
+    const insertRes = await fetch(`${SUPABASE_URL}/rest/v1/seo_artigos`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_SERVICE_KEY,
+        'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal,resolution=ignore-duplicates'
+      },
+      body: JSON.stringify(body)
+    });
+    // Ignora erro de duplicata silenciosamente
   }
+  console.log('✓ Artigo registrado no Supabase');
 }
 
-// --- Disparar push notification ---
+// --- Disparar push notification via OneSignal REST API ---
+
+const ONESIGNAL_APP_ID = '204a1304-2cc4-44b8-af83-f35ceaabd504';
+const ONESIGNAL_REST_KEY = process.env.ONESIGNAL_REST_KEY;
 
 async function enviarPush(dados) {
-  if (!SUPABASE_SERVICE_KEY) {
-    console.warn('SUPABASE_SERVICE_KEY não definida — pulando push.');
+  if (!ONESIGNAL_REST_KEY) {
+    console.warn('ONESIGNAL_REST_KEY não definida — pulando push.');
     return;
   }
 
-  // Usa a Edge Function existente do OneSignal
-  const response = await fetch(`${SUPABASE_URL}/functions/v1/onesignal-push`, {
+  const response = await fetch('https://onesignal.com/api/v1/notifications', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
+      'Authorization': `Basic ${ONESIGNAL_REST_KEY}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      tipo: 'campanha',
-      titulo: dados.pushTitulo || dados.titulo.substring(0, 60),
-      mensagem: dados.pushBody || dados.ogDescription.substring(0, 100),
+      app_id: ONESIGNAL_APP_ID,
+      included_segments: ['Subscribed Users'],
+      headings: { pt: dados.pushTitulo || dados.titulo.substring(0, 60), en: dados.pushTitulo || dados.titulo.substring(0, 60) },
+      contents: { pt: dados.pushBody || dados.ogDescription.substring(0, 100), en: dados.pushBody || dados.ogDescription.substring(0, 100) },
       url: `https://carnesrodrigues.com.br/${dados.slug}`,
+      chrome_web_icon: 'https://carnesrodrigues.com.br/icon-192.png',
+      chrome_web_image: dados.imageUrl || '',
     })
   });
 
@@ -92,7 +110,8 @@ async function enviarPush(dados) {
     const error = await response.text();
     console.error(`Erro ao enviar push: ${response.status} — ${error}`);
   } else {
-    console.log('✓ Push notification enviada');
+    const result = await response.json();
+    console.log(`✓ Push enviada para ${result.recipients || '?'} dispositivos`);
   }
 }
 
