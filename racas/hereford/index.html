@@ -19,7 +19,7 @@
     <meta property="og:url" content="https://carnesrodrigues.com.br/racas/hereford">
     <meta property="og:locale" content="pt_BR">
     <meta property="og:site_name" content="Clube Prime — Empório Família Rodrigues">
-    <meta property="article:published_time" content="2026-04-08T18:26:27.902Z">
+    <meta property="article:published_time" content="2026-04-08T18:43:12.093Z">
     <meta property="article:section" content="raca">
 
     <!-- Twitter Card -->
@@ -47,8 +47,8 @@
         "headline": "Hereford: A Raça Britânica de Carne Macia e Gordura Perfeita",
         "description": "Conheça a raça Hereford: origem inglesa, carne macia com gordura de cobertura ideal, adaptação ao Sul do Brasil e diferenças para o Angus.",
         "image": "https://plus.unsplash.com/premium_photo-1668453206347-922efbff8d54?w=1200&h=630&fit=crop&q=80",
-        "datePublished": "2026-04-08T18:26:27.902Z",
-        "dateModified": "2026-04-08T18:26:27.902Z",
+        "datePublished": "2026-04-08T18:43:12.093Z",
+        "dateModified": "2026-04-08T18:43:12.093Z",
         "author": {
             "@type": "Organization",
             "name": "Empório de Carnes Família Rodrigues",
@@ -430,7 +430,7 @@
             font-size: 0.95rem;
             margin-bottom: 24px;
         }
-        .btn-whatsapp {
+        .article .btn-whatsapp {
             display: inline-flex;
             align-items: center;
             gap: 10px;
@@ -445,7 +445,7 @@
             transition: all 0.2s;
             box-shadow: 0 4px 20px rgba(37, 211, 102, 0.3);
         }
-        .btn-whatsapp:hover {
+        .article .btn-whatsapp:hover {
             background: #20BD5A;
             color: #fff;
             transform: translateY(-2px);
@@ -494,7 +494,7 @@
             margin: 0 auto 28px;
             line-height: 1.7;
         }
-        .btn-primary {
+        .article .btn-primary {
             display: inline-block;
             background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
             color: var(--dark);
@@ -507,7 +507,7 @@
             transition: all 0.2s;
             box-shadow: 0 4px 24px rgba(197, 165, 90, 0.35);
         }
-        .btn-primary:hover {
+        .article .btn-primary:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 32px rgba(197, 165, 90, 0.5);
             color: var(--dark);
@@ -624,6 +624,72 @@
             color: var(--text-secondary);
         }
 
+        /* ── PAINEL DE MERCADO ── */
+        .painel-mercado {
+            margin: 32px 0;
+        }
+        .painel-mercado-title {
+            font-family: var(--font-serif);
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .painel-mercado-title small {
+            font-family: var(--font-sans);
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+        .painel-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+        .painel-card {
+            background: var(--dark-elevated);
+            border: 1px solid var(--dark-border);
+            border-radius: var(--radius-sm);
+            padding: 14px 16px;
+            text-align: center;
+        }
+        .painel-card-icon { font-size: 20px; margin-bottom: 4px; }
+        .painel-card-label {
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .painel-card-valor {
+            font-family: var(--font-serif);
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #fff;
+            line-height: 1.2;
+        }
+        .painel-card-var {
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-top: 2px;
+        }
+        .painel-card-var.up { color: var(--green); }
+        .painel-card-var.down { color: var(--red); }
+        .painel-card-var.neutral { color: var(--text-muted); }
+        .painel-link {
+            display: block;
+            text-align: center;
+            margin-top: 12px;
+            font-size: 0.8rem;
+            color: var(--gold);
+            text-decoration: none;
+        }
+        .painel-link:hover { text-decoration: underline; }
+
         /* ── RESPONSIVO ── */
         @media (max-width: 600px) {
             body { font-size: 15.5px; }
@@ -637,6 +703,8 @@
             .bloco-clube { padding: 20px 18px; }
             .faq { padding: 20px; }
             .related-grid { grid-template-columns: 1fr; }
+            .painel-grid { grid-template-columns: repeat(2, 1fr); }
+            .painel-card-valor { font-size: 1.1rem; }
         }
     </style>
 </head>
@@ -670,7 +738,7 @@
 
         <div class="article-meta">
             <span class="tag">Raças</span>
-            <time datetime="2026-04-08T18:26:27.902Z">8 de abril de 2026</time>
+            <time datetime="2026-04-08T18:43:12.093Z">8 de abril de 2026</time>
             <span>8 min de leitura</span>
         </div>
 
@@ -683,6 +751,8 @@
             loading="eager"
         >
         <p class="hero-credit">Foto: Unsplash</p>
+
+        
 
         <p>O <strong>Hereford</strong> é uma das raças de corte mais antigas e tradicionais do mundo. Com sua cara branca inconfundível e pelagem vermelha, é a raça que praticamente definiu o padrão de carne bovina de qualidade na Inglaterra e conquistou criadores em mais de 50 países.</p>
 
