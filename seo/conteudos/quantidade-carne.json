@@ -22,11 +22,26 @@
     }
   ],
   "relacionados": [
-    { "slug": "churrasco/receita-costela-fogo-de-chao", "titulo": "Costela no Fogo de Chão: Receita Completa", "categoria": "churrasco", "imageUrl": "https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?w=400&h=225&fit=crop" },
-    { "slug": "racas/angus", "titulo": "Angus: A Raça do Marmoreio Premium", "categoria": "raca", "imageUrl": "https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=400&h=225&fit=crop" },
-    { "slug": "cotacao-arroba-boi-gordo-hoje", "titulo": "Cotação da Arroba do Boi Gordo Hoje", "categoria": "cotacao", "imageUrl": "https://images.unsplash.com/photo-1500595046743-cd271d694d30?w=400&h=225&fit=crop" }
+    {
+      "slug": "churrasco/receita-costela-fogo-de-chao",
+      "titulo": "Costela no Fogo de Chão: Receita Completa",
+      "categoria": "churrasco",
+      "imageUrl": "https://images.unsplash.com/photo-1558030137-a56c1b004fa3?w=400&h=225&fit=crop"
+    },
+    {
+      "slug": "racas/angus",
+      "titulo": "Angus: A Raça do Marmoreio Premium",
+      "categoria": "raca",
+      "imageUrl": "https://images.unsplash.com/photo-1681767254572-ff6b6ebac7c8?w=400&h=225&fit=crop"
+    },
+    {
+      "slug": "cotacao-arroba-boi-gordo-hoje",
+      "titulo": "Cotação da Arroba do Boi Gordo Hoje",
+      "categoria": "cotacao",
+      "imageUrl": "https://plus.unsplash.com/premium_photo-1667860234741-0e500d0e5ba5?w=400&h=225&fit=crop"
+    }
   ],
-  "imageUrl": "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=1200&h=630&fit=crop&q=80",
+  "imageUrl": "https://plus.unsplash.com/premium_photo-1723478557023-1f739ec06671?w=1200&h=630&fit=crop&q=80",
   "imageAlt": "Mesa de churrasco com vários cortes de carne e acompanhamentos — Clube Prime, Empório Família Rodrigues",
   "imageCredit": "Foto: Unsplash",
   "tempoLeitura": 6

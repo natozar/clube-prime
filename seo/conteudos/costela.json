@@ -22,12 +22,27 @@
     }
   ],
   "relacionados": [
-    { "slug": "churrasco/quantidade-carne-por-pessoa", "titulo": "Calculadora: Quantidade de Carne por Pessoa", "categoria": "churrasco", "imageUrl": "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400&h=225&fit=crop" },
-    { "slug": "racas/angus", "titulo": "Angus: A Raça do Marmoreio Premium", "categoria": "raca", "imageUrl": "https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=400&h=225&fit=crop" },
-    { "slug": "cotacao-arroba-boi-gordo-hoje", "titulo": "Cotação da Arroba do Boi Gordo Hoje", "categoria": "cotacao", "imageUrl": "https://images.unsplash.com/photo-1500595046743-cd271d694d30?w=400&h=225&fit=crop" }
+    {
+      "slug": "churrasco/quantidade-carne-por-pessoa",
+      "titulo": "Calculadora: Quantidade de Carne por Pessoa",
+      "categoria": "churrasco",
+      "imageUrl": "https://plus.unsplash.com/premium_photo-1723478557023-1f739ec06671?w=400&h=225&fit=crop"
+    },
+    {
+      "slug": "racas/angus",
+      "titulo": "Angus: A Raça do Marmoreio Premium",
+      "categoria": "raca",
+      "imageUrl": "https://images.unsplash.com/photo-1681767254572-ff6b6ebac7c8?w=400&h=225&fit=crop"
+    },
+    {
+      "slug": "cotacao-arroba-boi-gordo-hoje",
+      "titulo": "Cotação da Arroba do Boi Gordo Hoje",
+      "categoria": "cotacao",
+      "imageUrl": "https://plus.unsplash.com/premium_photo-1667860234741-0e500d0e5ba5?w=400&h=225&fit=crop"
+    }
   ],
   "schemaExtra": "<script type=\"application/ld+json\">\n{\"@context\":\"https://schema.org\",\"@type\":\"Recipe\",\"name\":\"Costela no Fogo de Chão\",\"description\":\"Receita completa de costela bovina no fogo de chão, com tempo e temperatura para carne macia que desfia.\",\"author\":{\"@type\":\"Organization\",\"name\":\"Clube Prime — Empório Família Rodrigues\"},\"prepTime\":\"PT30M\",\"cookTime\":\"PT6H\",\"totalTime\":\"PT6H30M\",\"recipeYield\":\"10 porções\",\"recipeCategory\":\"Churrasco\",\"recipeCuisine\":\"Brasileira\",\"recipeIngredient\":[\"5 kg de costela bovina (ponta de agulha)\",\"Sal grosso (1 colher de sopa por kg)\"],\"recipeInstructions\":[{\"@type\":\"HowToStep\",\"text\":\"Retire a costela da geladeira 2 horas antes do preparo.\"},{\"@type\":\"HowToStep\",\"text\":\"Tempere com sal grosso generoso por toda a superfície.\"},{\"@type\":\"HowToStep\",\"text\":\"Monte o fogo de chão com cava de 40-50cm e acenda o carvão 1 hora antes.\"},{\"@type\":\"HowToStep\",\"text\":\"Coloque a costela na grelha a 60-80cm das brasas, gordura para cima.\"},{\"@type\":\"HowToStep\",\"text\":\"Asse por 5-8 horas mantendo temperatura constante, virando na metade do tempo.\"},{\"@type\":\"HowToStep\",\"text\":\"A costela está pronta quando a carne se solta do osso com facilidade.\"}]}\n</script>",
-  "imageUrl": "https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?w=1200&h=630&fit=crop&q=80",
+  "imageUrl": "https://images.unsplash.com/photo-1558030137-a56c1b004fa3?w=1200&h=630&fit=crop&q=80",
   "imageAlt": "Costela bovina assando no fogo de chão com brasas — Clube Prime, Empório Família Rodrigues",
   "imageCredit": "Foto: Unsplash",
   "tempoLeitura": 9
