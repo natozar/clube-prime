@@ -19,7 +19,7 @@
     <meta property="og:url" content="https://carnesrodrigues.com.br/guia/carne-de-pasto-vs-confinamento">
     <meta property="og:locale" content="pt_BR">
     <meta property="og:site_name" content="Clube Prime — Empório Família Rodrigues">
-    <meta property="article:published_time" content="2026-04-08T15:25:07.252Z">
+    <meta property="article:published_time" content="2026-04-08T18:18:21.321Z">
     <meta property="article:section" content="guia">
 
     <!-- Twitter Card -->
@@ -47,8 +47,8 @@
         "headline": "Carne de Pasto vs Confinamento: Diferença no Sabor, Cor e Gordura",
         "description": "Carne de pasto vs confinamento: diferenças reais no sabor, cor, gordura, marmoreio e preço. Qual é melhor para churrasco? Guia completo.",
         "image": "https://images.unsplash.com/photo-1690983325563-fe4412c4c347?w=1200&h=630&fit=crop&q=80",
-        "datePublished": "2026-04-08T15:25:07.252Z",
-        "dateModified": "2026-04-08T15:25:07.252Z",
+        "datePublished": "2026-04-08T18:18:21.321Z",
+        "dateModified": "2026-04-08T18:18:21.321Z",
         "author": {
             "@type": "Organization",
             "name": "Empório de Carnes Família Rodrigues",
@@ -276,7 +276,7 @@
         }
         .article a:hover { text-decoration-color: var(--gold); }
 
-        /* ── BLOCO CLUBE PRIME (banner contextual) ── */
+        /* ── BLOCO CLUBE PRIME (banner contextual grande) ── */
         .bloco-clube {
             background: linear-gradient(135deg, rgba(197, 165, 90, 0.12) 0%, rgba(197, 165, 90, 0.04) 100%);
             border-left: 4px solid var(--gold);
@@ -305,6 +305,76 @@
             line-height: 1.7;
         }
         .bloco-clube strong { color: var(--gold); }
+
+        /* ── MINI-BANNERS (pub inline entre parágrafos) ── */
+        .mini-banner {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            background: var(--dark-card);
+            border: 1px solid var(--dark-border);
+            border-radius: var(--radius-sm);
+            padding: 16px 20px;
+            margin: 28px 0;
+            text-decoration: none;
+            transition: border-color 0.2s, transform 0.15s;
+        }
+        .mini-banner:hover {
+            border-color: var(--gold);
+            transform: translateY(-1px);
+        }
+        .mini-banner-icon {
+            font-size: 28px;
+            flex-shrink: 0;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--gold-glow);
+            border-radius: 10px;
+        }
+        .mini-banner-text {
+            flex: 1;
+            min-width: 0;
+        }
+        .mini-banner-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 2px;
+        }
+        .mini-banner-desc {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+        .mini-banner-arrow {
+            color: var(--gold);
+            font-size: 18px;
+            flex-shrink: 0;
+            font-weight: 700;
+        }
+
+        /* Variante: destaque gold */
+        .mini-banner--gold {
+            border-color: rgba(197, 165, 90, 0.25);
+            background: linear-gradient(135deg, rgba(197, 165, 90, 0.08) 0%, var(--dark-card) 100%);
+        }
+        .mini-banner--gold .mini-banner-icon {
+            background: var(--gold);
+            color: var(--dark);
+            font-size: 20px;
+        }
+
+        /* Variante: cotação inline */
+        .mini-banner--cotacao {
+            border-color: rgba(76, 175, 80, 0.2);
+            background: linear-gradient(135deg, rgba(76, 175, 80, 0.06) 0%, var(--dark-card) 100%);
+        }
+        .mini-banner--cotacao .mini-banner-icon {
+            background: rgba(76, 175, 80, 0.15);
+        }
 
         /* ── FAQ ── */
         .faq {
@@ -459,11 +529,12 @@
             gap: 16px;
         }
         .related-card {
-            background: var(--dark-card);
+            background: var(--dark-elevated);
             border: 1px solid var(--dark-border);
             border-radius: var(--radius-sm);
             overflow: hidden;
             text-decoration: none;
+            display: block;
             transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
         }
         .related-card:hover {
@@ -475,6 +546,7 @@
             width: 100%;
             aspect-ratio: 16/9;
             object-fit: cover;
+            display: block;
         }
         .related-card-body {
             padding: 14px 16px;
@@ -482,15 +554,16 @@
         .related-card-body h4 {
             font-size: 0.88rem;
             color: #fff;
-            font-weight: 600;
+            font-weight: 700;
             line-height: 1.35;
-            margin-bottom: 4px;
+            margin-bottom: 6px;
         }
         .related-card-body span {
             font-size: 0.72rem;
-            color: var(--text-muted);
+            color: var(--gold);
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.06em;
+            font-weight: 600;
         }
 
         /* ── FOOTER ── */
@@ -597,7 +670,7 @@
 
         <div class="article-meta">
             <span class="tag">Guia da Carne</span>
-            <time datetime="2026-04-08T15:25:07.252Z">8 de abril de 2026</time>
+            <time datetime="2026-04-08T18:18:21.321Z">8 de abril de 2026</time>
             <span>8 min de leitura</span>
         </div>
 
@@ -634,6 +707,16 @@
 <li>Custo maior, mas animal pronto mais rápido</li>
 <li>Controle total de nutrição e ganho de peso</li>
 </ul>
+
+
+<a href="/" class="mini-banner mini-banner--gold" data-track="cta_emporio">
+      <div class="mini-banner-icon">🥩</div>
+      <div class="mini-banner-text">
+        <div class="mini-banner-title">Cortes premium no Empório Família Rodrigues</div>
+        <div class="mini-banner-desc">Angus, Hereford e cruzamentos selecionados. Ribeirão Preto/SP.</div>
+      </div>
+      <div class="mini-banner-arrow">›</div>
+    </a>
 
 <h2>Diferenças na Carne: O Que Muda no Prato</h2>
 <h3>Cor da carne</h3>
@@ -676,6 +759,16 @@
 <li><strong>Carne moída/hambúrguer:</strong> pasto — o sabor mais intenso se destaca no blend</li>
 <li><strong>Carne seca/charque:</strong> pasto — a carne mais firme e magra é ideal para desidratação</li>
 </ul>
+
+
+<a href="/" class="mini-banner mini-banner--gold" data-track="cta_clube_inline">
+      <div class="mini-banner-icon">🏆</div>
+      <div class="mini-banner-text">
+        <div class="mini-banner-title">Clube Prime — Acumule pontos a cada compra</div>
+        <div class="mini-banner-desc">Desconto exclusivo, acesso antecipado a cortes especiais e programa de indicação.</div>
+      </div>
+      <div class="mini-banner-arrow">›</div>
+    </a>
 
 <h2>E o Preço?</h2>
 <p>A carne de confinamento costuma ser <strong>10% a 25% mais cara</strong> que a de pasto, refletindo o custo maior de produção (ração, estrutura, manejo intensivo). Porém, a diferença diminui quando se trata de raças premium: um Angus de pasto com suplementação pode custar tanto quanto um Nelore de confinamento.</p>

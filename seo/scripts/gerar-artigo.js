@@ -90,6 +90,9 @@ async function gerarArtigo(dados) {
                     </div>
                 </a>`).join('');
 
+  // Inserir mini-banners entre seções do conteúdo
+  const conteudoComBanners = injetarMiniBanners(dados.conteudo, dados.categoria);
+
   // Share text para WhatsApp
   const shareText = encodeURIComponent(`${dados.titulo} — Leia no Clube Prime: https://carnesrodrigues.com.br/${dados.slug}`);
 
@@ -115,7 +118,7 @@ async function gerarArtigo(dados) {
     '{{TEMPO_LEITURA}}': (dados.tempoLeitura || 7).toString(),
     '{{IMAGE_ALT}}': dados.imageAlt || dados.titulo,
     '{{IMAGE_CREDIT}}': dados.imageCredit || '',
-    '{{CONTEUDO}}': dados.conteudo,
+    '{{CONTEUDO}}': conteudoComBanners,
     '{{BLOCO_CLUBE}}': dados.blocoClube,
     '{{FAQ_HTML}}': faqHtml,
     '{{FAQ_SCHEMA}}': faqSchema,
@@ -140,6 +143,113 @@ async function gerarArtigo(dados) {
   console.log(`✓ Artigo gerado: ${outputPath}`);
 
   return outputPath;
+}
+
+// Mini-banners de pub contextual inseridos entre seções H2
+const MINI_BANNERS = [
+  // Empório — produto/serviço
+  {
+    html: `<a href="/" class="mini-banner mini-banner--gold" data-track="cta_emporio">
+      <div class="mini-banner-icon">🥩</div>
+      <div class="mini-banner-text">
+        <div class="mini-banner-title">Cortes premium no Empório Família Rodrigues</div>
+        <div class="mini-banner-desc">Angus, Hereford e cruzamentos selecionados. Ribeirão Preto/SP.</div>
+      </div>
+      <div class="mini-banner-arrow">›</div>
+    </a>`,
+    categorias: ['raca', 'cruzamento', 'corte', 'guia']
+  },
+  // Clube Prime — fidelidade
+  {
+    html: `<a href="/" class="mini-banner mini-banner--gold" data-track="cta_clube_inline">
+      <div class="mini-banner-icon">🏆</div>
+      <div class="mini-banner-text">
+        <div class="mini-banner-title">Clube Prime — Acumule pontos a cada compra</div>
+        <div class="mini-banner-desc">Desconto exclusivo, acesso antecipado a cortes especiais e programa de indicação.</div>
+      </div>
+      <div class="mini-banner-arrow">›</div>
+    </a>`,
+    categorias: ['raca', 'cruzamento', 'corte', 'guia', 'regiao', 'churrasco', 'familia']
+  },
+  // Cotação — informação
+  {
+    html: `<a href="/cotacao-arroba-boi-gordo-hoje" class="mini-banner mini-banner--cotacao" data-track="cta_cotacao_inline">
+      <div class="mini-banner-icon">📈</div>
+      <div class="mini-banner-text">
+        <div class="mini-banner-title">Cotação da arroba do boi gordo — atualizada hoje</div>
+        <div class="mini-banner-desc">Gráfico de 30 dias, análise de mercado e tendência. Veja agora.</div>
+      </div>
+      <div class="mini-banner-arrow">›</div>
+    </a>`,
+    categorias: ['raca', 'cruzamento', 'regiao', 'guia']
+  },
+  // Churrasco — receitas
+  {
+    html: `<a href="/churrasco/receita-costela-fogo-de-chao" class="mini-banner" data-track="cta_churrasco_inline">
+      <div class="mini-banner-icon">🔥</div>
+      <div class="mini-banner-text">
+        <div class="mini-banner-title">Costela no Fogo de Chão — Receita completa</div>
+        <div class="mini-banner-desc">Tempo, temperatura e os segredos para carne que desfia no garfo.</div>
+      </div>
+      <div class="mini-banner-arrow">›</div>
+    </a>`,
+    categorias: ['raca', 'corte', 'guia', 'cotacao', 'regiao']
+  },
+  // Calculadora
+  {
+    html: `<a href="/churrasco/quantidade-carne-por-pessoa" class="mini-banner" data-track="cta_calculadora_inline">
+      <div class="mini-banner-icon">🧮</div>
+      <div class="mini-banner-text">
+        <div class="mini-banner-title">Calculadora: quanta carne comprar para o churrasco?</div>
+        <div class="mini-banner-desc">350g ou 500g por pessoa? Depende. Veja a conta certa.</div>
+      </div>
+      <div class="mini-banner-arrow">›</div>
+    </a>`,
+    categorias: ['churrasco', 'corte', 'familia']
+  },
+  // Afiliados
+  {
+    html: `<a href="/" class="mini-banner mini-banner--gold" data-track="cta_afiliado_inline">
+      <div class="mini-banner-icon">🤝</div>
+      <div class="mini-banner-text">
+        <div class="mini-banner-title">Indique amigos e ganhe recompensas</div>
+        <div class="mini-banner-desc">Programa de afiliados do Clube Prime — cada indicação conta pontos para você.</div>
+      </div>
+      <div class="mini-banner-arrow">›</div>
+    </a>`,
+    categorias: ['churrasco', 'familia']
+  },
+];
+
+function injetarMiniBanners(conteudo, categoria) {
+  // Encontrar posições dos H2 no conteúdo
+  const h2Positions = [];
+  let match;
+  const h2Regex = /<h2>/gi;
+  while ((match = h2Regex.exec(conteudo)) !== null) {
+    h2Positions.push(match.index);
+  }
+
+  if (h2Positions.length < 3) return conteudo; // Artigo curto, não inserir
+
+  // Selecionar banners relevantes para esta categoria
+  const relevantes = MINI_BANNERS.filter(b => b.categorias.includes(categoria));
+  if (relevantes.length === 0) return conteudo;
+
+  // Inserir banner após o 2o H2 e após o 4o H2 (se existir)
+  const insertPositions = [];
+  if (h2Positions.length >= 3) insertPositions.push(h2Positions[2]); // antes do 3o H2
+  if (h2Positions.length >= 5) insertPositions.push(h2Positions[4]); // antes do 5o H2
+
+  // Montar conteúdo com banners inseridos (de trás pra frente para não deslocar índices)
+  let resultado = conteudo;
+  for (let i = insertPositions.length - 1; i >= 0; i--) {
+    const pos = insertPositions[i];
+    const banner = relevantes[i % relevantes.length];
+    resultado = resultado.slice(0, pos) + '\n' + banner.html + '\n\n' + resultado.slice(pos);
+  }
+
+  return resultado;
 }
 
 function escapeJson(str) {

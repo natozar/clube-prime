@@ -19,7 +19,7 @@
     <meta property="og:url" content="https://carnesrodrigues.com.br/regioes/alta-mogiana">
     <meta property="og:locale" content="pt_BR">
     <meta property="og:site_name" content="Clube Prime — Empório Família Rodrigues">
-    <meta property="article:published_time" content="2026-04-08T15:25:06.609Z">
+    <meta property="article:published_time" content="2026-04-08T18:18:20.732Z">
     <meta property="article:section" content="regiao">
 
     <!-- Twitter Card -->
@@ -47,8 +47,8 @@
         "headline": "Alta Mogiana: A Região que Produz a Melhor Carne de São Paulo",
         "description": "Alta Mogiana paulista: polo de produção de Angus e cruzamentos premium em Ribeirão Preto e região. Conheça por que a carne daqui é diferente.",
         "image": "https://plus.unsplash.com/premium_photo-1667860234741-0e500d0e5ba5?w=1200&h=630&fit=crop&q=80",
-        "datePublished": "2026-04-08T15:25:06.609Z",
-        "dateModified": "2026-04-08T15:25:06.609Z",
+        "datePublished": "2026-04-08T18:18:20.732Z",
+        "dateModified": "2026-04-08T18:18:20.732Z",
         "author": {
             "@type": "Organization",
             "name": "Empório de Carnes Família Rodrigues",
@@ -276,7 +276,7 @@
         }
         .article a:hover { text-decoration-color: var(--gold); }
 
-        /* ── BLOCO CLUBE PRIME (banner contextual) ── */
+        /* ── BLOCO CLUBE PRIME (banner contextual grande) ── */
         .bloco-clube {
             background: linear-gradient(135deg, rgba(197, 165, 90, 0.12) 0%, rgba(197, 165, 90, 0.04) 100%);
             border-left: 4px solid var(--gold);
@@ -305,6 +305,76 @@
             line-height: 1.7;
         }
         .bloco-clube strong { color: var(--gold); }
+
+        /* ── MINI-BANNERS (pub inline entre parágrafos) ── */
+        .mini-banner {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            background: var(--dark-card);
+            border: 1px solid var(--dark-border);
+            border-radius: var(--radius-sm);
+            padding: 16px 20px;
+            margin: 28px 0;
+            text-decoration: none;
+            transition: border-color 0.2s, transform 0.15s;
+        }
+        .mini-banner:hover {
+            border-color: var(--gold);
+            transform: translateY(-1px);
+        }
+        .mini-banner-icon {
+            font-size: 28px;
+            flex-shrink: 0;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--gold-glow);
+            border-radius: 10px;
+        }
+        .mini-banner-text {
+            flex: 1;
+            min-width: 0;
+        }
+        .mini-banner-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 2px;
+        }
+        .mini-banner-desc {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+        .mini-banner-arrow {
+            color: var(--gold);
+            font-size: 18px;
+            flex-shrink: 0;
+            font-weight: 700;
+        }
+
+        /* Variante: destaque gold */
+        .mini-banner--gold {
+            border-color: rgba(197, 165, 90, 0.25);
+            background: linear-gradient(135deg, rgba(197, 165, 90, 0.08) 0%, var(--dark-card) 100%);
+        }
+        .mini-banner--gold .mini-banner-icon {
+            background: var(--gold);
+            color: var(--dark);
+            font-size: 20px;
+        }
+
+        /* Variante: cotação inline */
+        .mini-banner--cotacao {
+            border-color: rgba(76, 175, 80, 0.2);
+            background: linear-gradient(135deg, rgba(76, 175, 80, 0.06) 0%, var(--dark-card) 100%);
+        }
+        .mini-banner--cotacao .mini-banner-icon {
+            background: rgba(76, 175, 80, 0.15);
+        }
 
         /* ── FAQ ── */
         .faq {
@@ -459,11 +529,12 @@
             gap: 16px;
         }
         .related-card {
-            background: var(--dark-card);
+            background: var(--dark-elevated);
             border: 1px solid var(--dark-border);
             border-radius: var(--radius-sm);
             overflow: hidden;
             text-decoration: none;
+            display: block;
             transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
         }
         .related-card:hover {
@@ -475,6 +546,7 @@
             width: 100%;
             aspect-ratio: 16/9;
             object-fit: cover;
+            display: block;
         }
         .related-card-body {
             padding: 14px 16px;
@@ -482,15 +554,16 @@
         .related-card-body h4 {
             font-size: 0.88rem;
             color: #fff;
-            font-weight: 600;
+            font-weight: 700;
             line-height: 1.35;
-            margin-bottom: 4px;
+            margin-bottom: 6px;
         }
         .related-card-body span {
             font-size: 0.72rem;
-            color: var(--text-muted);
+            color: var(--gold);
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.06em;
+            font-weight: 600;
         }
 
         /* ── FOOTER ── */
@@ -597,7 +670,7 @@
 
         <div class="article-meta">
             <span class="tag">Regiões Produtoras</span>
-            <time datetime="2026-04-08T15:25:06.609Z">8 de abril de 2026</time>
+            <time datetime="2026-04-08T18:18:20.732Z">8 de abril de 2026</time>
             <span>8 min de leitura</span>
         </div>
 
@@ -635,6 +708,16 @@
 </ul>
 <p>O diferencial da Alta Mogiana não é apenas a genética, mas o <strong>manejo técnico</strong>. Produtores da região investem em suplementação nutricional, protocolo sanitário rigoroso e rastreabilidade individual dos animais — da fazenda ao frigorífico.</p>
 
+
+<a href="/" class="mini-banner mini-banner--gold" data-track="cta_clube_inline">
+      <div class="mini-banner-icon">🏆</div>
+      <div class="mini-banner-text">
+        <div class="mini-banner-title">Clube Prime — Acumule pontos a cada compra</div>
+        <div class="mini-banner-desc">Desconto exclusivo, acesso antecipado a cortes especiais e programa de indicação.</div>
+      </div>
+      <div class="mini-banner-arrow">›</div>
+    </a>
+
 <h2>Ribeirão Preto: Capital do Agro e da Carne</h2>
 <p>Ribeirão Preto, maior cidade da Alta Mogiana com mais de 700 mil habitantes, é um hub do agronegócio brasileiro. A cidade é sede da <strong>Agrishow</strong> — maior feira de tecnologia agrícola da América Latina — e conecta produtores rurais, frigoríficos, exportadores e o consumidor final.</p>
 <p>O mercado de carne premium em Ribeirão Preto é sofisticado: a cidade tem uma das maiores concentrações de casas de carne especializadas do interior paulista, atendendo tanto o consumidor que faz churrasco no fim de semana quanto restaurantes de alta gastronomia.</p>
@@ -642,6 +725,16 @@
 
 <h2>Barretos: Tradição Pecuária no DNA</h2>
 <p>Barretos, a 120 km de Ribeirão Preto, é sinônimo de pecuária no Brasil. A <strong>Festa do Peão de Barretos</strong> é o maior evento country da América Latina, mas a importância da cidade vai muito além da festa: Barretos abriga frigoríficos de grande porte e é ponto de referência para a comercialização de gado gordo em toda a região.</p>
+
+
+<a href="/cotacao-arroba-boi-gordo-hoje" class="mini-banner mini-banner--cotacao" data-track="cta_cotacao_inline">
+      <div class="mini-banner-icon">📈</div>
+      <div class="mini-banner-text">
+        <div class="mini-banner-title">Cotação da arroba do boi gordo — atualizada hoje</div>
+        <div class="mini-banner-desc">Gráfico de 30 dias, análise de mercado e tendência. Veja agora.</div>
+      </div>
+      <div class="mini-banner-arrow">›</div>
+    </a>
 
 <h2>Do Pasto ao Prato: A Cadeia Completa</h2>
 <p>Uma das grandes vantagens da Alta Mogiana é ter a <strong>cadeia produtiva inteira na mesma região</strong>:</p>

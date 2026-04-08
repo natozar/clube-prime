@@ -274,7 +274,7 @@
         }
         .article a:hover { text-decoration-color: var(--gold); }
 
-        /* ── BLOCO CLUBE PRIME (banner contextual) ── */
+        /* ── BLOCO CLUBE PRIME (banner contextual grande) ── */
         .bloco-clube {
             background: linear-gradient(135deg, rgba(197, 165, 90, 0.12) 0%, rgba(197, 165, 90, 0.04) 100%);
             border-left: 4px solid var(--gold);
@@ -303,6 +303,76 @@
             line-height: 1.7;
         }
         .bloco-clube strong { color: var(--gold); }
+
+        /* ── MINI-BANNERS (pub inline entre parágrafos) ── */
+        .mini-banner {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            background: var(--dark-card);
+            border: 1px solid var(--dark-border);
+            border-radius: var(--radius-sm);
+            padding: 16px 20px;
+            margin: 28px 0;
+            text-decoration: none;
+            transition: border-color 0.2s, transform 0.15s;
+        }
+        .mini-banner:hover {
+            border-color: var(--gold);
+            transform: translateY(-1px);
+        }
+        .mini-banner-icon {
+            font-size: 28px;
+            flex-shrink: 0;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--gold-glow);
+            border-radius: 10px;
+        }
+        .mini-banner-text {
+            flex: 1;
+            min-width: 0;
+        }
+        .mini-banner-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 2px;
+        }
+        .mini-banner-desc {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+        .mini-banner-arrow {
+            color: var(--gold);
+            font-size: 18px;
+            flex-shrink: 0;
+            font-weight: 700;
+        }
+
+        /* Variante: destaque gold */
+        .mini-banner--gold {
+            border-color: rgba(197, 165, 90, 0.25);
+            background: linear-gradient(135deg, rgba(197, 165, 90, 0.08) 0%, var(--dark-card) 100%);
+        }
+        .mini-banner--gold .mini-banner-icon {
+            background: var(--gold);
+            color: var(--dark);
+            font-size: 20px;
+        }
+
+        /* Variante: cotação inline */
+        .mini-banner--cotacao {
+            border-color: rgba(76, 175, 80, 0.2);
+            background: linear-gradient(135deg, rgba(76, 175, 80, 0.06) 0%, var(--dark-card) 100%);
+        }
+        .mini-banner--cotacao .mini-banner-icon {
+            background: rgba(76, 175, 80, 0.15);
+        }
 
         /* ── FAQ ── */
         .faq {
@@ -457,11 +527,12 @@
             gap: 16px;
         }
         .related-card {
-            background: var(--dark-card);
+            background: var(--dark-elevated);
             border: 1px solid var(--dark-border);
             border-radius: var(--radius-sm);
             overflow: hidden;
             text-decoration: none;
+            display: block;
             transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
         }
         .related-card:hover {
@@ -473,6 +544,7 @@
             width: 100%;
             aspect-ratio: 16/9;
             object-fit: cover;
+            display: block;
         }
         .related-card-body {
             padding: 14px 16px;
@@ -480,15 +552,16 @@
         .related-card-body h4 {
             font-size: 0.88rem;
             color: #fff;
-            font-weight: 600;
+            font-weight: 700;
             line-height: 1.35;
-            margin-bottom: 4px;
+            margin-bottom: 6px;
         }
         .related-card-body span {
             font-size: 0.72rem;
-            color: var(--text-muted);
+            color: var(--gold);
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.06em;
+            font-weight: 600;
         }
 
         /* ── FOOTER ── */
