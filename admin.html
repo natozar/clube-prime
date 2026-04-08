@@ -348,6 +348,93 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom))}
     </div>
   </div>
 
+  <!-- TELA: BLOG SEO -->
+  <div class="screen" id="screen-blog">
+    <div class="ph"><div class="logo ph-logo"></div><div><div class="ph-title">Blog SEO</div><div class="ph-sub">Clube Prime · Artigos</div></div></div>
+    <div class="pw">
+      <div class="sec-card">
+        <div class="sec-title">📰 Artigos Publicados <button class="btn bg bsm" onclick="abrirModalBlog()">+ Novo Artigo</button></div>
+        <div class="search-bar" style="margin-bottom:10px">
+          <input class="fi" id="busca-blog" placeholder="Buscar artigo..." oninput="renderizarBlog()" style="flex:1">
+          <select class="fi" id="filtro-cat-blog" onchange="renderizarBlog()" style="width:auto;min-width:120px">
+            <option value="">Todas</option>
+            <option value="cotacao">Cotação</option>
+            <option value="raca">Raças</option>
+            <option value="cruzamento">Cruzamentos</option>
+            <option value="corte">Cortes</option>
+            <option value="regiao">Regiões</option>
+            <option value="guia">Guias</option>
+            <option value="churrasco">Churrasco</option>
+            <option value="familia">Família</option>
+          </select>
+        </div>
+        <div id="blog-lista"><div style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Carregando...</div></div>
+      </div>
+
+      <div class="sec-card">
+        <div class="sec-title">📊 Estatísticas SEO</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px" id="blog-stats">
+          <div style="background:rgba(201,168,76,.08);border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:22px;font-weight:700;color:var(--gold)" id="stat-total-artigos">0</div>
+            <div style="font-size:9px;color:var(--gray);text-transform:uppercase;letter-spacing:1px">Artigos</div>
+          </div>
+          <div style="background:rgba(201,168,76,.08);border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:22px;font-weight:700;color:var(--gold)" id="stat-total-views">0</div>
+            <div style="font-size:9px;color:var(--gray);text-transform:uppercase;letter-spacing:1px">Page Views</div>
+          </div>
+          <div style="background:rgba(201,168,76,.08);border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:22px;font-weight:700;color:var(--gold)" id="stat-total-shares">0</div>
+            <div style="font-size:9px;color:var(--gray);text-transform:uppercase;letter-spacing:1px">Shares WhatsApp</div>
+          </div>
+          <div style="background:rgba(201,168,76,.08);border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:22px;font-weight:700;color:var(--gold)" id="stat-total-cta">0</div>
+            <div style="font-size:9px;color:var(--gray);text-transform:uppercase;letter-spacing:1px">Cliques CTA</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL BLOG (Editar Artigo) -->
+  <div class="mo" id="mo-blog">
+    <div class="md" style="max-height:90vh;overflow-y:auto">
+      <div class="md-handle"></div>
+      <div class="md-title" id="mo-blog-title">Novo Artigo</div>
+      <input type="hidden" id="blog-edit-id">
+      <div class="fl"><label class="flabel">Slug (URL) *</label><input class="fi" id="blog-slug" placeholder="Ex: racas/wagyu"></div>
+      <div class="fl"><label class="flabel">Título *</label><input class="fi" id="blog-titulo" placeholder="Ex: Wagyu: A Raça Japonesa de Carne Premium"></div>
+      <div class="fl"><label class="flabel">Categoria *</label>
+        <select class="fi" id="blog-categoria">
+          <option value="cotacao">Cotação</option>
+          <option value="raca">Raça</option>
+          <option value="cruzamento">Cruzamento</option>
+          <option value="corte">Corte</option>
+          <option value="regiao">Região</option>
+          <option value="guia">Guia</option>
+          <option value="churrasco">Churrasco</option>
+          <option value="familia">Família</option>
+        </select>
+      </div>
+      <div class="fl"><label class="flabel">Meta Description (max 155 chars)</label><input class="fi" id="blog-meta" placeholder="Descrição para Google" maxlength="155"></div>
+      <div class="fl"><label class="flabel">Resumo / OG Description</label><input class="fi" id="blog-resumo" placeholder="Descrição curta para WhatsApp/redes sociais"></div>
+      <div class="fl">
+        <label class="flabel">Status</label>
+        <select class="fi" id="blog-ativo">
+          <option value="true">Ativo (publicado)</option>
+          <option value="false">Inativo (rascunho)</option>
+        </select>
+      </div>
+      <div style="margin-top:8px;padding:10px;background:rgba(201,168,76,.06);border-radius:8px;font-size:10px;color:var(--gray)">
+        <strong style="color:var(--gold)">Dica:</strong> Para editar o conteúdo completo (HTML, FAQ, imagens), edite o arquivo JSON em <code>seo/conteudos/</code> e rode o gerador. Aqui você gerencia metadados e status.
+      </div>
+      <div class="md-actions" style="margin-top:12px">
+        <button class="btn bo" onclick="document.getElementById('mo-blog').classList.remove('open')">Cancelar</button>
+        <a id="blog-preview-link" href="#" target="_blank" class="btn bo" style="text-decoration:none;display:none">Visualizar</a>
+        <button class="btn bg" onclick="salvarBlog()">Salvar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL RECOMPENSA -->
   <div class="mo" id="mo-recomp">
     <div class="md">
@@ -449,6 +536,7 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom))}
     <button class="an active" onclick="A('op',this)"><span class="an-icon">🏪</span>Caixa</button>
     <button class="an" onclick="A('painel',this)"><span class="an-icon">📊</span>Painel</button>
     <button class="an" onclick="A('cardapio',this)"><span class="an-icon">🍖</span>Cardápio</button>
+    <button class="an" onclick="A('blog',this)"><span class="an-icon">📰</span>Blog</button>
     <button class="an" onclick="A('admin',this)"><span class="an-icon">⚙️</span>Admin</button>
     <button class="an" onclick="fazerLogout()" style="color:#e74c3c"><span class="an-icon">🚪</span>Sair</button>
   </nav>
@@ -1154,6 +1242,7 @@ function A(n,btn){
   btn.classList.add('active');
   if(n==='painel') { listarClientes(); listarResgatesPendentes(); listarAniversariantes(); carregarEstatisticas(); }
   if(n==='cardapio') { carregarCardapioAdmin(); }
+  if(n==='blog') { carregarBlogAdmin(); }
 }
 async function listarAniversariantes() {
   try {
@@ -1591,6 +1680,145 @@ if(admCepInput)admCepInput.addEventListener('input',function(){
   if(v.length>5)v=v.slice(0,5)+'-'+v.slice(5);
   this.value=v;
 });
+
+// ── BLOG SEO ─────────────────────────────────────────────
+let blogCache = [];
+
+async function carregarBlogAdmin() {
+  try {
+    const res = await fetch(`${SUPA_URL}/rest/v1/seo_artigos?order=publicado_em.desc`, { headers: authHeaders() });
+    if (!res.ok) throw new Error('Erro ' + res.status);
+    blogCache = await res.json();
+    renderizarBlog();
+    carregarStatsBlog();
+  } catch(e) {
+    document.getElementById('blog-lista').innerHTML = '<div style="text-align:center;padding:20px;color:var(--red);font-size:12px">Erro ao carregar artigos: ' + e.message + '</div>';
+  }
+}
+
+function renderizarBlog() {
+  const el = document.getElementById('blog-lista');
+  const filtCat = document.getElementById('filtro-cat-blog')?.value || '';
+  const busca = (document.getElementById('busca-blog')?.value || '').toLowerCase();
+  let lista = [...blogCache];
+  if (filtCat) lista = lista.filter(a => a.categoria === filtCat);
+  if (busca) lista = lista.filter(a => a.titulo.toLowerCase().includes(busca) || a.slug.toLowerCase().includes(busca));
+  if (!lista.length) { el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Nenhum artigo encontrado</div>'; return; }
+
+  const catLabels = {cotacao:'Cotação',raca:'Raça',cruzamento:'Cruzamento',corte:'Corte',regiao:'Região',guia:'Guia',churrasco:'Churrasco',familia:'Família'};
+
+  el.innerHTML = lista.map(a => {
+    const catLabel = catLabels[a.categoria] || a.categoria;
+    const statusBadge = a.ativo
+      ? '<span style="background:rgba(76,175,80,.15);color:#4CAF50;padding:2px 8px;border-radius:4px;font-size:9px;font-weight:600">ATIVO</span>'
+      : '<span style="background:rgba(224,82,82,.15);color:#EF5350;padding:2px 8px;border-radius:4px;font-size:9px;font-weight:600">INATIVO</span>';
+    const data = a.publicado_em ? new Date(a.publicado_em).toLocaleDateString('pt-BR') : '';
+    return '<div class="toggle-row" style="gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05)">' +
+      '<div style="flex:1;min-width:0">' +
+        '<div style="font-size:12px;font-weight:600;color:#fff;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + sanitize(a.titulo) + '</div>' +
+        '<div style="font-size:10px;color:var(--gray);display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
+          '<span style="background:rgba(201,168,76,.12);color:var(--gold);padding:1px 6px;border-radius:3px;font-size:9px">' + catLabel + '</span>' +
+          statusBadge +
+          '<span>/' + sanitize(a.slug) + '</span>' +
+          '<span>' + data + '</span>' +
+        '</div>' +
+      '</div>' +
+      '<div style="display:flex;gap:4px;flex-shrink:0;align-items:center">' +
+        '<a href="/' + a.slug + '" target="_blank" class="btn bo bsm" style="text-decoration:none;font-size:10px" title="Ver no site">👁️</a>' +
+        '<button class="btn bo bsm" onclick="editarBlog(\'' + a.slug.replace(/'/g, "\\'") + '\')" style="font-size:10px" title="Editar">✏️</button>' +
+        '<div class="tog ' + (a.ativo ? 'on' : '') + '" onclick="toggleBlog(\'' + a.slug.replace(/'/g, "\\'") + '\',' + (a.ativo ? 'false' : 'true') + ')"><div class="tog-d"></div></div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function abrirModalBlog(slug) {
+  const art = slug ? blogCache.find(a => a.slug === slug) : null;
+  document.getElementById('blog-edit-id').value = art?.id || '';
+  document.getElementById('blog-slug').value = art?.slug || '';
+  document.getElementById('blog-titulo').value = art?.titulo || '';
+  document.getElementById('blog-categoria').value = art?.categoria || 'raca';
+  document.getElementById('blog-meta').value = art?.meta_description || '';
+  document.getElementById('blog-resumo').value = art?.conteudo_resumo || '';
+  document.getElementById('blog-ativo').value = art?.ativo !== false ? 'true' : 'false';
+  document.getElementById('mo-blog-title').textContent = art ? 'Editar Artigo' : 'Novo Artigo';
+  document.getElementById('blog-slug').readOnly = !!art;
+  const previewLink = document.getElementById('blog-preview-link');
+  if (art) {
+    previewLink.href = '/' + art.slug;
+    previewLink.style.display = '';
+  } else {
+    previewLink.style.display = 'none';
+  }
+  document.getElementById('mo-blog').classList.add('open');
+}
+
+function editarBlog(slug) { abrirModalBlog(slug); }
+
+async function salvarBlog() {
+  const id = document.getElementById('blog-edit-id').value;
+  const slug = document.getElementById('blog-slug').value.trim();
+  const titulo = document.getElementById('blog-titulo').value.trim();
+  const categoria = document.getElementById('blog-categoria').value;
+  const meta = document.getElementById('blog-meta').value.trim();
+  const resumo = document.getElementById('blog-resumo').value.trim();
+  const ativo = document.getElementById('blog-ativo').value === 'true';
+
+  if (!slug || !titulo) { alert('Slug e título são obrigatórios'); return; }
+
+  try {
+    if (id) {
+      await fetch(`${SUPA_URL}/rest/v1/seo_artigos?id=eq.${id}`, {
+        method: 'PATCH',
+        headers: authHeaders(),
+        body: JSON.stringify({ titulo, categoria, meta_description: meta, conteudo_resumo: resumo, ativo, atualizado_em: new Date().toISOString() })
+      });
+    } else {
+      await fetch(`${SUPA_URL}/rest/v1/seo_artigos`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ slug, titulo, categoria, meta_description: meta, conteudo_resumo: resumo, ativo })
+      });
+    }
+    document.getElementById('mo-blog').classList.remove('open');
+    await carregarBlogAdmin();
+  } catch(e) { alert('Erro ao salvar: ' + e.message); }
+}
+
+async function toggleBlog(slug, novoEstado) {
+  try {
+    await fetch(`${SUPA_URL}/rest/v1/seo_artigos?slug=eq.${encodeURIComponent(slug)}`, {
+      method: 'PATCH',
+      headers: authHeaders(),
+      body: JSON.stringify({ ativo: novoEstado, atualizado_em: new Date().toISOString() })
+    });
+    await carregarBlogAdmin();
+  } catch(e) { alert('Erro: ' + e.message); }
+}
+
+async function carregarStatsBlog() {
+  try {
+    document.getElementById('stat-total-artigos').textContent = blogCache.filter(a => a.ativo).length;
+
+    const views = await fetch(`${SUPA_URL}/rest/v1/seo_analytics?evento=eq.page_view&select=id`, { headers: authHeaders() });
+    if (views.ok) {
+      const data = await views.json();
+      document.getElementById('stat-total-views').textContent = data.length;
+    }
+
+    const shares = await fetch(`${SUPA_URL}/rest/v1/seo_analytics?evento=eq.share_whatsapp&select=id`, { headers: authHeaders() });
+    if (shares.ok) {
+      const data = await shares.json();
+      document.getElementById('stat-total-shares').textContent = data.length;
+    }
+
+    const cta = await fetch(`${SUPA_URL}/rest/v1/seo_analytics?evento=eq.cta_clube&select=id`, { headers: authHeaders() });
+    if (cta.ok) {
+      const data = await cta.json();
+      document.getElementById('stat-total-cta').textContent = data.length;
+    }
+  } catch(e) { console.warn('Stats blog erro:', e); }
+}
 </script>
 </body>
 </html>
