@@ -1,0 +1,17 @@
+{
+  "name": "clube-prime-seo",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Sistema SEO programático do Clube Prime",
+  "scripts": {
+    "cotacao": "node scripts/cotacao-scraper.js",
+    "gerar-artigo": "node scripts/gerar-artigo.js",
+    "publicar": "node scripts/publicar.js",
+    "foto": "node scripts/unsplash.js"
+  },
+  "dependencies": {
+    "cheerio": "^1.0.0",
+    "node-fetch": "^3.3.2"
+  }
+}

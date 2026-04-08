@@ -1,0 +1,57 @@
+name: SEO — Publicação Diária
+
+on:
+  schedule:
+    # Seg-Sex 6:30 BRT (9:30 UTC)
+    - cron: '30 9 * * 1-5'
+    # Sábado 9:00 BRT (12:00 UTC)
+    - cron: '0 12 * * 6'
+    # Domingo 10:00 BRT (13:00 UTC)
+    - cron: '0 13 * * 0'
+  workflow_dispatch:
+    inputs:
+      dia_override:
+        description: 'Forçar dia da semana (segunda, terca, etc)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Instalar dependências SEO
+        working-directory: seo
+        run: npm ci
+
+      - name: Scraping cotação CEPEA
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: node seo/scripts/cotacao-scraper.js
+        continue-on-error: true
+
+      - name: Gerar e publicar artigo do dia
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY }}
+          DIA_OVERRIDE: ${{ inputs.dia_override }}
+        run: node seo/scripts/conteudo-diario.js
+
+      - name: Commit e push
+        run: |
+          git config user.name "Clube Prime SEO Bot"
+          git config user.email "seo@carnesrodrigues.com.br"
+          git add -A
+          git diff --staged --quiet && echo "Nenhuma mudança" && exit 0
+          git commit -m "seo: artigo diário $(date +%Y-%m-%d)"
+          git push

@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /admin-MSI.html
+Disallow: /sql-*.sql
+Disallow: /supabase/
+Disallow: /seo/scripts/
+Disallow: /seo/templates/
+Disallow: /*.bak$
+
+Sitemap: https://carnesrodrigues.com.br/sitemap.xml
