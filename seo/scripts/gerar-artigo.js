@@ -124,7 +124,6 @@ async function gerarArtigo(dados) {
     '{{FAQ_SCHEMA}}': faqSchema,
     '{{SCHEMA_EXTRA}}': dados.schemaExtra || '',
     '{{RELATED_HTML}}': relatedHtml,
-    '{{PAINEL_MERCADO}}': dados.painelMercado || '',
     '{{SHARE_TEXT_ENCODED}}': shareText,
     '{{ANALYTICS_SNIPPET}}': analyticsSnippet,
   };

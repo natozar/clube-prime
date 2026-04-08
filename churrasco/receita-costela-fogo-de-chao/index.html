@@ -19,7 +19,7 @@
     <meta property="og:url" content="https://carnesrodrigues.com.br/churrasco/receita-costela-fogo-de-chao">
     <meta property="og:locale" content="pt_BR">
     <meta property="og:site_name" content="Clube Prime — Empório Família Rodrigues">
-    <meta property="article:published_time" content="2026-04-08T18:43:11.864Z">
+    <meta property="article:published_time" content="2026-04-08T18:47:52.698Z">
     <meta property="article:section" content="churrasco">
 
     <!-- Twitter Card -->
@@ -47,8 +47,8 @@
         "headline": "Costela no Fogo de Chão: Receita Completa com Tempo e Temperatura",
         "description": "Aprenda a fazer costela no fogo de chão: preparação, tempero, tempo de cocção de 5 a 8 horas e dicas para carne macia que desfia no garfo.",
         "image": "https://images.unsplash.com/photo-1558030137-a56c1b004fa3?w=1200&h=630&fit=crop&q=80",
-        "datePublished": "2026-04-08T18:43:11.864Z",
-        "dateModified": "2026-04-08T18:43:11.864Z",
+        "datePublished": "2026-04-08T18:47:52.698Z",
+        "dateModified": "2026-04-08T18:47:52.698Z",
         "author": {
             "@type": "Organization",
             "name": "Empório de Carnes Família Rodrigues",
@@ -740,7 +740,7 @@
 
         <div class="article-meta">
             <span class="tag">Churrasco</span>
-            <time datetime="2026-04-08T18:43:11.864Z">8 de abril de 2026</time>
+            <time datetime="2026-04-08T18:47:52.698Z">8 de abril de 2026</time>
             <span>9 min de leitura</span>
         </div>
 
@@ -754,7 +754,52 @@
         >
         <p class="hero-credit">Foto: Unsplash</p>
 
-        
+        <!-- Painel de Mercado (carrega do Supabase em tempo real) -->
+        <div id="painel-mercado-container"></div>
+        <script>
+        (function(){
+          var SUPA='https://mrourzdxrahpysscckxm.supabase.co/rest/v1';
+          var K='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1yb3VyemR4cmFocHlzc2Nja3htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODMzMTUsImV4cCI6MjA4ODU1OTMxNX0.A4ueyDJgOu4cbxcHxsMTDBNHkxAOUlWFoYuv88LdnU4';
+          var H={'apikey':K,'Authorization':'Bearer '+K};
+          var inds=[
+            {key:'boi',icon:'🐂',label:'Boi Gordo',pre:'R$',suf:'/@',dec:2},
+            {key:'dolar',icon:'💵',label:'Dolar',pre:'R$',suf:'',dec:4},
+            {key:'petroleo',icon:'🛢️',label:'Petroleo',pre:'US$',suf:'/bbl',dec:2},
+            {key:'ouro',icon:'🥇',label:'Ouro',pre:'R$',suf:'/g',dec:2},
+            {key:'milho',icon:'🌽',label:'Milho',pre:'R$',suf:'/sc',dec:2},
+            {key:'soja',icon:'🫘',label:'Soja',pre:'R$',suf:'/sc',dec:2}
+          ];
+          var data={};
+          var done=0;
+          var total=inds.length;
+
+          function fmtN(v,d){return parseFloat(v).toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d})}
+          function render(){
+            var el=document.getElementById('painel-mercado-container');
+            var has=Object.keys(data).length;
+            if(!has){el.innerHTML='';return;}
+            var cards=inds.filter(function(i){return data[i.key]}).map(function(i){
+              var v=data[i.key];
+              var vc=v.var>0?'up':v.var<0?'down':'neutral';
+              var vs=v.var?(v.var>0?'+':'')+v.var.toFixed(2)+'%':'—';
+              return '<div class="painel-card"><div class="painel-card-icon">'+i.icon+'</div><div class="painel-card-label">'+i.label+'</div><div class="painel-card-valor">'+i.pre+fmtN(v.val,i.dec)+(i.suf?'<small style="font-size:0.7rem;color:var(--text-muted)">'+i.suf+'</small>':'')+'</div><div class="painel-card-var '+vc+'">'+vs+'</div></div>';
+            }).join('');
+            el.innerHTML='<div class="painel-mercado"><div class="painel-mercado-title">📊 Painel de Mercado <small>atualizado diariamente</small></div><div class="painel-grid">'+cards+'</div><a href="/mercado" class="painel-link">Ver todos os indicadores e graficos →</a></div>';
+          }
+
+          // Boi gordo
+          fetch(SUPA+'/cotacao_arroba?order=data.desc&limit=1',{headers:H}).then(function(r){return r.json()}).then(function(rows){
+            if(rows&&rows[0])data.boi={val:parseFloat(rows[0].preco_rs),var:rows[0].variacao_pct?parseFloat(rows[0].variacao_pct):null};
+          }).catch(function(){}).finally(function(){done++;if(done>=total)render();});
+
+          // Outros
+          ['dolar','petroleo','ouro','milho','soja'].forEach(function(ind){
+            fetch(SUPA+'/mercado_indicadores?indicador=eq.'+ind+'&order=data.desc&limit=1',{headers:H}).then(function(r){return r.json()}).then(function(rows){
+              if(rows&&rows[0])data[ind]={val:parseFloat(rows[0].valor),var:rows[0].variacao_pct?parseFloat(rows[0].variacao_pct):null};
+            }).catch(function(){}).finally(function(){done++;if(done>=total)render();});
+          });
+        })();
+        </script>
 
         <p>A <strong>costela no fogo de chão</strong> é o prato que transforma qualquer reunião em festa. Aquela carne que desfia no garfo, com crosta dourada por fora e suculenta por dentro. O segredo não é mistério — é técnica, paciência e fogo controlado.</p>
 
