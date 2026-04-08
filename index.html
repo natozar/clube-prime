@@ -894,11 +894,19 @@ async function preencherTela(cliente, saldo) {
   const temPin = await verificarPinCliente(cliente.id);
   atualizarPinPerfil(temPin);
 
-  // Se admin pediu reset do PIN, forçar criação de novo PIN
+  // Verificar se PIN já foi confirmado nesta sessão
+  const sessaoAtual = validarSessaoCliente();
+  const pinJaVerificado = sessaoAtual && sessaoAtual.pinVerificado === true;
+
+  // Se admin pediu reset do PIN, forçar criação de novo PIN (sempre)
   if (pinResetPedido && !temPin) {
     setTimeout(() => abrirCriarPinObrigatorio(), 1000);
   }
-  // Se tem PIN → pedir para verificar no login
+  // Se PIN já verificado nesta sessão → entrar direto
+  else if (pinJaVerificado) {
+    // Nada a fazer — acesso liberado
+  }
+  // Se tem PIN mas ainda não verificou nesta sessão → pedir
   else if (temPin) {
     setTimeout(() => pedirPinLogin(), 500);
   }
@@ -1174,6 +1182,17 @@ function limparSessaoCliente() {
   localStorage.removeItem('clube_cliente_tel');
   localStorage.removeItem('clube_cliente_dados');
   localStorage.removeItem('clube_cliente_saldo');
+}
+
+// Marcar PIN como verificado na sessão atual (não pede de novo)
+function marcarPinVerificado() {
+  try {
+    const raw = localStorage.getItem('clube_sessao');
+    if (!raw) return;
+    const sessao = JSON.parse(raw);
+    sessao.pinVerificado = true;
+    localStorage.setItem('clube_sessao', JSON.stringify(sessao));
+  } catch(e) {}
 }
 
 // Renovar sessão (estende por mais 30 dias se estiver perto de expirar)
@@ -1798,9 +1817,10 @@ function confirmarPinLogin() {
   }
   const tentativa = hashPin(pin);
   if (tentativa === clientePinHash) {
-    // PIN correto
+    // PIN correto — marcar na sessão para não pedir de novo
     document.getElementById('mo-pin-login').classList.remove('open');
     pinLoginTentativas = 0;
+    marcarPinVerificado();
   } else {
     // PIN incorreto
     pinLoginTentativas++;
@@ -1884,6 +1904,7 @@ async function salvarPinSeguranca() {
     clientePinHash = pinHash;
     document.getElementById('mo-pin-criar').classList.remove('open');
     atualizarPinPerfil(true);
+    marcarPinVerificado(); // PIN acabou de ser criado — sessão verificada
     // Restaurar modal ao estado padrão (caso tenha sido aberto como obrigatório)
     const titleEl = document.querySelector('#mo-pin-criar .md-title');
     if (titleEl) titleEl.textContent = 'Crie seu PIN de segurança';
@@ -1891,7 +1912,7 @@ async function salvarPinSeguranca() {
     if (descEl) descEl.textContent = 'Crie um PIN de 4 dígitos para proteger seus pontos. Ele será pedido nos resgates e operações sensíveis.';
     const btnDepois = document.querySelector('#mo-pin-criar .btn.bo');
     if (btnDepois) btnDepois.style.display = '';
-    alert('PIN criado com sucesso! Ele será pedido nos resgates.');
+    alert('PIN criado com sucesso!');
   } else {
     erroEl.textContent = 'Erro ao salvar. Tente novamente.';
   }
