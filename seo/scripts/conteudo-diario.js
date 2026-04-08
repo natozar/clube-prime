@@ -16,6 +16,8 @@
 
 import { publicar, getDiaSemana, getDataFormatada } from './publicar.js';
 import { getCotacaoHoje, getHistorico } from './cotacao-scraper.js';
+import { getResumoMercado } from './mercado-scraper.js';
+import { gerarPainelMercado } from './gerar-artigo.js';
 
 // --- Banco de conteúdo rotativo ---
 
@@ -697,9 +699,25 @@ async function selecionarConteudo() {
       console.error(`Dia da semana não reconhecido: ${dia}`);
       process.exit(1);
   }
+
+  // Nunca chega aqui, mas TypeScript ficaria feliz
+  return null;
+}
+
+// Wrapper que injeta painel de mercado no resultado
+async function selecionarConteudoComPainel() {
+  // Buscar resumo de mercado
+  let resumoMercado = {};
+  try { resumoMercado = await getResumoMercado(); } catch(e) { console.warn('Mercado indisponível:', e.message); }
+
+  const dados = await selecionarConteudo();
+  const dia = process.env.DIA_OVERRIDE || getDiaSemana();
+  const diaCotacao = ['segunda', 'quarta', 'sexta', 'quinta'].includes(dia);
+  dados.painelMercado = gerarPainelMercado(resumoMercado, diaCotacao);
+  return dados;
 }
 
 // --- Main ---
 
-const dados = await selecionarConteudo();
+const dados = await selecionarConteudoComPainel();
 await publicar(dados);

@@ -1,0 +1,48 @@
+{
+  "slug": "mercado/panorama-semanal",
+  "titulo": "Panorama do Mercado Agro: Como Dólar, Milho e Petróleo Afetam o Preço da Carne",
+  "tituloCurto": "Panorama Semanal",
+  "categoria": "cotacao",
+  "metaDescription": "Análise semanal do mercado agro: como dólar, petróleo, milho e soja impactam a cotação do boi gordo e o preço da carne no açougue.",
+  "ogDescription": "Panorama do mercado: entenda como dólar, milho e petróleo afetam o preço da carne que você compra.",
+  "blocoClube": "Acompanhe o <strong>Panorama de Mercado</strong> toda quinta no <strong>Clube Prime</strong>. Membros recebem alerta quando indicadores impactam o preço da carne.",
+  "conteudo": "<p>O preço da carne no açougue não depende só da oferta de boi gordo. Uma rede de indicadores financeiros — <strong>dólar, petróleo, milho, soja e ouro</strong> — afeta cada elo da cadeia, do pasto ao prato. Entender essas conexões é o que separa quem reage do preço de quem antecipa.</p>\n\n<h2>Dólar e a Carne: A Conexão Direta</h2>\n<p>O Brasil é o maior exportador de carne bovina do mundo. Quando o <strong>dólar sobe</strong>, a carne brasileira fica mais barata para compradores internacionais (China, países árabes, Europa). Resultado: frigoríficos exportam mais, sobra menos carne no mercado interno, e o preço doméstico sobe.</p>\n<p>A lógica inversa também vale: <strong>dólar em queda</strong> torna a exportação menos atrativa, aumenta a oferta interna e pressiona preços para baixo.</p>\n<p>Para o pecuarista, dólar alto é bom — mais receita por arroba. Para o consumidor, é ruim — carne mais cara no açougue.</p>\n\n<h2>Petróleo: O Custo Invisível</h2>\n<p>O <strong>petróleo</strong> afeta a carne de forma indireta mas poderosa:</p>\n<ul>\n<li><strong>Frete:</strong> diesel mais caro encarece o transporte do boi vivo, da carcaça frigorificada e da distribuição ao varejo</li>\n<li><strong>Insumos:</strong> fertilizantes, herbicidas e plásticos de embalagem são derivados do petróleo</li>\n<li><strong>Ração:</strong> o custo de transporte de milho e soja até o confinamento sobe com o diesel</li>\n</ul>\n<p>Quando o barril de Brent sobe de US$ 70 para US$ 90, o impacto cascata pode adicionar R$ 0,50 a R$ 1,50 por kg de carne no varejo.</p>\n\n<h2>Milho e Soja: A Conta do Confinamento</h2>\n<p><strong>Milho</strong> e <strong>soja</strong> são os principais ingredientes da ração de confinamento. Juntos, representam 60% a 70% do custo de alimentação do boi em terminação.</p>\n<ul>\n<li><strong>Milho caro:</strong> confinamento fica mais caro → pecuarista demora mais para confinar → menos boi pronto → arroba sobe</li>\n<li><strong>Soja cara:</strong> farelo de soja (proteína da ração) mais caro → mesmo efeito no custo de confinamento</li>\n<li><strong>Safra boa:</strong> grão barato → confinamento viável → mais boi terminado → arroba tende a ceder</li>\n</ul>\n<p>A safra de milho no Brasil (janeiro-junho) e a safrinha (junho-setembro) são os períodos que mais impactam. Pecuaristas que acompanham o preço do milho conseguem planejar a entrada no confinamento no momento certo.</p>\n\n<h2>Ouro: O Termômetro da Incerteza</h2>\n<p>O <strong>ouro</strong> é o ativo de refúgio em momentos de incerteza. Quando o ouro sobe forte, geralmente significa que o mercado está nervoso — crises, guerras, inflação alta. Nessas situações:</p>\n<ul>\n<li>Moedas se desvalorizam (dólar sobe no Brasil)</li>\n<li>Commodities agrícolas podem subir por especulação</li>\n<li>Custo de financiamento rural pode aumentar</li>\n</ul>\n<p>O ouro não afeta a carne diretamente, mas é um <strong>indicador antecedente</strong>: quando o ouro dispara, prepare-se para volatilidade nos outros indicadores.</p>\n\n<h2>Como Ler os Indicadores Juntos</h2>\n<p>O cenário mais favorável para <strong>carne barata no açougue</strong>:</p>\n<ul>\n<li>Dólar baixo (exportação menos atrativa → mais carne no mercado interno)</li>\n<li>Petróleo baixo (frete barato)</li>\n<li>Milho e soja baratos (confinamento viável → mais boi terminado)</li>\n<li>Ouro estável (sem crises)</li>\n</ul>\n<p>O cenário mais <strong>desfavorável</strong>: dólar alto + petróleo caro + milho caro + ouro em alta = tempestade perfeita para carne cara.</p>\n<p>Para o <strong>pecuarista/investidor</strong>, o cenário ideal é o oposto: dólar alto + milho barato = margem gorda no confinamento + exportação lucrativa.</p>\n\n<h2>Acompanhe os Indicadores</h2>\n<p>Aqui no Clube Prime, atualizamos diariamente todos os indicadores que impactam o preço da carne. Acesse o <a href=\"/mercado\">Painel de Mercado</a> para ver gráficos, variações e tendências.</p>",
+  "faq": [
+    {
+      "pergunta": "Por que o dólar alto aumenta o preço da carne?",
+      "resposta": "Com dólar alto, a carne brasileira fica mais barata para importadores estrangeiros. Frigoríficos exportam mais, reduzindo a oferta no mercado interno. Com menos carne disponível no Brasil, o preço sobe para o consumidor. O Brasil exporta cerca de 25% da produção — volume suficiente para impactar o mercado doméstico."
+    },
+    {
+      "pergunta": "Como o preço do milho afeta o boi gordo?",
+      "resposta": "O milho é o principal ingrediente da ração de confinamento (50-60% da dieta). Quando o milho está caro, o custo de engordar o boi sobe, desestimulando o confinamento. Com menos boi terminado, a oferta cai e o preço da arroba sobe. Inversamente, milho barato incentiva confinamento, aumenta a oferta e pode pressionar a arroba para baixo."
+    },
+    {
+      "pergunta": "O petróleo afeta o preço da carne?",
+      "resposta": "Sim, indiretamente. O diesel derivado do petróleo é o principal custo de transporte da cadeia: frete do boi vivo, transporte da carcaça refrigerada e distribuição ao varejo. Petróleo caro também encarece fertilizantes e insumos agrícolas. Uma alta de US$ 20/barril no Brent pode adicionar R$ 0,50 a R$ 1,50 por kg de carne ao consumidor final."
+    }
+  ],
+  "relacionados": [
+    {
+      "slug": "cotacao-arroba-boi-gordo-hoje",
+      "titulo": "Cotação da Arroba do Boi Gordo Hoje",
+      "categoria": "cotacao",
+      "imageUrl": "https://plus.unsplash.com/premium_photo-1667860234741-0e500d0e5ba5?w=400&h=225&fit=crop"
+    },
+    {
+      "slug": "guia/carne-de-pasto-vs-confinamento",
+      "titulo": "Pasto vs Confinamento: Diferença na Carne",
+      "categoria": "guia",
+      "imageUrl": "https://images.unsplash.com/photo-1690983325563-fe4412c4c347?w=400&h=225&fit=crop"
+    },
+    {
+      "slug": "regioes/alta-mogiana",
+      "titulo": "Alta Mogiana: Polo da Carne Premium",
+      "categoria": "regiao",
+      "imageUrl": "https://plus.unsplash.com/premium_photo-1667860234741-0e500d0e5ba5?w=400&h=225&fit=crop"
+    }
+  ],
+  "imageUrl": "https://plus.unsplash.com/premium_photo-1667860234741-0e500d0e5ba5?w=1200&h=630&fit=crop&q=80",
+  "imageAlt": "Gado no pasto ao entardecer representando o mercado agro — Clube Prime",
+  "imageCredit": "Foto: Unsplash",
+  "tempoLeitura": 9
+}

@@ -124,6 +124,7 @@ async function gerarArtigo(dados) {
     '{{FAQ_SCHEMA}}': faqSchema,
     '{{SCHEMA_EXTRA}}': dados.schemaExtra || '',
     '{{RELATED_HTML}}': relatedHtml,
+    '{{PAINEL_MERCADO}}': dados.painelMercado || '',
     '{{SHARE_TEXT_ENCODED}}': shareText,
     '{{ANALYTICS_SNIPPET}}': analyticsSnippet,
   };
@@ -256,7 +257,60 @@ function escapeJson(str) {
   return str.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n');
 }
 
-export { gerarArtigo };
+/**
+ * Gera o HTML do painel de mercado a partir do resumo de indicadores
+ * @param {Object} resumo - { boi: {valor, variacao_pct}, dolar: {...}, ... }
+ * @param {boolean} completo - true = painel 6 cards, false = mini linha
+ */
+function gerarPainelMercado(resumo, completo = true) {
+  if (!resumo || Object.keys(resumo).length === 0) return '';
+
+  const indicadores = [
+    { key: 'boi', icon: '🐂', label: 'Boi Gordo', prefix: 'R$', suffix: '/@', decimals: 2 },
+    { key: 'dolar', icon: '💵', label: 'Dólar', prefix: 'R$', suffix: '', decimals: 4 },
+    { key: 'petroleo', icon: '🛢️', label: 'Petróleo', prefix: 'US$', suffix: '/bbl', decimals: 2 },
+    { key: 'ouro', icon: '🥇', label: 'Ouro', prefix: 'R$', suffix: '/g', decimals: 2 },
+    { key: 'milho', icon: '🌽', label: 'Milho', prefix: 'R$', suffix: '/sc', decimals: 2 },
+    { key: 'soja', icon: '🫘', label: 'Soja', prefix: 'R$', suffix: '/sc', decimals: 2 },
+  ];
+
+  if (!completo) {
+    // Mini resumo em uma linha
+    const items = indicadores.filter(i => resumo[i.key]).map(i => {
+      const v = resumo[i.key];
+      return `${i.label} ${i.prefix}${v.valor.toFixed(i.decimals)}`;
+    });
+    if (items.length === 0) return '';
+    return `<div class="mini-banner mini-banner--cotacao" style="justify-content:center;text-align:center;flex-direction:column;gap:6px">
+      <div class="mini-banner-title" style="font-size:0.78rem">Mercado hoje</div>
+      <div class="mini-banner-desc" style="font-size:0.82rem;color:#D0D0D0">${items.join('  ·  ')}</div>
+    </div>`;
+  }
+
+  // Painel completo
+  const cards = indicadores.filter(i => resumo[i.key]).map(i => {
+    const v = resumo[i.key];
+    const varClass = v.variacao_pct > 0 ? 'up' : v.variacao_pct < 0 ? 'down' : 'neutral';
+    const varStr = v.variacao_pct ? `${v.variacao_pct > 0 ? '+' : ''}${v.variacao_pct.toFixed(2)}%` : '—';
+    const valorFmt = v.valor.toLocaleString('pt-BR', { minimumFractionDigits: i.decimals, maximumFractionDigits: i.decimals });
+    return `<div class="painel-card">
+        <div class="painel-card-icon">${i.icon}</div>
+        <div class="painel-card-label">${i.label}</div>
+        <div class="painel-card-valor">${i.prefix}${valorFmt}${i.suffix ? '<small style="font-size:0.7rem;color:var(--text-muted)">' + i.suffix + '</small>' : ''}</div>
+        <div class="painel-card-var ${varClass}">${varStr}</div>
+      </div>`;
+  }).join('\n      ');
+
+  return `<div class="painel-mercado">
+    <div class="painel-mercado-title">📊 Painel de Mercado <small>atualizado diariamente</small></div>
+    <div class="painel-grid">
+      ${cards}
+    </div>
+    <a href="/mercado" class="painel-link">Ver todos os indicadores e gráficos →</a>
+  </div>`;
+}
+
+export { gerarArtigo, gerarPainelMercado };
 
 // CLI mode
 if (process.argv[2]) {
