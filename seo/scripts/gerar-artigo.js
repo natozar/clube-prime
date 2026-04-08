@@ -129,9 +129,8 @@ async function gerarArtigo(dados) {
   }
 
   // Determinar caminho de saída
-  // slug "racas/angus" → /racas/angus.html  (GitHub Pages)
-  // slug "cotacao-arroba-boi-gordo-hoje" → /cotacao-arroba-boi-gordo-hoje.html
-  const outputPath = join(SITE_ROOT, `${dados.slug}.html`);
+  // slug "racas/angus" → /racas/angus/index.html (GitHub Pages clean URLs)
+  const outputPath = join(SITE_ROOT, dados.slug, 'index.html');
   const outputDir = dirname(outputPath);
 
   await mkdir(outputDir, { recursive: true });
