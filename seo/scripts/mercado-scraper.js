@@ -1,8 +1,11 @@
 /**
  * CLUBE PRIME SEO — Scraper Multi-Indicadores de Mercado
  *
- * Indicadores: Dólar (BCB), Ouro (BCB), Petróleo (BCB), Milho (CEPEA), Soja (CEPEA)
- * Todas as fontes são APIs públicas gratuitas.
+ * Fontes reais e gratuitas:
+ * - Dólar PTAX: BCB série 1 (api.bcb.gov.br)
+ * - Ouro: AwesomeAPI XAU-BRL convertido para g
+ * - Petróleo WTI: Yahoo Finance (CL=F)
+ * - Milho e Soja: CEPEA/Esalq (scraping HTML)
  */
 
 const cheerio = await import('cheerio');
@@ -10,103 +13,78 @@ const cheerio = await import('cheerio');
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://mrourzdxrahpysscckxm.supabase.co';
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 
-// --- APIs do Banco Central do Brasil (séries temporais) ---
-// Série 1: Dólar comercial (venda)
-// Série 4: Ouro BM&F (grama)
-// Série 21619: Petróleo Brent (US$/barril) — via SGS/BCB
-
-const BCB_BASE = 'https://api.bcb.gov.br/dados/serie/bcdata.sgs';
-
-async function fetchBCB(serie, ultimos = 30) {
-  const url = `${BCB_BASE}.${serie}/dados/ultimos/${ultimos}?formato=json`;
-  const res = await fetch(url, {
+// ────────────────────────────────────────────────
+// DÓLAR — BCB Série 1 (PTAX Venda)
+// ────────────────────────────────────────────────
+async function scrapeDolar() {
+  console.log('  Dólar PTAX (BCB série 1)...');
+  const res = await fetch('https://api.bcb.gov.br/dados/serie/bcdata.sgs.1/dados/ultimos/20?formato=json', {
     headers: { 'Accept': 'application/json' }
   });
-  if (!res.ok) throw new Error(`BCB série ${serie}: HTTP ${res.status}`);
-  return res.json();
-}
+  if (!res.ok) throw new Error(`BCB Dólar: HTTP ${res.status}`);
+  const dados = await res.json();
 
-function parseBCBDate(dateStr) {
-  // BCB retorna DD/MM/YYYY
-  const [d, m, y] = dateStr.split('/');
-  return `${y}-${m}-${d}`;
-}
-
-// --- Dólar Comercial (PTAX) ---
-async function scrapeDolar() {
-  console.log('  Buscando Dólar PTAX (BCB série 1)...');
-  const dados = await fetchBCB(1, 30);
   return dados.map((d, i, arr) => {
+    const [dia, mes, ano] = d.data.split('/');
     const valor = parseFloat(d.valor);
     const anterior = i > 0 ? parseFloat(arr[i - 1].valor) : null;
     const variacao = anterior ? parseFloat(((valor - anterior) / anterior * 100).toFixed(2)) : null;
-    return {
-      data: parseBCBDate(d.data),
-      indicador: 'dolar',
-      valor,
-      variacao_pct: variacao,
-      fonte: 'BCB/PTAX'
-    };
+    return { data: `${ano}-${mes}-${dia}`, indicador: 'dolar', valor, variacao_pct: variacao, fonte: 'BCB/PTAX' };
   });
 }
 
-// --- Ouro BM&F (grama em R$) ---
+// ────────────────────────────────────────────────
+// OURO — AwesomeAPI XAU-BRL (onça troy → grama)
+// ────────────────────────────────────────────────
 async function scrapeOuro() {
-  console.log('  Buscando Ouro BM&F (BCB série 4)...');
-  const dados = await fetchBCB(4, 30);
-  return dados.map((d, i, arr) => {
-    const valor = parseFloat(d.valor);
-    const anterior = i > 0 ? parseFloat(arr[i - 1].valor) : null;
+  console.log('  Ouro (AwesomeAPI XAU-BRL → R$/g)...');
+  const res = await fetch('https://economia.awesomeapi.com.br/json/daily/XAU-BRL/30');
+  if (!res.ok) throw new Error(`AwesomeAPI Ouro: HTTP ${res.status}`);
+  const dados = await res.json();
+
+  // AwesomeAPI retorna do mais recente ao mais antigo
+  const sorted = dados.slice().reverse();
+  return sorted.map((d, i, arr) => {
+    const data = new Date(d.timestamp * 1000).toISOString().split('T')[0];
+    const valor = parseFloat((parseFloat(d.bid) / 31.1035).toFixed(2)); // onça → grama
+    const anterior = i > 0 ? parseFloat((parseFloat(arr[i - 1].bid) / 31.1035).toFixed(2)) : null;
     const variacao = anterior ? parseFloat(((valor - anterior) / anterior * 100).toFixed(2)) : null;
-    return {
-      data: parseBCBDate(d.data),
-      indicador: 'ouro',
-      valor,
-      variacao_pct: variacao,
-      fonte: 'BCB/BM&F'
-    };
+    return { data, indicador: 'ouro', valor, variacao_pct: variacao, fonte: 'AwesomeAPI/XAU' };
   });
 }
 
-// --- Petróleo Brent (US$/barril) via BCB série 21619 ---
+// ────────────────────────────────────────────────
+// PETRÓLEO WTI — Yahoo Finance (CL=F)
+// ────────────────────────────────────────────────
 async function scrapePetroleo() {
-  console.log('  Buscando Petróleo Brent (BCB série 21619)...');
-  try {
-    const dados = await fetchBCB(21619, 30);
-    return dados.map((d, i, arr) => {
-      const valor = parseFloat(d.valor);
-      const anterior = i > 0 ? parseFloat(arr[i - 1].valor) : null;
-      const variacao = anterior ? parseFloat(((valor - anterior) / anterior * 100).toFixed(2)) : null;
-      return {
-        data: parseBCBDate(d.data),
-        indicador: 'petroleo',
-        valor,
-        variacao_pct: variacao,
-        fonte: 'BCB/EIA'
-      };
-    });
-  } catch (e) {
-    // Fallback: tentar série 20812 (Brent FOB)
-    console.warn('  Série 21619 falhou, tentando 20812...');
-    const dados = await fetchBCB(20812, 30);
-    return dados.map((d, i, arr) => {
-      const valor = parseFloat(d.valor);
-      const anterior = i > 0 ? parseFloat(arr[i - 1].valor) : null;
-      const variacao = anterior ? parseFloat(((valor - anterior) / anterior * 100).toFixed(2)) : null;
-      return {
-        data: parseBCBDate(d.data),
-        indicador: 'petroleo',
-        valor,
-        variacao_pct: variacao,
-        fonte: 'BCB/Brent'
-      };
-    });
-  }
+  console.log('  Petróleo WTI (Yahoo Finance CL=F)...');
+  const res = await fetch('https://query1.finance.yahoo.com/v8/finance/chart/CL%3DF?range=1mo&interval=1d', {
+    headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
+  });
+  if (!res.ok) throw new Error(`Yahoo Petróleo: HTTP ${res.status}`);
+  const json = await res.json();
+
+  const result = json.chart?.result?.[0];
+  if (!result) throw new Error('Yahoo: sem dados');
+
+  const timestamps = result.timestamp || [];
+  const closes = result.indicators?.quote?.[0]?.close || [];
+
+  return timestamps.map((t, i, arr) => {
+    const data = new Date(t * 1000).toISOString().split('T')[0];
+    const valor = closes[i] ? parseFloat(closes[i].toFixed(2)) : null;
+    if (!valor) return null;
+    const anterior = i > 0 && closes[i - 1] ? parseFloat(closes[i - 1].toFixed(2)) : null;
+    const variacao = anterior ? parseFloat(((valor - anterior) / anterior * 100).toFixed(2)) : null;
+    return { data, indicador: 'petroleo', valor, variacao_pct: variacao, fonte: 'Yahoo/WTI' };
+  }).filter(Boolean);
 }
 
-// --- CEPEA Scraper genérico ---
+// ────────────────────────────────────────────────
+// CEPEA Scraper genérico (Milho / Soja)
+// ────────────────────────────────────────────────
 async function scrapeCEPEA(url, indicador) {
-  console.log(`  Buscando ${indicador} (CEPEA)...`);
+  console.log(`  ${indicador} (CEPEA/Esalq)...`);
   const response = await fetch(url, {
     headers: {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
@@ -136,13 +114,7 @@ async function scrapeCEPEA(url, indicador) {
           if (!isNaN(parsed)) variacao = parsed;
         }
         if (!isNaN(valor)) {
-          rows.push({
-            data: `${ano}-${mes}-${dia}`,
-            indicador,
-            valor,
-            variacao_pct: variacao,
-            fonte: 'CEPEA/Esalq'
-          });
+          rows.push({ data: `${ano}-${mes}-${dia}`, indicador, valor, variacao_pct: variacao, fonte: 'CEPEA/Esalq' });
         }
       }
     }
@@ -151,20 +123,14 @@ async function scrapeCEPEA(url, indicador) {
   return rows;
 }
 
-// --- Milho (saca 60kg) ---
-async function scrapeMilho() {
-  return scrapeCEPEA('https://cepea.esalq.usp.br/br/indicador/milho.aspx', 'milho');
-}
+async function scrapeMilho() { return scrapeCEPEA('https://cepea.esalq.usp.br/br/indicador/milho.aspx', 'milho'); }
+async function scrapeSoja() { return scrapeCEPEA('https://cepea.esalq.usp.br/br/indicador/soja.aspx', 'soja'); }
 
-// --- Soja (saca 60kg) ---
-async function scrapeSoja() {
-  return scrapeCEPEA('https://cepea.esalq.usp.br/br/indicador/soja.aspx', 'soja');
-}
-
-// --- Salvar no Supabase ---
+// ────────────────────────────────────────────────
+// Salvar no Supabase (upsert)
+// ────────────────────────────────────────────────
 async function salvarIndicadores(dados) {
   if (!SUPABASE_SERVICE_KEY || dados.length === 0) return;
-
   const res = await fetch(`${SUPABASE_URL}/rest/v1/mercado_indicadores`, {
     method: 'POST',
     headers: {
@@ -175,63 +141,54 @@ async function salvarIndicadores(dados) {
     },
     body: JSON.stringify(dados)
   });
-
   if (!res.ok) {
     const err = await res.text();
     throw new Error(`Supabase: ${res.status} — ${err}`);
   }
 }
 
-// --- Buscar resumo (último valor de cada indicador) ---
+// ────────────────────────────────────────────────
+// Resumo (último valor de cada indicador)
+// ────────────────────────────────────────────────
 async function getResumoMercado() {
   const key = SUPABASE_SERVICE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1yb3VyemR4cmFocHlzc2Nja3htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODMzMTUsImV4cCI6MjA4ODU1OTMxNX0.A4ueyDJgOu4cbxcHxsMTDBNHkxAOUlWFoYuv88LdnU4';
-  const indicadores = ['dolar', 'petroleo', 'ouro', 'milho', 'soja'];
+  const H = { 'apikey': key, 'Authorization': `Bearer ${key}` };
   const resumo = {};
 
-  // Buscar boi gordo também
   try {
-    const boiRes = await fetch(`${SUPABASE_URL}/rest/v1/cotacao_arroba?order=data.desc&limit=1`, {
-      headers: { 'apikey': key, 'Authorization': `Bearer ${key}` }
-    });
-    if (boiRes.ok) {
-      const [boi] = await boiRes.json();
-      if (boi) resumo.boi = { valor: parseFloat(boi.preco_rs), variacao_pct: boi.variacao_pct ? parseFloat(boi.variacao_pct) : null, data: boi.data, fonte: boi.fonte };
-    }
-  } catch (e) { console.warn('Resumo boi falhou:', e.message); }
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/cotacao_arroba?order=data.desc&limit=1`, { headers: H });
+    if (r.ok) { const [boi] = await r.json(); if (boi) resumo.boi = { valor: parseFloat(boi.preco_rs), variacao_pct: boi.variacao_pct ? parseFloat(boi.variacao_pct) : null }; }
+  } catch (e) {}
 
-  for (const ind of indicadores) {
+  for (const ind of ['dolar', 'petroleo', 'ouro', 'milho', 'soja']) {
     try {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/mercado_indicadores?indicador=eq.${ind}&order=data.desc&limit=1`, {
-        headers: { 'apikey': key, 'Authorization': `Bearer ${key}` }
-      });
-      if (res.ok) {
-        const [row] = await res.json();
-        if (row) resumo[ind] = { valor: parseFloat(row.valor), variacao_pct: row.variacao_pct ? parseFloat(row.variacao_pct) : null, data: row.data, fonte: row.fonte };
-      }
-    } catch (e) { console.warn(`Resumo ${ind} falhou:`, e.message); }
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/mercado_indicadores?indicador=eq.${ind}&order=data.desc&limit=1`, { headers: H });
+      if (r.ok) { const [row] = await r.json(); if (row) resumo[ind] = { valor: parseFloat(row.valor), variacao_pct: row.variacao_pct ? parseFloat(row.variacao_pct) : null }; }
+    } catch (e) {}
   }
 
   return resumo;
 }
 
-// --- Buscar histórico de um indicador ---
 async function getHistoricoIndicador(indicador, dias = 30) {
   const key = SUPABASE_SERVICE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1yb3VyemR4cmFocHlzc2Nja3htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODMzMTUsImV4cCI6MjA4ODU1OTMxNX0.A4ueyDJgOu4cbxcHxsMTDBNHkxAOUlWFoYuv88LdnU4';
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/mercado_indicadores?indicador=eq.${indicador}&order=data.desc&limit=${dias}`, {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/mercado_indicadores?indicador=eq.${indicador}&order=data.desc&limit=${dias}`, {
     headers: { 'apikey': key, 'Authorization': `Bearer ${key}` }
   });
-  if (!res.ok) return [];
-  return res.json();
+  if (!r.ok) return [];
+  return r.json();
 }
 
-// --- Execução principal ---
+// ────────────────────────────────────────────────
+// Main
+// ────────────────────────────────────────────────
 async function main() {
   console.log('=== CLUBE PRIME — Scraping Indicadores de Mercado ===\n');
 
   const scrapers = [
     { name: 'Dólar', fn: scrapeDolar },
     { name: 'Ouro', fn: scrapeOuro },
-    { name: 'Petróleo', fn: scrapePetroleo },
+    { name: 'Petróleo WTI', fn: scrapePetroleo },
     { name: 'Milho', fn: scrapeMilho },
     { name: 'Soja', fn: scrapeSoja },
   ];
@@ -242,7 +199,7 @@ async function main() {
     try {
       const dados = await fn();
       console.log(`  ${name}: ${dados.length} registros`);
-      if (dados.length > 0) {
+      if (dados.length > 0 && SUPABASE_SERVICE_KEY) {
         await salvarIndicadores(dados);
         totalSalvos += dados.length;
         const ultimo = dados[dados.length - 1];
@@ -253,14 +210,15 @@ async function main() {
     }
   }
 
-  console.log(`\n✓ Total salvo: ${totalSalvos} registros`);
+  console.log(`\n✓ Total: ${totalSalvos} registros salvos`);
 
-  // Mostrar resumo
-  const resumo = await getResumoMercado();
-  console.log('\nResumo do mercado:');
-  for (const [k, v] of Object.entries(resumo)) {
-    const varStr = v.variacao_pct ? ` (${v.variacao_pct > 0 ? '+' : ''}${v.variacao_pct}%)` : '';
-    console.log(`  ${k}: ${v.valor}${varStr}`);
+  if (SUPABASE_SERVICE_KEY) {
+    const resumo = await getResumoMercado();
+    console.log('\nResumo atual:');
+    for (const [k, v] of Object.entries(resumo)) {
+      const vs = v.variacao_pct ? ` (${v.variacao_pct > 0 ? '+' : ''}${v.variacao_pct}%)` : '';
+      console.log(`  ${k}: ${v.valor}${vs}`);
+    }
   }
 }
 
