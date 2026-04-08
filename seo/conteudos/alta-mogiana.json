@@ -22,10 +22,11 @@
     }
   ],
   "relacionados": [
-    { "slug": "racas/angus", "titulo": "Angus: A Raça que Revolucionou a Pecuária", "categoria": "raca" },
-    { "slug": "cotacao-arroba-boi-gordo-hoje", "titulo": "Cotação da Arroba do Boi Gordo Hoje", "categoria": "cotacao" },
-    { "slug": "churrasco/receita-costela-fogo-de-chao", "titulo": "Costela no Fogo de Chão: Receita Completa", "categoria": "churrasco" }
+    { "slug": "racas/angus", "titulo": "Angus: A Raça que Revolucionou a Pecuária", "categoria": "raca", "imageUrl": "https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=400&h=225&fit=crop" },
+    { "slug": "cotacao-arroba-boi-gordo-hoje", "titulo": "Cotação da Arroba do Boi Gordo Hoje", "categoria": "cotacao", "imageUrl": "https://images.unsplash.com/photo-1500595046743-cd271d694d30?w=400&h=225&fit=crop" },
+    { "slug": "churrasco/receita-costela-fogo-de-chao", "titulo": "Costela no Fogo de Chão: Receita Completa", "categoria": "churrasco", "imageUrl": "https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?w=400&h=225&fit=crop" }
   ],
+  "imageUrl": "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1200&h=630&fit=crop&q=80",
   "imageAlt": "Paisagem de fazenda de gado na região da Alta Mogiana paulista — Clube Prime, Empório Família Rodrigues",
   "imageCredit": "Foto: Unsplash",
   "tempoLeitura": 8
