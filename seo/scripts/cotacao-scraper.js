@@ -13,9 +13,7 @@ const SUPABASE_URL = process.env.SUPABASE_URL || 'https://mrourzdxrahpysscckxm.s
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 
 if (!SUPABASE_SERVICE_KEY) {
-  console.error('ERRO: SUPABASE_SERVICE_KEY não definida.');
-  console.error('Defina via: export SUPABASE_SERVICE_KEY="sua-service-role-key"');
-  process.exit(1);
+  console.warn('AVISO: SUPABASE_SERVICE_KEY não definida — scraping de cotação pulado.');
 }
 
 // --- Scraping do CEPEA ---
@@ -212,12 +210,13 @@ async function main() {
     }
   } catch (error) {
     console.error('ERRO:', error.message);
-    process.exit(1);
+    if (isMain) process.exit(1);
   }
 }
 
 // Exportar funções para uso em outros scripts
 export { scrapeCepea, salvarCotacoes, getCotacaoHoje, getHistorico };
 
-// Executar se chamado diretamente
-main();
+// Executar só se chamado diretamente (não quando importado)
+const isMain = !process.argv[1] || process.argv[1].includes('cotacao-scraper');
+if (isMain) main();
