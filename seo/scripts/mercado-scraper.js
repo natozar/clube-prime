@@ -8,8 +8,6 @@
  * - Milho e Soja: CEPEA/Esalq (scraping HTML)
  */
 
-const cheerio = await import('cheerio');
-
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://mrourzdxrahpysscckxm.supabase.co';
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 
@@ -81,50 +79,49 @@ async function scrapePetroleo() {
 }
 
 // ────────────────────────────────────────────────
-// CEPEA Scraper genérico (Milho / Soja)
+// MILHO e SOJA — Yahoo Finance (CBOT futures → R$/saca 60kg)
+// CEPEA está atrás de Cloudflare, então usamos futuros CBOT
+// convertidos para R$/saca usando o dólar do dia
 // ────────────────────────────────────────────────
-async function scrapeCEPEA(url, indicador) {
-  console.log(`  ${indicador} (CEPEA/Esalq)...`);
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-      'Accept': 'text/html,application/xhtml+xml',
-      'Accept-Language': 'pt-BR,pt;q=0.9',
-    }
+const MILHO_BUSHEL_KG = 25.4;   // 1 bushel milho = 25.4 kg
+const SOJA_BUSHEL_KG = 27.216;  // 1 bushel soja = 27.216 kg
+const SACA_KG = 60;
+
+async function getDolarHoje() {
+  const r = await fetch('https://api.bcb.gov.br/dados/serie/bcdata.sgs.1/dados/ultimos/1?formato=json', {
+    headers: { 'Accept': 'application/json' }
   });
-  if (!response.ok) throw new Error(`CEPEA ${indicador}: HTTP ${response.status}`);
-
-  const html = await response.text();
-  const $ = cheerio.load(html);
-  const rows = [];
-
-  $('table tbody tr').each((_, row) => {
-    const cells = $(row).find('td');
-    if (cells.length >= 3) {
-      const dataText = $(cells[0]).text().trim();
-      const precoText = $(cells[1]).text().trim();
-      const variacaoText = $(cells[2]).text().trim();
-
-      if (/^\d{2}\/\d{2}\/\d{4}$/.test(dataText) && /\d+,\d{2}$/.test(precoText)) {
-        const [dia, mes, ano] = dataText.split('/');
-        const valor = parseFloat(precoText.replace(/\./g, '').replace(',', '.'));
-        let variacao = null;
-        if (variacaoText) {
-          const parsed = parseFloat(variacaoText.replace(/[%\s]/g, '').replace(',', '.'));
-          if (!isNaN(parsed)) variacao = parsed;
-        }
-        if (!isNaN(valor)) {
-          rows.push({ data: `${ano}-${mes}-${dia}`, indicador, valor, variacao_pct: variacao, fonte: 'CEPEA/Esalq' });
-        }
-      }
-    }
-  });
-
-  return rows;
+  const [d] = await r.json();
+  return parseFloat(d.valor);
 }
 
-async function scrapeMilho() { return scrapeCEPEA('https://cepea.esalq.usp.br/br/indicador/milho.aspx', 'milho'); }
-async function scrapeSoja() { return scrapeCEPEA('https://cepea.esalq.usp.br/br/indicador/soja.aspx', 'soja'); }
+async function scrapeYahooCommodity(symbol, indicador, bushelKg) {
+  console.log(`  ${indicador} (Yahoo Finance ${symbol} → R$/sc)...`);
+  const usd = await getDolarHoje();
+  const r = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=1mo&interval=1d`, {
+    headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
+  });
+  if (!r.ok) throw new Error(`Yahoo ${indicador}: HTTP ${r.status}`);
+  const j = await r.json();
+  const res = j.chart?.result?.[0];
+  if (!res) throw new Error(`Yahoo ${indicador}: sem dados`);
+
+  const ts = res.timestamp || [];
+  const cl = res.indicators?.quote?.[0]?.close || [];
+
+  return ts.map((t, i) => {
+    if (!cl[i]) return null;
+    const data = new Date(t * 1000).toISOString().split('T')[0];
+    const usdPerBushel = cl[i] / 100; // cents → dollars
+    const brlPerSaca = parseFloat((usdPerBushel / bushelKg * SACA_KG * usd).toFixed(2));
+    const anterior = i > 0 && cl[i - 1] ? cl[i - 1] : null;
+    const variacao = anterior ? parseFloat(((cl[i] - anterior) / anterior * 100).toFixed(2)) : null;
+    return { data, indicador, valor: brlPerSaca, variacao_pct: variacao, fonte: 'Yahoo/CBOT' };
+  }).filter(Boolean);
+}
+
+async function scrapeMilho() { return scrapeYahooCommodity('ZC=F', 'milho', MILHO_BUSHEL_KG); }
+async function scrapeSoja() { return scrapeYahooCommodity('ZS=F', 'soja', SOJA_BUSHEL_KG); }
 
 // ────────────────────────────────────────────────
 // Salvar no Supabase (upsert)
