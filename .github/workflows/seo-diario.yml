@@ -2,8 +2,8 @@ name: SEO — Publicação Diária
 
 on:
   schedule:
-    # Seg-Sex 6:30 BRT (9:30 UTC)
-    - cron: '30 9 * * 1-5'
+    # Seg-Sex 9:00 BRT (12:00 UTC)
+    - cron: '0 12 * * 1-5'
     # Sábado 9:00 BRT (12:00 UTC)
     - cron: '0 12 * * 6'
     # Domingo 10:00 BRT (13:00 UTC)
