@@ -106,12 +106,16 @@ async function enviarPush(dados) {
     })
   });
 
+  const body = await response.text();
   if (!response.ok) {
-    const error = await response.text();
-    console.error(`Erro ao enviar push: ${response.status} — ${error}`);
+    console.error(`Erro ao enviar push: ${response.status} — ${body}`);
   } else {
-    const result = await response.json();
-    console.log(`✓ Push enviada para ${result.recipients || '?'} dispositivos`);
+    try {
+      const result = JSON.parse(body);
+      console.log(`✓ Push enviada — id: ${result.id || '?'}, recipients: ${result.recipients || 0}, errors: ${JSON.stringify(result.errors || [])}`);
+    } catch (e) {
+      console.log(`✓ Push enviada — resposta: ${body.slice(0, 200)}`);
+    }
   }
 }
 

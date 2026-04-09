@@ -128,13 +128,14 @@ async function scrapeSoja() { return scrapeYahooCommodity('ZS=F', 'soja', SOJA_B
 // ────────────────────────────────────────────────
 async function salvarIndicadores(dados) {
   if (!SUPABASE_SERVICE_KEY || dados.length === 0) return;
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/mercado_indicadores`, {
+  // Upsert com on_conflict na constraint composta (data, indicador)
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/mercado_indicadores?on_conflict=data,indicador`, {
     method: 'POST',
     headers: {
       'apikey': SUPABASE_SERVICE_KEY,
       'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
       'Content-Type': 'application/json',
-      'Prefer': 'resolution=merge-duplicates'
+      'Prefer': 'resolution=merge-duplicates,return=minimal'
     },
     body: JSON.stringify(dados)
   });
