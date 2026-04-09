@@ -101,6 +101,7 @@ async function enviarPush(dados) {
       headings: { pt: dados.pushTitulo || dados.titulo.substring(0, 60), en: dados.pushTitulo || dados.titulo.substring(0, 60) },
       contents: { pt: dados.pushBody || dados.ogDescription.substring(0, 100), en: dados.pushBody || dados.ogDescription.substring(0, 100) },
       url: `https://carnesrodrigues.com.br/${dados.slug}`,
+      web_url: `https://carnesrodrigues.com.br/${dados.slug}`,
       chrome_web_icon: 'https://carnesrodrigues.com.br/icon-192.png',
       chrome_web_image: dados.imageUrl || '',
     })
