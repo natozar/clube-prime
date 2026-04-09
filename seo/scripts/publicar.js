@@ -89,15 +89,15 @@ async function enviarPush(dados) {
     return;
   }
 
-  const response = await fetch('https://onesignal.com/api/v1/notifications', {
+  const response = await fetch('https://api.onesignal.com/notifications', {
     method: 'POST',
     headers: {
-      'Authorization': `Basic ${ONESIGNAL_REST_KEY}`,
+      'Authorization': `Key ${ONESIGNAL_REST_KEY}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
       app_id: ONESIGNAL_APP_ID,
-      included_segments: ['Subscribed Users'],
+      included_segments: ['All'],
       headings: { pt: dados.pushTitulo || dados.titulo.substring(0, 60), en: dados.pushTitulo || dados.titulo.substring(0, 60) },
       contents: { pt: dados.pushBody || dados.ogDescription.substring(0, 100), en: dados.pushBody || dados.ogDescription.substring(0, 100) },
       url: `https://carnesrodrigues.com.br/${dados.slug}`,
