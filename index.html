@@ -233,7 +233,8 @@ body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
   OneSignalDeferred.push(async function(OneSignal) {
     await OneSignal.init({
       appId: "204a1304-2cc4-44b8-af83-f35ceaabd504",
-      serviceWorkerPath: "/OneSignalSDKWorker.js",
+      serviceWorkerParam: { scope: "/" },
+      serviceWorkerPath: "/sw.js",
       notifyButton: { enable: false },
       promptOptions: { autoPrompt: false },
     });
