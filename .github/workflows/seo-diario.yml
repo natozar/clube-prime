@@ -32,6 +32,19 @@ jobs:
         working-directory: seo
         run: npm ci
 
+      - name: Validar secrets obrigatórios
+        run: |
+          if [ -z "$ONESIGNAL_REST_KEY" ]; then
+            echo "::warning::ONESIGNAL_REST_KEY não configurada — push notifications serão ignoradas"
+          fi
+          if [ -z "$SUPABASE_SERVICE_KEY" ]; then
+            echo "::error::SUPABASE_SERVICE_KEY não configurada — pipeline não pode continuar"
+            exit 1
+          fi
+        env:
+          ONESIGNAL_REST_KEY: ${{ secrets.ONESIGNAL_REST_KEY }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+
       - name: Scraping cotação CEPEA
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
