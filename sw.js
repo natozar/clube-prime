@@ -1,8 +1,8 @@
 // OneSignal SDK — DEVE ser a primeira linha do service worker
 importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
 
-const CACHE_NAME = 'clube-prime-v7';
-const ASSETS = ['/manifest.json', '/icon-72.png', '/icon-96.png', '/icon-128.png', '/icon-144.png', '/icon-152.png', '/icon-192.png', '/icon-384.png', '/icon-512.png'];
+const CACHE_NAME = 'clube-prime-v8';
+const ASSETS = ['/manifest.json', '/icon-72.png', '/icon-96.png', '/icon-128.png', '/icon-144.png', '/icon-152.png', '/icon-192.png', '/icon-384.png', '/icon-512.png', '/app.css', '/app.js', '/admin.css', '/admin.js'];
 
 self.addEventListener('install', e => {
   e.waitUntil(
