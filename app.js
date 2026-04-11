@@ -706,40 +706,50 @@ window.addEventListener('appinstalled', () => {
 
 // ── NOTIFICAÇÕES — Prompt Customizado ─────────────────────
 function mostrarBannerNotif() {
-  if (!('Notification' in window)) return;
-  // Se já tem permissão granted, garantir que OneSignal está registrado
-  if (Notification.permission === 'granted') {
-    if (window.OneSignalDeferred) {
-      OneSignalDeferred.push(async (OneSignal) => {
-        try {
-          const sub = await OneSignal.User.PushSubscription;
-          if (!sub || !sub.id) {
-            await OneSignal.Notifications.requestPermission();
-          }
-        } catch(e) { console.warn('OneSignal re-register:', e); }
-      });
+  if (!('Notification' in window) || !window.OneSignalDeferred) return;
+
+  OneSignalDeferred.push(async (OneSignal) => {
+    try {
+      // 1. Verificar subscription real no OneSignal
+      var permission = OneSignal.Notifications.permission;
+      var pushSub = OneSignal.User.PushSubscription;
+
+      // Caso 1: Tem permissão E subscription ativa → tudo OK
+      if (permission && pushSub && pushSub.id && pushSub.optedIn) {
+        console.log('[Push] Subscription ativa:', pushSub.id);
+        return;
+      }
+
+      // Caso 2: Tem permissão do browser mas OneSignal não registrou → forçar opt-in
+      if (Notification.permission === 'granted') {
+        console.warn('[Push] Permissão granted mas sem subscription — forçando opt-in');
+        await OneSignal.User.PushSubscription.optIn();
+        return;
+      }
+
+      // Caso 3: Permissão negada → não insistir
+      if (Notification.permission === 'denied') return;
+
+      // Caso 4: Permissão default → mostrar banner customizado
+      var dispensou = localStorage.getItem('notif-dismissed');
+      var seteDias = 7 * 24 * 60 * 60 * 1000;
+      if (dispensou && Date.now() - parseInt(dispensou) < seteDias) return;
+
+      setTimeout(function() {
+        var pwa = document.getElementById('pwa-banner');
+        if (pwa && pwa.classList.contains('show')) {
+          var obs = new MutationObserver(function() {
+            if (!pwa.classList.contains('show')) { obs.disconnect(); mostrarNotifBanner(); }
+          });
+          obs.observe(pwa, { attributes: true, attributeFilter: ['class'] });
+        } else {
+          mostrarNotifBanner();
+        }
+      }, 3500);
+    } catch(e) {
+      console.error('[Push] Erro ao verificar subscription:', e);
     }
-    return;
-  }
-  // Se já negou, não insiste
-  if (Notification.permission === 'denied') return;
-  const dispensou = localStorage.getItem('notif-dismissed');
-  const seteDias = 7 * 24 * 60 * 60 * 1000;
-  if (dispensou && Date.now() - parseInt(dispensou) < seteDias) return;
-  // Espera 3s após login para não sobrepor o PWA banner
-  setTimeout(() => {
-    // Só mostra se o PWA banner não estiver visível
-    const pwa = document.getElementById('pwa-banner');
-    if (pwa && pwa.classList.contains('show')) {
-      // Espera o PWA banner fechar e tenta de novo
-      const obs = new MutationObserver(() => {
-        if (!pwa.classList.contains('show')) { obs.disconnect(); mostrarNotifBanner(); }
-      });
-      obs.observe(pwa, { attributes: true, attributeFilter: ['class'] });
-    } else {
-      mostrarNotifBanner();
-    }
-  }, 3500);
+  });
 }
 
 function mostrarNotifBanner() {
@@ -749,12 +759,17 @@ function mostrarNotifBanner() {
 document.getElementById('notif-accept-btn').addEventListener('click', async () => {
   document.getElementById('notif-banner').classList.remove('show');
   localStorage.setItem('notif-accepted', '1');
-  // Pede permissão real via OneSignal
+  // Pede permissão real via OneSignal + opt-in explícito
   if (window.OneSignalDeferred) {
     OneSignalDeferred.push(async (OneSignal) => {
       try {
         await OneSignal.Notifications.requestPermission();
-      } catch(e) { console.warn('OneSignal permission error:', e); }
+        // Garantir opt-in explícito após permissão
+        if (Notification.permission === 'granted') {
+          await OneSignal.User.PushSubscription.optIn();
+          console.log('[Push] Subscription ativada com sucesso');
+        }
+      } catch(e) { console.warn('[Push] Permission/optIn error:', e); }
     });
   }
 });
