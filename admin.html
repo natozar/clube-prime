@@ -27,6 +27,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
 </head>
 <body>
+<a href="#main-content" class="skip-link">Pular para o conteúdo</a>
 
 <!-- LOGIN SCREEN -->
 <div id="pin-screen" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:24px">
@@ -34,22 +35,23 @@
   <div id="login-step" style="padding:32px 24px;text-align:center;width:100%;max-width:340px">
     <div style="font-size:13px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:24px">🔐 Área Administrativa</div>
     <div style="font-size:12px;color:var(--gray);margin-bottom:16px">Faça login com suas credenciais</div>
-    <input id="inp-email" type="email" autocomplete="email"
+    <input id="inp-email" type="email" autocomplete="email" aria-label="Email"
       style="width:100%;background:var(--dark2);border:1px solid rgba(201,168,76,.3);border-radius:10px;padding:12px 16px;color:var(--white);font-size:14px;text-align:center;outline:none;margin-bottom:12px"
       placeholder="Email">
-    <input id="inp-senha" type="password" autocomplete="current-password"
+    <input id="inp-senha" type="password" autocomplete="current-password" aria-label="Senha"
       style="width:100%;background:var(--dark2);border:1px solid rgba(201,168,76,.3);border-radius:10px;padding:12px 16px;color:var(--white);font-size:14px;text-align:center;outline:none;letter-spacing:2px"
       placeholder="Senha"
       data-enter-action="fazerLogin">
     <div style="margin-top:16px">
       <button data-action="fazerLogin" id="btn-login" style="background:var(--gold);color:#000;border:none;border-radius:10px;padding:12px 32px;font-size:13px;font-weight:700;letter-spacing:1px;cursor:pointer;width:100%">ENTRAR</button>
     </div>
-    <div class="pin-error" id="login-error" style="margin-top:12px"></div>
+    <div class="pin-error" id="login-error" style="margin-top:12px" aria-live="assertive" role="alert"></div>
   </div>
 </div>
 
 <!-- ADMIN APP (oculto até PIN correto) -->
-<div id="admin-app" style="display:none">
+<div id="admin-app" style="display:none" role="main">
+  <span id="main-content" tabindex="-1"></span>
 
   <!-- TELA: OPERADOR DE CAIXA -->
   <div class="screen active" id="screen-op">
@@ -59,38 +61,38 @@
       <div id="scan-placeholder">
         <div style="font-size:46px;margin-bottom:10px">📷</div>
         <div style="font-size:13px;color:var(--gold);letter-spacing:1px">Toque para escanear o cartão</div>
-        <div style="font-size:10px;color:var(--gray);margin-top:6px">Ou digite o código manualmente</div>
+        <div style="font-size:12px;color:var(--gray);margin-top:6px">Ou digite o código manualmente</div>
       </div>
       <div style="margin-top:12px;display:flex;gap:8px;justify-content:center">
-        <button class="btn bg bsm" id="btn-scan" data-action="iniciarScanner" style="font-size:11px">📷 Escanear QR</button>
-        <button class="btn bo bsm" data-action="digitarCodigo" style="font-size:11px">⌨️ Digitar código</button>
+        <button class="btn bg bsm" id="btn-scan" data-action="iniciarScanner" style="font-size:12px" aria-label="Escanear QR Code">📷 Escanear QR</button>
+        <button class="btn bo bsm" data-action="digitarCodigo" style="font-size:12px" aria-label="Digitar código manualmente">⌨️ Digitar código</button>
       </div>
-      <div id="scan-status" style="font-size:11px;color:var(--gold);margin-top:8px;text-align:center;display:none"></div>
+      <div id="scan-status" style="font-size:12px;color:var(--gold);margin-top:8px;text-align:center;display:none"></div>
     </div>
     <div class="client-found" id="client-found" style="display:none">
       <div class="cli-av" id="cli-av-iniciais">--</div>
-      <div style="flex:1"><div style="font-size:14px;font-weight:600;color:var(--white)" id="cli-nome">—</div><div style="font-size:10px;color:var(--gray);margin-top:2px" id="cli-meta">—</div><div style="font-family:'Cormorant Garamond',serif;font-size:17px;color:var(--gold);margin-top:3px;font-weight:700" id="cli-pontos">0 pontos</div></div>
+      <div style="flex:1"><div style="font-size:14px;font-weight:600;color:var(--white)" id="cli-nome">—</div><div style="font-size:12px;color:var(--gray);margin-top:2px" id="cli-meta">—</div><div style="font-family:'Cormorant Garamond',serif;font-size:17px;color:var(--gold);margin-top:3px;font-weight:700" id="cli-pontos">0 pontos</div></div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
-        <div style="font-size:9px;color:var(--green);letter-spacing:1px">✓ ATIVO</div>
+        <div style="font-size:12px;color:var(--green);letter-spacing:1px">✓ ATIVO</div>
         <div style="display:flex;gap:4px" id="cli-pin-area">
-          <span id="cli-pin-badge" style="font-size:8px;padding:2px 6px;border-radius:6px;display:none"></span>
-          <button class="btn bo" style="font-size:8px;padding:3px 8px;border-radius:6px" id="btn-reset-pin" data-action="resetarPinCliente" title="Resetar PIN do cliente">🔐 Resetar PIN</button>
+          <span id="cli-pin-badge" style="font-size:12px;padding:2px 6px;border-radius:6px;display:none"></span>
+          <button class="btn bo" style="font-size:12px;padding:3px 8px;border-radius:6px" id="btn-reset-pin" data-action="resetarPinCliente" title="Resetar PIN do cliente" aria-label="Resetar PIN do cliente">🔐 Resetar PIN</button>
         </div>
       </div>
     </div>
-    <div style="padding:0 16px 12px;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gold-dark)">Valor da compra</div>
+    <div style="padding:0 16px 12px;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--gold-dark)">Valor da compra</div>
     <div class="value-display">
       <span style="font-size:18px;color:var(--gray)">R$</span>
       <span style="font-family:'Cormorant Garamond',serif;font-size:32px;color:var(--white);font-weight:700" id="valor-display">___</span>
       <span class="value-cursor"></span>
     </div>
-    <div style="text-align:center;font-size:11px;color:var(--gray);margin-bottom:12px" id="pts-preview"></div>
-    <div class="keypad">
-      <div class="key" data-action="kp" data-arg="1">1</div><div class="key" data-action="kp" data-arg="2">2</div><div class="key" data-action="kp" data-arg="3">3</div>
-      <div class="key" data-action="kp" data-arg="4">4</div><div class="key" data-action="kp" data-arg="5">5</div><div class="key" data-action="kp" data-arg="6">6</div>
-      <div class="key" data-action="kp" data-arg="7">7</div><div class="key" data-action="kp" data-arg="8">8</div><div class="key" data-action="kp" data-arg="9">9</div>
-      <div class="key" data-action="kp" data-arg="⌫" style="font-size:18px">⌫</div><div class="key" data-action="kp" data-arg="0">0</div>
-      <div class="key kconfirm" data-action="kp" data-arg="OK">✓ OK</div>
+    <div style="text-align:center;font-size:12px;color:var(--gray);margin-bottom:12px" id="pts-preview"></div>
+    <div class="keypad" role="group" aria-label="Teclado numérico">
+      <div class="key" data-action="kp" data-arg="1" role="button" aria-label="1">1</div><div class="key" data-action="kp" data-arg="2" role="button" aria-label="2">2</div><div class="key" data-action="kp" data-arg="3" role="button" aria-label="3">3</div>
+      <div class="key" data-action="kp" data-arg="4" role="button" aria-label="4">4</div><div class="key" data-action="kp" data-arg="5" role="button" aria-label="5">5</div><div class="key" data-action="kp" data-arg="6" role="button" aria-label="6">6</div>
+      <div class="key" data-action="kp" data-arg="7" role="button" aria-label="7">7</div><div class="key" data-action="kp" data-arg="8" role="button" aria-label="8">8</div><div class="key" data-action="kp" data-arg="9" role="button" aria-label="9">9</div>
+      <div class="key" data-action="kp" data-arg="⌫" style="font-size:18px" role="button" aria-label="Apagar">⌫</div><div class="key" data-action="kp" data-arg="0" role="button" aria-label="0">0</div>
+      <div class="key kconfirm" data-action="kp" data-arg="OK" role="button" aria-label="Confirmar valor">✓ OK</div>
     </div>
   </div>
 
@@ -108,11 +110,11 @@
       </div>
       <div class="sec-card">
         <div class="sec-title">🏆 Ranking Indicadores</div>
-        <div id="ranking-lista" style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Carregando...</div>
+        <div id="ranking-lista" aria-live="polite" style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Carregando...</div>
       </div>
       <div class="sec-card">
         <div class="sec-title">🔔 Alertas</div>
-        <div id="alertas-lista" style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Nenhum alerta</div>
+        <div id="alertas-lista" aria-live="polite" style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Nenhum alerta</div>
       </div>
     </div>
   </div>
@@ -132,36 +134,36 @@
       <div class="sec-card">
         <div class="sec-title">👤 Clientes <button class="btn bg bsm" data-modal-open="mo-new">+ Novo</button></div>
         <div class="search-bar"><input class="si" placeholder="Buscar cliente..."><select class="fsel" style="width:110px"><option>Todos</option><option>Ativos</option><option>Bloqueados</option></select></div>
-        <div id="clientes-lista"><div style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Nenhum cliente cadastrado ainda</div></div>>
+        <div id="clientes-lista" aria-live="polite"><div style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Nenhum cliente cadastrado ainda</div></div>
       </div>
       <div class="sec-card">
         <div class="sec-title">🎫 Validar Cupom</div>
-        <div style="font-size:11px;color:var(--gray);margin-bottom:10px">Busque o código do cupom que o cliente apresentar na loja</div>
+        <div style="font-size:12px;color:var(--gray);margin-bottom:10px">Busque o código do cupom que o cliente apresentar na loja</div>
         <div style="display:flex;gap:8px;margin-bottom:12px">
           <input class="fi" id="busca-cupom" placeholder="Ex: CP-A3B7X2" style="flex:1;text-transform:uppercase;font-family:'Fira Code',monospace;letter-spacing:2px">
           <button class="btn bg" data-action="buscarCupom" style="white-space:nowrap">Buscar</button>
         </div>
-        <div id="cupom-resultado"></div>
+        <div id="cupom-resultado" aria-live="polite"></div>
       </div>
       <div class="sec-card">
         <div class="sec-title">📋 Resgates Recentes</div>
-        <div id="resgates-lista" style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Carregando...</div>
+        <div id="resgates-lista" aria-live="polite" style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Carregando...</div>
       </div>
 
       <!-- CATÁLOGO DE RECOMPENSAS -->
       <div class="sec-card">
         <div class="sec-title">🎁 Catálogo de Recompensas <button class="btn bg bsm" data-action="abrirModalRecompensa">+ Recompensa</button></div>
-        <div style="font-size:11px;color:var(--gray);margin-bottom:12px">Produtos/prêmios que os clientes podem trocar por pontos</div>
-        <div id="recompensas-lista" style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Carregando...</div>
+        <div style="font-size:12px;color:var(--gray);margin-bottom:12px">Produtos/prêmios que os clientes podem trocar por pontos</div>
+        <div id="recompensas-lista" aria-live="polite" style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Carregando...</div>
       </div>
 
       <!-- REGRAS DE PONTUAÇÃO -->
       <div class="sec-card">
         <div class="sec-title">⚙️ Regras de Pontuação & Troca</div>
-        <div style="font-size:11px;color:var(--gray);margin-bottom:12px">Configure as regras do programa de fidelidade</div>
+        <div style="font-size:12px;color:var(--gray);margin-bottom:12px">Configure as regras do programa de fidelidade</div>
 
         <div style="background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.15);border-radius:10px;padding:14px;margin-bottom:14px">
-          <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gold-dark);margin-bottom:10px">Acúmulo de Pontos</div>
+          <div style="font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--gold-dark);margin-bottom:10px">Acúmulo de Pontos</div>
           <div class="fl">
             <label class="flabel">Pontos por R$1 gasto</label>
             <input class="fi" id="regra-pts-por-real" type="number" value="1" min="1" max="10" style="width:80px">
@@ -173,7 +175,7 @@
         </div>
 
         <div style="background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.15);border-radius:10px;padding:14px;margin-bottom:14px">
-          <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gold-dark);margin-bottom:10px">Regra de Troca</div>
+          <div style="font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--gold-dark);margin-bottom:10px">Regra de Troca</div>
           <div class="fl">
             <label class="flabel">Pontos necessários para resgate</label>
             <input class="fi" id="regra-meta-pontos" type="number" value="5000" min="100" step="100">
@@ -193,28 +195,28 @@
         </div>
 
         <div style="background:rgba(192,57,43,.1);border:1px solid rgba(192,57,43,.2);border-radius:10px;padding:14px;margin-bottom:14px">
-          <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#e74c3c;margin-bottom:10px">Expiração</div>
+          <div style="font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#e74c3c;margin-bottom:10px">Expiração</div>
           <div class="fl">
             <label class="flabel">Cupom expirado = perda dos pontos?</label>
             <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
               <div class="tog on" id="tog-perde-pontos" data-action="toggleSelf"><div class="tog-d"></div></div>
-              <span style="font-size:11px;color:var(--gray)" id="label-perde-pontos">Sim — cliente perde os pontos usados</span>
+              <span style="font-size:12px;color:var(--gray)" id="label-perde-pontos">Sim — cliente perde os pontos usados</span>
             </div>
           </div>
         </div>
 
         <button class="btn bg" style="width:100%;margin-top:4px" data-action="salvarRegras">💾 Salvar Regras</button>
-        <div id="regras-status" style="font-size:11px;margin-top:8px;text-align:center"></div>
+        <div id="regras-status" style="font-size:12px;margin-top:8px;text-align:center"></div>
       </div>
 
       <div class="sec-card">
         <div class="sec-title">🔔 Push Notifications</div>
-        <div style="font-size:11px;color:var(--gray);margin-bottom:12px">Envie uma mensagem para todos os membros do Clube Prime</div>
+        <div style="font-size:12px;color:var(--gray);margin-bottom:12px">Envie uma mensagem para todos os membros do Clube Prime</div>
         <div class="fl"><label class="flabel">Título</label><input class="fi" id="push-titulo" placeholder="Ex: Promoção especial hoje!"></div>
         <div class="fl"><label class="flabel">Mensagem</label><textarea class="fi" id="push-msg" rows="3" placeholder="Ex: Picanha premium com 20% off só hoje. Venha conferir!" style="resize:vertical"></textarea></div>
         <div class="fl"><label class="flabel">URL (opcional)</label><input class="fi" id="push-url" placeholder="https://carnesrodrigues.com.br/"></div>
         <button class="btn bg" style="width:100%;margin-top:8px" data-action="dispararCampanha">📣 Enviar para todos</button>
-        <div id="push-status" style="font-size:11px;margin-top:8px;text-align:center"></div>
+        <div id="push-status" style="font-size:12px;margin-top:8px;text-align:center"></div>
       </div>
     </div>
   </div>
@@ -226,16 +228,16 @@
       <!-- CATEGORIAS -->
       <div class="sec-card">
         <div class="sec-title">📂 Categorias <button class="btn bg bsm" data-action="abrirModalCat">+ Categoria</button></div>
-        <div id="cat-lista"><div style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Carregando...</div></div>
+        <div id="cat-lista" aria-live="polite"><div style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Carregando...</div></div>
       </div>
       <!-- PRODUTOS -->
       <div class="sec-card">
-        <div class="sec-title">🥩 Produtos <button class="btn bg bsm" data-action="abrirModalProd">+ Produto</button> <button class="btn bo bsm" data-action="ordenarProdutosAZ" style="font-size:10px">Ordenar A→Z</button></div>
+        <div class="sec-title">🥩 Produtos <button class="btn bg bsm" data-action="abrirModalProd">+ Produto</button> <button class="btn bo bsm" data-action="ordenarProdutosAZ" style="font-size:12px">Ordenar A→Z</button></div>
         <div class="search-bar">
           <select class="fsel" id="filtro-cat-prod" data-onchange="renderizarProdutos" style="width:160px"><option value="">Todas as categorias</option></select>
           <input class="si" id="busca-prod" placeholder="Buscar produto..." data-oninput="renderizarProdutos">
         </div>
-        <div id="prod-lista"><div style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Carregando...</div></div>
+        <div id="prod-lista" aria-live="polite"><div style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Carregando...</div></div>
       </div>
     </div>
   </div>
@@ -260,7 +262,7 @@
             <option value="familia">Família</option>
           </select>
         </div>
-        <div id="blog-lista"><div style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Carregando...</div></div>
+        <div id="blog-lista" aria-live="polite"><div style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Carregando...</div></div>
       </div>
 
       <div class="sec-card">
@@ -268,19 +270,19 @@
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px" id="blog-stats">
           <div style="background:rgba(201,168,76,.08);border-radius:8px;padding:12px;text-align:center">
             <div style="font-size:22px;font-weight:700;color:var(--gold)" id="stat-total-artigos">0</div>
-            <div style="font-size:9px;color:var(--gray);text-transform:uppercase;letter-spacing:1px">Artigos</div>
+            <div style="font-size:12px;color:var(--gray);text-transform:uppercase;letter-spacing:1px">Artigos</div>
           </div>
           <div style="background:rgba(201,168,76,.08);border-radius:8px;padding:12px;text-align:center">
             <div style="font-size:22px;font-weight:700;color:var(--gold)" id="stat-total-views">0</div>
-            <div style="font-size:9px;color:var(--gray);text-transform:uppercase;letter-spacing:1px">Page Views</div>
+            <div style="font-size:12px;color:var(--gray);text-transform:uppercase;letter-spacing:1px">Page Views</div>
           </div>
           <div style="background:rgba(201,168,76,.08);border-radius:8px;padding:12px;text-align:center">
             <div style="font-size:22px;font-weight:700;color:var(--gold)" id="stat-total-shares">0</div>
-            <div style="font-size:9px;color:var(--gray);text-transform:uppercase;letter-spacing:1px">Shares WhatsApp</div>
+            <div style="font-size:12px;color:var(--gray);text-transform:uppercase;letter-spacing:1px">Shares WhatsApp</div>
           </div>
           <div style="background:rgba(201,168,76,.08);border-radius:8px;padding:12px;text-align:center">
             <div style="font-size:22px;font-weight:700;color:var(--gold)" id="stat-total-cta">0</div>
-            <div style="font-size:9px;color:var(--gray);text-transform:uppercase;letter-spacing:1px">Cliques CTA</div>
+            <div style="font-size:12px;color:var(--gray);text-transform:uppercase;letter-spacing:1px">Cliques CTA</div>
           </div>
         </div>
       </div>
@@ -316,7 +318,7 @@
           <option value="false">Inativo (rascunho)</option>
         </select>
       </div>
-      <div style="margin-top:8px;padding:10px;background:rgba(201,168,76,.06);border-radius:8px;font-size:10px;color:var(--gray)">
+      <div style="margin-top:8px;padding:10px;background:rgba(201,168,76,.06);border-radius:8px;font-size:12px;color:var(--gray)">
         <strong style="color:var(--gold)">Dica:</strong> Para editar o conteúdo completo (HTML, FAQ, imagens), edite o arquivo JSON em <code>seo/conteudos/</code> e rode o gerador. Aqui você gerencia metadados e status.
       </div>
       <div class="md-actions" style="margin-top:12px">
@@ -387,21 +389,21 @@
     <div class="md" style="max-height:85vh;overflow-y:auto">
       <div class="md-handle"></div>
       <div class="md-title">Novo Cliente</div>
-      <div style="font-size:10px;color:var(--gray);margin-bottom:16px">* Campos obrigatórios para cadastro</div>
+      <div style="font-size:12px;color:var(--gray);margin-bottom:16px">* Campos obrigatórios para cadastro</div>
 
-      <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gold-dark);margin-bottom:10px">Dados Básicos *</div>
+      <div style="font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--gold-dark);margin-bottom:10px">Dados Básicos *</div>
       <div class="fl"><label class="flabel">Nome completo *</label><input class="fi" placeholder="Ex: João da Silva"></div>
       <div class="fl"><label class="flabel">WhatsApp *</label><input class="fi" type="tel" placeholder="(16) 99999-0000"></div>
       <div class="fl"><label class="flabel">Data de nascimento *</label><input class="fi" type="date"></div>
 
-      <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gold-dark);margin:14px 0 10px">Dados Complementares</div>
+      <div style="font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--gold-dark);margin:14px 0 10px">Dados Complementares</div>
       <div class="fl"><label class="flabel">E-mail</label><input class="fi" placeholder="email@exemplo.com"></div>
       <div class="fl"><label class="flabel">CPF</label><input class="fi" placeholder="000.000.000-00" maxlength="14"></div>
 
-      <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gold-dark);margin:14px 0 10px">Endereço</div>
+      <div style="font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--gold-dark);margin:14px 0 10px">Endereço</div>
       <div style="display:flex;gap:8px;margin-bottom:12px">
         <input class="fi" id="adm-cep" placeholder="CEP" maxlength="9" style="flex:1">
-        <button class="btn bo" style="padding:8px 12px;font-size:9px;white-space:nowrap" data-action="admCep">Buscar</button>
+        <button class="btn bo" style="padding:8px 12px;font-size:12px;white-space:nowrap" data-action="admCep">Buscar</button>
       </div>
       <div class="fl"><label class="flabel">Rua</label><input class="fi" id="adm-rua" placeholder="Logradouro"></div>
       <div style="display:flex;gap:8px">
@@ -413,7 +415,7 @@
         <div class="fl" style="flex:1"><label class="flabel">UF</label><input class="fi" id="adm-uf" placeholder="SP" maxlength="2"></div>
       </div>
 
-      <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gold-dark);margin:14px 0 10px">Indicação</div>
+      <div style="font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--gold-dark);margin:14px 0 10px">Indicação</div>
       <div class="fl"><label class="flabel">Indicado por</label><input class="fi" placeholder="#ID ou nome do indicador"></div>
 
       <div class="md-actions" style="margin-top:8px">
@@ -424,13 +426,13 @@
   </div>
 
   <!-- ADMIN NAV -->
-  <nav class="admin-nav">
-    <button class="an active" data-tab="op"><span class="an-icon">🏪</span>Caixa</button>
-    <button class="an" data-tab="painel"><span class="an-icon">📊</span>Painel</button>
-    <button class="an" data-tab="cardapio"><span class="an-icon">🍖</span>Cardápio</button>
-    <button class="an" data-tab="blog"><span class="an-icon">📰</span>Blog</button>
-    <button class="an" data-tab="admin"><span class="an-icon">⚙️</span>Admin</button>
-    <button class="an" data-action="fazerLogout" style="color:#e74c3c"><span class="an-icon">🚪</span>Sair</button>
+  <nav class="admin-nav" role="navigation" aria-label="Menu administração">
+    <button class="an active" data-tab="op" aria-label="Caixa"><span class="an-icon">🏪</span>Caixa</button>
+    <button class="an" data-tab="painel" aria-label="Painel"><span class="an-icon">📊</span>Painel</button>
+    <button class="an" data-tab="cardapio" aria-label="Cardápio"><span class="an-icon">🍖</span>Cardápio</button>
+    <button class="an" data-tab="blog" aria-label="Blog"><span class="an-icon">📰</span>Blog</button>
+    <button class="an" data-tab="admin" aria-label="Admin"><span class="an-icon">⚙️</span>Admin</button>
+    <button class="an" data-action="fazerLogout" style="color:#e74c3c" aria-label="Sair"><span class="an-icon">🚪</span>Sair</button>
   </nav>
 </div>
 

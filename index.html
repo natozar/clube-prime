@@ -39,6 +39,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
 </head>
 <body>
+<a href="#main-content" class="skip-link">Pular para o conteúdo</a>
 
 <!-- PWA BANNER -->
 <!-- NOTIF PERMISSION BANNER -->
@@ -89,7 +90,7 @@
     <div class="cad-form">
       <div id="ref-banner" class="ref-banner" style="display:none"><span>Você foi indicado por</span><strong id="ref-name"></strong> 🎉</div>
       <div class="cad-hint">Preencha os dados essenciais para começar. Você pode completar o perfil depois.</div>
-      <div class="fl"><label class="flabel">Nome completo *</label><input class="fi" id="inp-nome" placeholder="Seu nome completo"></div>
+      <div class="fl"><label class="flabel">Nome completo *</label><input class="fi" id="inp-nome" placeholder="Seu nome completo" aria-label="Seu nome completo"></div>
       <div class="fl"><label class="flabel">WhatsApp *</label>
 <div style="display:flex;gap:6px;align-items:center">
   <select id="inp-pais" style="background:#1a1a1a;color:#fff;border:1px solid #333;border-radius:8px;padding:10px 6px;font-size:13px;min-width:110px;cursor:pointer">
@@ -124,7 +125,7 @@
     <option value="+7">🇷🇺 +7</option>
     <option value="+380">🇺🇦 +380</option>
   </select>
-  <input class="fi" id="inp-tel" type="tel" placeholder="99999-0000" style="flex:1">
+  <input class="fi" id="inp-tel" type="tel" placeholder="99999-0000" aria-label="WhatsApp" style="flex:1">
 </div></div>
       <div class="fl"><label class="flabel">Data de nascimento *</label>
         <div style="display:flex;gap:6px">
@@ -135,7 +136,7 @@
       </div>
       <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:14px">
         <input type="checkbox" id="chk-termos" style="margin-top:3px;accent-color:#C9A84C;width:16px;height:16px;flex-shrink:0">
-        <label for="chk-termos" style="font-size:11px;color:#888;line-height:1.5">Li e concordo com os <a href="termos.html" target="_blank" style="color:#C9A84C">Termos de Uso e Política de Privacidade</a>. Autorizo o uso dos meus dados para operação do Clube Prime conforme a LGPD.</label>
+        <label for="chk-termos" style="font-size:12px;color:#888;line-height:1.5">Li e concordo com os <a href="termos.html" target="_blank" style="color:#C9A84C">Termos de Uso e Política de Privacidade</a>. Autorizo o uso dos meus dados para operação do Clube Prime conforme a LGPD.</label>
       </div>
       <button class="cad-btn" data-action="goApp">Entrar no Clube Prime →</button>
       <div class="cad-link">Já é membro? <a data-action="acessarCartao">Acessar meu cartão</a></div>
@@ -144,7 +145,8 @@
 </div>
 
 <!-- TELA: CARTÃO -->
-<div class="screen" id="screen-cartao">
+<div id="main-content"></div>
+<div class="screen" id="screen-cartao" role="main">
   <div class="app-header">
     <div class="logo logo-sm"></div>
     <div style="text-align:right"><div class="h-name" id="display-nome">—</div><div class="h-level">membro prime</div></div>
@@ -153,20 +155,20 @@
     <div class="card-shine"></div><div class="card-pattern"></div>
     <div class="card-top">
       <div class="logo card-logo"></div>
-      <div style="text-align:right"><div style="font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--gold-dark)">clube</div><div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:300;color:var(--gold-light);letter-spacing:5px">PRIME</div></div>
+      <div style="text-align:right"><div style="font-size:12px;letter-spacing:3px;text-transform:uppercase;color:var(--gold-dark)">clube</div><div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:300;color:var(--gold-light);letter-spacing:5px">PRIME</div></div>
     </div>
     <div class="card-divider"></div>
     <div class="card-mid">
-      <div><div style="font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--gray)">saldo de pontos</div><div class="pts-val" style="font-family:'Cormorant Garamond',serif;font-size:38px;color:var(--gold-light);font-weight:700;line-height:1">0</div><div style="font-size:9px;color:var(--gold-dark);letter-spacing:1px">pts acumulados</div></div>
+      <div><div style="font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--gray)">saldo de pontos</div><div class="pts-val" aria-live="polite" style="font-family:'Cormorant Garamond',serif;font-size:38px;color:var(--gold-light);font-weight:700;line-height:1">0</div><div style="font-size:12px;color:var(--gold-dark);letter-spacing:1px">pts acumulados</div></div>
       <div class="qr-box" id="qr-box" data-action="abrirQRExpandido"><canvas id="qr-canvas" width="50" height="50"></canvas></div>
     </div>
     <div class="card-bot">
-      <div><div style="font-size:12px;font-weight:600;color:var(--white);letter-spacing:1px;text-transform:uppercase" id="card-nome">Carlos R.</div><div style="font-size:9px;color:var(--gray);margin-top:2px" id="card-codigo">#---</div></div>
-      <div style="text-align:right"><div style="font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--gold-dark)">cartão</div><div style="font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--gold);letter-spacing:2px;font-weight:600">BLACK</div></div>
+      <div><div style="font-size:12px;font-weight:600;color:var(--white);letter-spacing:1px;text-transform:uppercase" id="card-nome">Carlos R.</div><div style="font-size:12px;color:var(--gray);margin-top:2px" id="card-codigo">#---</div></div>
+      <div style="text-align:right"><div style="font-size:12px;letter-spacing:3px;text-transform:uppercase;color:var(--gold-dark)">cartão</div><div style="font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--gold);letter-spacing:2px;font-weight:600">BLACK</div></div>
     </div>
   </div>
   <div class="prog-wrap">
-    <div class="prog-header"><span style="font-size:9px;color:var(--gray);letter-spacing:1px">próximo resgate</span><span style="font-size:9px;color:var(--gold)">360 pts restantes</span></div>
+    <div class="prog-header"><span style="font-size:12px;color:var(--gray);letter-spacing:1px">próximo resgate</span><span style="font-size:12px;color:var(--gold)">360 pts restantes</span></div>
     <div class="prog-bar"><div class="prog-fill"></div></div>
   </div>
   <div class="stats-row">
@@ -176,7 +178,7 @@
   </div>
   <div class="sec-label">— últimas compras</div>
   <div style="padding:0 16px 16px">
-    <div id="extrato-lista" style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Carregando extrato...</div>
+    <div id="extrato-lista" aria-live="polite" style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Carregando extrato...</div>
   </div>
 </div>
 
@@ -184,7 +186,7 @@
 <div class="screen" id="screen-pontos">
   <div class="app-header"><div class="logo logo-sm"></div><div style="text-align:right"><div class="h-name">Meus Pontos</div><div class="h-level" id="pontos-codigo">#---</div></div></div>
   <div class="sh">
-    <div class="sh-label">saldo atual</div><div class="sh-value" id="saldo-pts">0</div><div class="sh-unit">pontos prime</div>
+    <div class="sh-label">saldo atual</div><div class="sh-value" id="saldo-pts" aria-live="polite">0</div><div class="sh-unit">pontos prime</div>
     <div class="sh-row">
       <div><div class="sh-sv" id="sh-gastos">R$0</div><div class="sh-sl">gastos/mês</div></div>
       <div style="width:1px;background:rgba(201,168,76,.2);height:28px"></div>
@@ -204,15 +206,15 @@
   </div>
   <div class="sec-card">
     <div class="sec-title">📋 Extrato de Pontos</div>
-    <div id="extrato-lista" style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Nenhuma transação ainda</div>
+    <div id="extrato-lista" aria-live="polite" style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Nenhuma transação ainda</div>
   </div>
   <div class="sec-card">
     <div class="sec-title">🎁 Vitrine de Recompensas</div>
-    <div id="vitrine-recompensas" style="text-align:center;padding:12px;color:var(--gray);font-size:12px">Carregando recompensas...</div>
+    <div id="vitrine-recompensas" aria-live="polite" style="text-align:center;padding:12px;color:var(--gray);font-size:12px">Carregando recompensas...</div>
   </div>
   <div class="sec-card">
     <div class="sec-title">📋 Meus Cupons</div>
-    <div id="meus-cupons" style="text-align:center;padding:12px;color:var(--gray);font-size:12px">Nenhum cupom ainda</div>
+    <div id="meus-cupons" aria-live="polite" style="text-align:center;padding:12px;color:var(--gray);font-size:12px">Nenhum cupom ainda</div>
   </div>
 </div>
 
@@ -220,9 +222,9 @@
 <div class="screen" id="screen-ind">
   <div class="app-header"><div class="logo logo-sm"></div><div style="text-align:right"><div class="h-name">Indicações</div><div class="h-level">sua rede</div></div></div>
   <div class="ind-hero">
-    <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gray);margin-bottom:6px">seu bônus permanente</div>
+    <div style="font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--gray);margin-bottom:6px">seu bônus permanente</div>
     <div style="font-family:'Cormorant Garamond',serif;font-size:44px;color:var(--gold-light);font-weight:700;line-height:1">2%</div>
-    <div style="font-size:11px;color:var(--gray);margin-top:8px">de cada compra dos seus indicados, <strong style="color:var(--gold)">para sempre</strong></div>
+    <div style="font-size:12px;color:var(--gray);margin-top:8px">de cada compra dos seus indicados, <strong style="color:var(--gold)">para sempre</strong></div>
   </div>
   <button class="share-btn" data-action="compartilhar">🔗 Compartilhar meu link de convite</button>
   <div class="share-url" id="share-url-text">carnesrodrigues.com.br/?ref=CR847</div>
@@ -270,30 +272,30 @@
 
     <!-- DADOS COMPLEMENTARES -->
     <div class="sec-card" style="margin:0 0 14px">
-      <div class="sec-title">📋 Dados Complementares <span style="font-size:8px;color:var(--gray);letter-spacing:0;text-transform:none;font-weight:400">opcional</span></div>
-      <div class="fl"><label class="flabel">E-mail</label><input class="fi" id="perfil-email" placeholder="seu@email.com"></div>
-      <div class="fl"><label class="flabel">CPF</label><input class="fi" placeholder="000.000.000-00" maxlength="14" id="inp-cpf"></div>
+      <div class="sec-title">📋 Dados Complementares <span style="font-size:12px;color:var(--gray);letter-spacing:0;text-transform:none;font-weight:400">opcional</span></div>
+      <div class="fl"><label class="flabel">E-mail</label><input class="fi" id="perfil-email" placeholder="seu@email.com" aria-label="E-mail"></div>
+      <div class="fl"><label class="flabel">CPF</label><input class="fi" placeholder="000.000.000-00" maxlength="14" id="inp-cpf" aria-label="CPF"></div>
       <button class="btn bg" style="margin-top:6px" data-action="salvarComplemento">Salvar</button>
     </div>
 
     <!-- ENDEREÇO -->
     <div class="sec-card" style="margin:0 0 14px">
-      <div class="sec-title">📍 Endereço <span style="font-size:8px;color:var(--gray);letter-spacing:0;text-transform:none;font-weight:400">opcional</span></div>
+      <div class="sec-title">📍 Endereço <span style="font-size:12px;color:var(--gray);letter-spacing:0;text-transform:none;font-weight:400">opcional</span></div>
       <div class="fl"><label class="flabel">CEP</label>
         <div style="display:flex;gap:8px">
-          <input class="fi" id="inp-cep" placeholder="00000-000" maxlength="9" style="flex:1">
+          <input class="fi" id="inp-cep" placeholder="00000-000" maxlength="9" aria-label="CEP" style="flex:1">
           <button class="btn bo" style="padding:8px 14px;white-space:nowrap" data-action="buscaCep">Buscar</button>
         </div>
       </div>
-      <div class="fl"><label class="flabel">Rua / Logradouro</label><input class="fi" id="inp-rua" placeholder="Ex: Rua das Palmeiras"></div>
+      <div class="fl"><label class="flabel">Rua / Logradouro</label><input class="fi" id="inp-rua" placeholder="Ex: Rua das Palmeiras" aria-label="Rua / Logradouro"></div>
       <div style="display:flex;gap:8px">
-        <div class="fl" style="flex:1"><label class="flabel">Número</label><input class="fi" id="inp-num" placeholder="123"></div>
-        <div class="fl" style="flex:2"><label class="flabel">Complemento</label><input class="fi" placeholder="Apto, Bloco..."></div>
+        <div class="fl" style="flex:1"><label class="flabel">Número</label><input class="fi" id="inp-num" placeholder="123" aria-label="Número"></div>
+        <div class="fl" style="flex:2"><label class="flabel">Complemento</label><input class="fi" placeholder="Apto, Bloco..." aria-label="Complemento"></div>
       </div>
-      <div class="fl"><label class="flabel">Bairro</label><input class="fi" id="inp-bairro" placeholder="Ex: Centro"></div>
+      <div class="fl"><label class="flabel">Bairro</label><input class="fi" id="inp-bairro" placeholder="Ex: Centro" aria-label="Bairro"></div>
       <div style="display:flex;gap:8px">
-        <div class="fl" style="flex:2"><label class="flabel">Cidade</label><input class="fi" id="inp-cidade" placeholder="Ex: Ribeirão Preto"></div>
-        <div class="fl" style="flex:1"><label class="flabel">Estado</label><input class="fi" id="inp-uf" placeholder="SP" maxlength="2" style="text-transform:uppercase"></div>
+        <div class="fl" style="flex:2"><label class="flabel">Cidade</label><input class="fi" id="inp-cidade" placeholder="Ex: Ribeirão Preto" aria-label="Cidade"></div>
+        <div class="fl" style="flex:1"><label class="flabel">Estado</label><input class="fi" id="inp-uf" placeholder="SP" maxlength="2" aria-label="Estado" style="text-transform:uppercase"></div>
       </div>
       <button class="btn bg" style="margin-top:6px" data-action="salvarEndereco">Salvar endereço</button>
     </div>
@@ -301,7 +303,7 @@
     <!-- BLOG / CONTEÚDO -->
     <div class="sec-card" style="margin:0 0 14px">
       <div class="sec-title">📰 Blog Clube Prime</div>
-      <div style="font-size:11px;color:var(--gray);line-height:1.5;margin-bottom:10px">Cotação da arroba, raças, receitas de churrasco e dicas exclusivas.</div>
+      <div style="font-size:12px;color:var(--gray);line-height:1.5;margin-bottom:10px">Cotação da arroba, raças, receitas de churrasco e dicas exclusivas.</div>
       <div style="display:flex;flex-wrap:wrap;gap:8px">
         <a href="/cotacao-arroba-boi-gordo-hoje" class="btn bg bsm" style="text-decoration:none;text-align:center">Cotação do Boi</a>
         <a href="/racas/angus" class="btn bo bsm" style="text-decoration:none;text-align:center">Raças</a>
@@ -313,7 +315,7 @@
     <!-- PIN DE SEGURANÇA -->
     <div class="sec-card" style="margin:0 0 14px">
       <div class="sec-title">🔐 PIN de Segurança</div>
-      <div style="font-size:11px;color:var(--gray);line-height:1.5;margin-bottom:10px" id="pin-perfil-status">Verificando...</div>
+      <div style="font-size:12px;color:var(--gray);line-height:1.5;margin-bottom:10px" id="pin-perfil-status">Verificando...</div>
       <button class="btn bg bsm" id="btn-pin-perfil" data-action="abrirAlterarPin" style="display:none">Alterar PIN</button>
       <button class="btn bg bsm" id="btn-pin-criar-perfil" data-action="abrirCriarPin" style="display:none">Criar PIN</button>
     </div>
@@ -331,11 +333,11 @@
     <div class="md-handle"></div>
     <div style="font-size:48px;margin-bottom:10px">🎉</div>
     <div class="md-title" style="color:var(--gold-light);justify-content:center;display:flex" id="modal-5k-title">Você chegou aos 5.000 pontos!</div>
-    <div class="md-text" id="modal-5k-text">Parabéns! Você acumulou <strong style="color:var(--gold)">5.000 pontos Prime</strong>.<br>Troque por um cupom de desconto!<br><br><span style="font-size:10px;color:var(--gray)">⏰ Válido por 30 dias · Compras acima de R$200</span></div>
+    <div class="md-text" id="modal-5k-text">Parabéns! Você acumulou <strong style="color:var(--gold)">5.000 pontos Prime</strong>.<br>Troque por um cupom de desconto!<br><br><span style="font-size:12px;color:var(--gray)">⏰ Válido por 30 dias · Compras acima de R$200</span></div>
     <div style="background:rgba(201,168,76,.08);border:2px dashed rgba(201,168,76,.4);border-radius:12px;padding:16px;margin-bottom:18px">
-      <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gray);margin-bottom:6px">seu cupom</div>
+      <div style="font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--gray);margin-bottom:6px">seu cupom</div>
       <div style="font-family:'Fira Code',monospace;font-size:22px;color:var(--gold-light);font-weight:700;letter-spacing:4px" id="cupom-code">PRIME100</div>
-      <div style="font-size:10px;color:var(--gray);margin-top:4px" id="cupom-valor-desc">R$ 100 de desconto · compras acima de R$200</div>
+      <div style="font-size:12px;color:var(--gray);margin-top:4px" id="cupom-valor-desc">R$ 100 de desconto · compras acima de R$200</div>
     </div>
     <div class="md-actions" style="justify-content:center;flex-direction:column;gap:8px">
       <button class="btn bg" style="width:100%" data-action="compartilharCupom">📲 Compartilhar cupom</button>
@@ -350,13 +352,13 @@
   <div style="padding:12px 16px 0">
     <!-- BUSCA E FILTROS -->
     <div style="display:flex;gap:8px;margin-bottom:10px">
-      <input class="fi" id="cardapio-busca" placeholder="Buscar produto..." data-oninput="filtrarCardapioCliente" style="flex:1;padding:10px 14px;font-size:12px">
+      <input class="fi" id="cardapio-busca" placeholder="Buscar produto..." aria-label="Buscar produto" data-oninput="filtrarCardapioCliente" style="flex:1;padding:10px 14px;font-size:12px">
     </div>
     <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">
-      <button class="btn bo bsm filtro-tag active" data-action="setFiltroTag" data-arg="todos" style="font-size:8px;padding:5px 10px;border-radius:20px">Todos</button>
-      <button class="btn bo bsm filtro-tag" data-action="setFiltroTag" data-arg="promocao" style="font-size:8px;padding:5px 10px;border-radius:20px">Promoções</button>
-      <button class="btn bo bsm filtro-tag" data-action="setFiltroTag" data-arg="novidade" style="font-size:8px;padding:5px 10px;border-radius:20px">Novidades</button>
-      <button class="btn bo bsm filtro-tag" data-action="setFiltroTag" data-arg="favoritos" style="font-size:8px;padding:5px 10px;border-radius:20px">Favoritos</button>
+      <button class="btn bo bsm filtro-tag active" data-action="setFiltroTag" data-arg="todos" style="font-size:12px;padding:5px 10px;border-radius:20px">Todos</button>
+      <button class="btn bo bsm filtro-tag" data-action="setFiltroTag" data-arg="promocao" style="font-size:12px;padding:5px 10px;border-radius:20px">Promoções</button>
+      <button class="btn bo bsm filtro-tag" data-action="setFiltroTag" data-arg="novidade" style="font-size:12px;padding:5px 10px;border-radius:20px">Novidades</button>
+      <button class="btn bo bsm filtro-tag" data-action="setFiltroTag" data-arg="favoritos" style="font-size:12px;padding:5px 10px;border-radius:20px">Favoritos</button>
     </div>
   </div>
   <!-- LISTA DE PRODUTOS POR CATEGORIA -->
@@ -382,7 +384,7 @@
     <div class="md-title">Revisar Pedido</div>
     <!-- REPETIR ÚLTIMO PEDIDO -->
     <div id="ultimo-pedido-box" style="display:none;margin-bottom:14px">
-      <button class="btn bo" style="width:100%;font-size:10px" data-action="repetirUltimoPedido">🔄 Repetir último pedido</button>
+      <button class="btn bo" style="width:100%;font-size:12px" data-action="repetirUltimoPedido">🔄 Repetir último pedido</button>
     </div>
     <!-- ITENS DO PEDIDO -->
     <div id="pedido-itens-lista"></div>
@@ -409,8 +411,8 @@
     <div class="fl">
       <label class="flabel">Tipo</label>
       <div style="display:flex;gap:8px">
-        <button class="btn bg tipo-entrega active" id="tipo-entrega" data-action="setTipoEntrega" data-arg="entrega" style="flex:1;font-size:10px">🚚 Entrega</button>
-        <button class="btn bo tipo-entrega" id="tipo-retirada" data-action="setTipoEntrega" data-arg="retirada" style="flex:1;font-size:10px">🏪 Retirada</button>
+        <button class="btn bg tipo-entrega active" id="tipo-entrega" data-action="setTipoEntrega" data-arg="entrega" style="flex:1;font-size:12px">🚚 Entrega</button>
+        <button class="btn bo tipo-entrega" id="tipo-retirada" data-action="setTipoEntrega" data-arg="retirada" style="flex:1;font-size:12px">🏪 Retirada</button>
       </div>
     </div>
     <!-- AÇÕES -->
@@ -419,7 +421,7 @@
         <svg width="18" height="18" viewBox="0 0 24 24" fill="#000"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.136.564 4.14 1.542 5.879L.057 23.428a.75.75 0 0 0 .916.916l5.549-1.485A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.907 0-3.694-.5-5.24-1.375l-.374-.217-3.894 1.043 1.043-3.894-.217-.374A9.953 9.953 0 0 1 2 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10z"/></svg>
         ENVIAR PELO WHATSAPP
       </button>
-      <button class="btn bo" style="width:100%;font-size:10px" data-modal-close="mo-pedido">Voltar ao cardápio</button>
+      <button class="btn bo" style="width:100%;font-size:12px" data-modal-close="mo-pedido">Voltar ao cardápio</button>
     </div>
   </div>
 </div>
@@ -432,15 +434,15 @@
     <div class="md-title" style="color:var(--gold-light);justify-content:center;display:flex">Crie seu PIN de segurança</div>
     <div class="md-text">Crie um PIN de 4 dígitos para proteger seus pontos. Ele será pedido nos resgates e operações sensíveis.</div>
     <div style="display:flex;gap:10px;justify-content:center;margin-bottom:14px">
-      <input class="fi pin-input" id="pin-d1" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-next="pin-d2">
-      <input class="fi pin-input" id="pin-d2" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-next="pin-d3" data-pin-prev="pin-d1">
-      <input class="fi pin-input" id="pin-d3" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-next="pin-d4" data-pin-prev="pin-d2">
-      <input class="fi pin-input" id="pin-d4" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-prev="pin-d3">
+      <input class="fi pin-input" id="pin-d1" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Dígito 1 do PIN" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-next="pin-d2">
+      <input class="fi pin-input" id="pin-d2" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Dígito 2 do PIN" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-next="pin-d3" data-pin-prev="pin-d1">
+      <input class="fi pin-input" id="pin-d3" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Dígito 3 do PIN" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-next="pin-d4" data-pin-prev="pin-d2">
+      <input class="fi pin-input" id="pin-d4" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Dígito 4 do PIN" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-prev="pin-d3">
     </div>
-    <div id="pin-criar-erro" style="color:#e74c3c;font-size:11px;min-height:16px;margin-bottom:8px"></div>
+    <div id="pin-criar-erro" aria-live="assertive" style="color:#e74c3c;font-size:12px;min-height:16px;margin-bottom:8px"></div>
     <div class="md-actions" style="justify-content:center;flex-direction:column;gap:8px">
       <button class="btn bg" style="width:100%" id="btn-salvar-pin" data-action="salvarPinSeguranca">Salvar PIN</button>
-      <button class="btn bo" style="width:100%;font-size:10px;opacity:.7" data-action="pularCriacaoPin">Depois eu crio</button>
+      <button class="btn bo" style="width:100%;font-size:12px;opacity:.7" data-action="pularCriacaoPin">Depois eu crio</button>
     </div>
   </div>
 </div>
@@ -453,16 +455,16 @@
     <div class="md-title" style="color:var(--gold-light);justify-content:center;display:flex">Digite seu PIN</div>
     <div class="md-text">Informe seu PIN de 4 dígitos para acessar sua conta.</div>
     <div style="display:flex;gap:10px;justify-content:center;margin-bottom:14px">
-      <input class="fi pin-input" id="lpin-d1" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-next="lpin-d2">
-      <input class="fi pin-input" id="lpin-d2" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-next="lpin-d3" data-pin-prev="lpin-d1">
-      <input class="fi pin-input" id="lpin-d3" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-next="lpin-d4" data-pin-prev="lpin-d2">
-      <input class="fi pin-input" id="lpin-d4" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-prev="lpin-d3">
+      <input class="fi pin-input" id="lpin-d1" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Dígito 1 do PIN" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-next="lpin-d2">
+      <input class="fi pin-input" id="lpin-d2" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Dígito 2 do PIN" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-next="lpin-d3" data-pin-prev="lpin-d1">
+      <input class="fi pin-input" id="lpin-d3" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Dígito 3 do PIN" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-next="lpin-d4" data-pin-prev="lpin-d2">
+      <input class="fi pin-input" id="lpin-d4" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Dígito 4 do PIN" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-prev="lpin-d3">
     </div>
-    <div id="pin-login-erro" style="color:#e74c3c;font-size:11px;min-height:16px;margin-bottom:8px"></div>
+    <div id="pin-login-erro" aria-live="assertive" style="color:#e74c3c;font-size:12px;min-height:16px;margin-bottom:8px"></div>
     <div class="md-actions" style="justify-content:center;flex-direction:column;gap:8px">
       <button class="btn bg" style="width:100%" data-action="confirmarPinLogin">Entrar</button>
     </div>
-    <div style="margin-top:12px;font-size:10px;color:var(--gray)">Esqueceu o PIN? Entre em contato com o Empório.</div>
+    <div style="margin-top:12px;font-size:12px;color:var(--gray)">Esqueceu o PIN? Entre em contato com o Empório.</div>
   </div>
 </div>
 
@@ -474,12 +476,12 @@
     <div class="md-title" style="color:var(--gold-light);justify-content:center;display:flex">Digite seu PIN</div>
     <div class="md-text">Informe seu PIN de 4 dígitos para confirmar o resgate.</div>
     <div style="display:flex;gap:10px;justify-content:center;margin-bottom:14px">
-      <input class="fi pin-input" id="vpin-d1" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-next="vpin-d2">
-      <input class="fi pin-input" id="vpin-d2" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-next="vpin-d3" data-pin-prev="vpin-d1">
-      <input class="fi pin-input" id="vpin-d3" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-next="vpin-d4" data-pin-prev="vpin-d2">
-      <input class="fi pin-input" id="vpin-d4" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-prev="vpin-d3">
+      <input class="fi pin-input" id="vpin-d1" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Dígito 1 do PIN" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-next="vpin-d2">
+      <input class="fi pin-input" id="vpin-d2" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Dígito 2 do PIN" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-next="vpin-d3" data-pin-prev="vpin-d1">
+      <input class="fi pin-input" id="vpin-d3" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Dígito 3 do PIN" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-next="vpin-d4" data-pin-prev="vpin-d2">
+      <input class="fi pin-input" id="vpin-d4" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Dígito 4 do PIN" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-prev="vpin-d3">
     </div>
-    <div id="pin-verificar-erro" style="color:#e74c3c;font-size:11px;min-height:16px;margin-bottom:8px"></div>
+    <div id="pin-verificar-erro" aria-live="assertive" style="color:#e74c3c;font-size:12px;min-height:16px;margin-bottom:8px"></div>
     <div class="md-actions" style="justify-content:center;flex-direction:column;gap:8px">
       <button class="btn bg" style="width:100%" id="btn-confirmar-pin" data-action="confirmarPinResgate">Confirmar</button>
       <button class="btn bo" style="width:100%" data-action="fecharModalPin" data-arg="mo-pin-verificar">Cancelar</button>
@@ -495,24 +497,24 @@
     <div class="md-title" style="color:var(--gold-light);justify-content:center;display:flex">Alterar PIN</div>
     <div class="md-text" id="pin-alterar-desc">Digite o PIN atual e o novo PIN.</div>
     <div style="margin-bottom:12px">
-      <div style="font-size:10px;color:var(--gray);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px" id="pin-alt-label-atual">PIN Atual</div>
+      <div style="font-size:12px;color:var(--gray);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px" id="pin-alt-label-atual">PIN Atual</div>
       <div style="display:flex;gap:10px;justify-content:center">
-        <input class="fi pin-input" id="apin-a1" type="tel" maxlength="1" inputmode="numeric" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-next="apin-a2">
-        <input class="fi pin-input" id="apin-a2" type="tel" maxlength="1" inputmode="numeric" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-next="apin-a3" data-pin-prev="apin-a1">
-        <input class="fi pin-input" id="apin-a3" type="tel" maxlength="1" inputmode="numeric" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-next="apin-a4" data-pin-prev="apin-a2">
-        <input class="fi pin-input" id="apin-a4" type="tel" maxlength="1" inputmode="numeric" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-prev="apin-a3">
+        <input class="fi pin-input" id="apin-a1" type="tel" maxlength="1" inputmode="numeric" aria-label="Dígito 1 do PIN atual" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-next="apin-a2">
+        <input class="fi pin-input" id="apin-a2" type="tel" maxlength="1" inputmode="numeric" aria-label="Dígito 2 do PIN atual" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-next="apin-a3" data-pin-prev="apin-a1">
+        <input class="fi pin-input" id="apin-a3" type="tel" maxlength="1" inputmode="numeric" aria-label="Dígito 3 do PIN atual" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-next="apin-a4" data-pin-prev="apin-a2">
+        <input class="fi pin-input" id="apin-a4" type="tel" maxlength="1" inputmode="numeric" aria-label="Dígito 4 do PIN atual" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-prev="apin-a3">
       </div>
     </div>
     <div style="margin-bottom:14px">
-      <div style="font-size:10px;color:var(--gray);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">Novo PIN</div>
+      <div style="font-size:12px;color:var(--gray);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">Novo PIN</div>
       <div style="display:flex;gap:10px;justify-content:center">
-        <input class="fi pin-input" id="apin-n1" type="tel" maxlength="1" inputmode="numeric" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-next="apin-n2">
-        <input class="fi pin-input" id="apin-n2" type="tel" maxlength="1" inputmode="numeric" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-next="apin-n3" data-pin-prev="apin-n1">
-        <input class="fi pin-input" id="apin-n3" type="tel" maxlength="1" inputmode="numeric" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-next="apin-n4" data-pin-prev="apin-n2">
-        <input class="fi pin-input" id="apin-n4" type="tel" maxlength="1" inputmode="numeric" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-prev="apin-n3">
+        <input class="fi pin-input" id="apin-n1" type="tel" maxlength="1" inputmode="numeric" aria-label="Dígito 1 do novo PIN" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-next="apin-n2">
+        <input class="fi pin-input" id="apin-n2" type="tel" maxlength="1" inputmode="numeric" aria-label="Dígito 2 do novo PIN" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-next="apin-n3" data-pin-prev="apin-n1">
+        <input class="fi pin-input" id="apin-n3" type="tel" maxlength="1" inputmode="numeric" aria-label="Dígito 3 do novo PIN" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-next="apin-n4" data-pin-prev="apin-n2">
+        <input class="fi pin-input" id="apin-n4" type="tel" maxlength="1" inputmode="numeric" aria-label="Dígito 4 do novo PIN" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-prev="apin-n3">
       </div>
     </div>
-    <div id="pin-alterar-erro" style="color:#e74c3c;font-size:11px;min-height:16px;margin-bottom:8px"></div>
+    <div id="pin-alterar-erro" aria-live="assertive" style="color:#e74c3c;font-size:12px;min-height:16px;margin-bottom:8px"></div>
     <div class="md-actions" style="justify-content:center;flex-direction:column;gap:8px">
       <button class="btn bg" style="width:100%" data-action="alterarPinSeguranca">Salvar novo PIN</button>
       <button class="btn bo" style="width:100%" data-action="fecharModalPin" data-arg="mo-pin-alterar">Cancelar</button>
@@ -532,17 +534,17 @@
 
     <!-- COTAÇÃO DESTAQUE -->
     <div class="sec-card" style="margin:0 0 14px;text-align:center">
-      <div style="font-size:10px;color:var(--gray);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:4px">Arroba do Boi Gordo — CEPEA/Esalq</div>
+      <div style="font-size:12px;color:var(--gray);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:4px">Arroba do Boi Gordo — CEPEA/Esalq</div>
       <div id="blog-cotacao-valor" style="font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:700;color:var(--gold)">Carregando...</div>
       <div id="blog-cotacao-var" style="font-size:12px;margin-top:2px"></div>
-      <a href="/cotacao-arroba-boi-gordo-hoje" style="display:inline-block;margin-top:10px;font-size:10px;color:var(--gold);text-decoration:underline">Ver gráfico completo e análise</a>
+      <a href="/cotacao-arroba-boi-gordo-hoje" style="display:inline-block;margin-top:10px;font-size:12px;color:var(--gold);text-decoration:underline">Ver gráfico completo e análise</a>
     </div>
 
     <!-- ARTIGOS -->
     <div class="sec-card" style="margin:0 0 14px">
       <div class="sec-title">Últimos Artigos</div>
       <div id="blog-artigos-lista" style="display:flex;flex-direction:column;gap:12px">
-        <div style="text-align:center;padding:16px;color:var(--gray);font-size:11px">Carregando...</div>
+        <div style="text-align:center;padding:16px;color:var(--gray);font-size:12px">Carregando...</div>
       </div>
     </div>
 
@@ -563,13 +565,13 @@
 </div>
 
 <!-- BOTTOM NAV -->
-<nav class="bnav" id="bnav" style="display:none">
-  <button class="bn active" data-nav="cartao"><span class="bn-icon">🃏</span>Cartão</button>
-  <button class="bn" data-nav="cardapio"><span class="bn-icon">🛒</span>Cardápio</button>
-  <button class="bn" data-nav="pontos"><span class="bn-icon">⭐</span>Pontos</button>
-  <button class="bn" data-nav="ind"><span class="bn-icon">🔗</span>Indicar</button>
-  <button class="bn" data-nav="blog"><span class="bn-icon">📰</span>Blog</button>
-  <button class="bn" data-nav="perfil"><span class="bn-icon">👤</span>Perfil</button>
+<nav class="bnav" id="bnav" role="navigation" aria-label="Menu principal" style="display:none">
+  <button class="bn active" data-nav="cartao" aria-label="Cartão"><span class="bn-icon" aria-hidden="true">🃏</span>Cartão</button>
+  <button class="bn" data-nav="cardapio" aria-label="Cardápio"><span class="bn-icon" aria-hidden="true">🛒</span>Cardápio</button>
+  <button class="bn" data-nav="pontos" aria-label="Pontos"><span class="bn-icon" aria-hidden="true">⭐</span>Pontos</button>
+  <button class="bn" data-nav="ind" aria-label="Indicar"><span class="bn-icon" aria-hidden="true">🔗</span>Indicar</button>
+  <button class="bn" data-nav="blog" aria-label="Blog"><span class="bn-icon" aria-hidden="true">📰</span>Blog</button>
+  <button class="bn" data-nav="perfil" aria-label="Perfil"><span class="bn-icon" aria-hidden="true">👤</span>Perfil</button>
 </nav>
 
 <!-- QR Code Expandido -->
