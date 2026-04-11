@@ -649,7 +649,10 @@ if('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     // GitHub Pages usa subpasta /
     const swPath = location.pathname.includes('/clube-prime') ? '/clube-prime/sw.js' : '/sw.js';
-    navigator.serviceWorker.register(swPath).catch(()=>{});
+    navigator.serviceWorker.register(swPath).then(reg => {
+      // Forçar verificação de update a cada carregamento
+      reg.update().catch(() => {});
+    }).catch(()=>{});
   });
 }
 
