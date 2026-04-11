@@ -76,38 +76,82 @@ const ONESIGNAL_REST_KEY = process.env.ONESIGNAL_REST_KEY;
 
 async function enviarPush(dados) {
   if (!ONESIGNAL_REST_KEY) {
-    console.warn('ONESIGNAL_REST_KEY não definida — pulando push.');
-    return;
+    console.warn('⚠ ONESIGNAL_REST_KEY não definida — pulando push.');
+    return { sent: false, reason: 'no_key' };
   }
 
-  const response = await fetch('https://api.onesignal.com/notifications', {
+  const articleUrl = `https://carnesrodrigues.com.br/${dados.slug}`;
+  const payload = {
+    app_id: ONESIGNAL_APP_ID,
+    target_channel: 'push',
+    included_segments: ['Total Subscriptions'],
+    headings: { pt: dados.pushTitulo || dados.titulo.substring(0, 60), en: dados.pushTitulo || dados.titulo.substring(0, 60) },
+    contents: { pt: dados.pushBody || dados.ogDescription.substring(0, 100), en: dados.pushBody || dados.ogDescription.substring(0, 100) },
+    url: articleUrl,
+    web_url: articleUrl,
+    chrome_web_icon: 'https://carnesrodrigues.com.br/icon-192.png',
+    web_buttons: [
+      { id: 'open', text: 'Ler artigo', url: articleUrl },
+      { id: 'share', text: 'Compartilhar', url: `https://api.whatsapp.com/send?text=${encodeURIComponent('Veja no Clube Prime: ' + articleUrl)}` }
+    ]
+  };
+
+  // Só incluir imagem se existir (string vazia causa erro na API)
+  if (dados.imageUrl) {
+    payload.chrome_web_image = dados.imageUrl;
+    payload.big_picture = dados.imageUrl;
+  }
+
+  console.log('Push payload:', JSON.stringify(payload, null, 2));
+
+  let response = await fetch('https://api.onesignal.com/notifications', {
     method: 'POST',
     headers: {
       'Authorization': `Key ${ONESIGNAL_REST_KEY}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      app_id: ONESIGNAL_APP_ID,
-      included_segments: ['All'],
-      headings: { pt: dados.pushTitulo || dados.titulo.substring(0, 60), en: dados.pushTitulo || dados.titulo.substring(0, 60) },
-      contents: { pt: dados.pushBody || dados.ogDescription.substring(0, 100), en: dados.pushBody || dados.ogDescription.substring(0, 100) },
-      url: `https://carnesrodrigues.com.br/${dados.slug}`,
-      web_url: `https://carnesrodrigues.com.br/${dados.slug}`,
-      chrome_web_icon: 'https://carnesrodrigues.com.br/icon-192.png',
-      chrome_web_image: dados.imageUrl || '',
-    })
+    body: JSON.stringify(payload)
   });
 
-  const body = await response.text();
+  let body = await response.text();
+
+  // Se "Total Subscriptions" não existe, tentar com "All"
+  if (!response.ok && (body.includes('segment') || body.includes('Segment'))) {
+    console.warn(`⚠ Segmento "Total Subscriptions" falhou (${response.status}), tentando "All"...`);
+    payload.included_segments = ['All'];
+    response = await fetch('https://api.onesignal.com/notifications', {
+      method: 'POST',
+      headers: { 'Authorization': `Key ${ONESIGNAL_REST_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    body = await response.text();
+  }
+
   if (!response.ok) {
-    console.error(`Erro ao enviar push: ${response.status} — ${body}`);
-  } else {
-    try {
-      const result = JSON.parse(body);
-      console.log(`✓ Push enviada — id: ${result.id || '?'}, recipients: ${result.recipients || 0}, errors: ${JSON.stringify(result.errors || [])}`);
-    } catch (e) {
-      console.log(`✓ Push enviada — resposta: ${body.slice(0, 200)}`);
+    console.error(`✗ Push FALHOU: HTTP ${response.status}`);
+    console.error(`  Resposta: ${body}`);
+    return { sent: false, reason: body };
+  }
+
+  try {
+    const result = JSON.parse(body);
+    const recipients = result.recipients || 0;
+
+    if (recipients === 0) {
+      console.warn('⚠ Push enviada mas 0 RECIPIENTS!');
+      console.warn('  Verifique: subscribers no OneSignal dashboard, SW registrado, domínio correto');
+    } else {
+      console.log(`✓ Push enviada — id: ${result.id}, recipients: ${recipients}`);
     }
+
+    if (result.errors && result.errors.length > 0) {
+      console.warn(`  Erros: ${JSON.stringify(result.errors)}`);
+    }
+
+    return { sent: true, recipients, id: result.id, errors: result.errors };
+  } catch (e) {
+    console.log(`✓ Push enviada — resposta raw: ${body.slice(0, 200)}`);
+    return { sent: true, body };
   }
 }
 
