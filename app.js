@@ -166,9 +166,9 @@ async function preencherTela(cliente, saldo) {
   clienteCodigo = cliente.codigo;
   clienteNome = cliente.nome.split(' ')[0];
   // Salvar dados localmente + sessão segura
-  localStorage.setItem('clube_cliente_dados', JSON.stringify(cliente));
-  localStorage.setItem('clube_cliente_saldo', String(saldo));
-  localStorage.setItem('clube_cliente_tel', cliente.telefone);
+  SecureStorage.set('clube_cliente_dados', JSON.stringify(cliente));
+  SecureStorage.set('clube_cliente_saldo', String(saldo));
+  SecureStorage.set('clube_cliente_tel', cliente.telefone);
   // Criar/renovar sessão segura se não existir
   if (!validarSessaoCliente()) {
     salvarSessaoCliente(cliente);
@@ -274,8 +274,8 @@ async function goApp() {
       const r = await fetch(`${SUPA_URL}/rest/v1/pontos?cliente_id=eq.${cliente.id}`, { headers: SH });
       const pts = r.ok ? await r.json() : [];
       await preencherTela(cliente, pts[0]?.saldo || 0);
-      localStorage.setItem('clube_cliente_id', cliente.id);
-      localStorage.setItem('clube_cliente_tel', tel);
+      SecureStorage.set('clube_cliente_id', cliente.id);
+      SecureStorage.set('clube_cliente_tel', tel);
       // Criar sessão segura
       salvarSessaoCliente(cliente);
       // Sugerir criação de PIN se não tem e não foi lembrado recentemente
@@ -299,8 +299,8 @@ async function goApp() {
 
       if (cliente) {
         preencherTela(cliente, 0);
-        localStorage.setItem('clube_cliente_id', cliente.id);
-        localStorage.setItem('clube_cliente_tel', tel);
+        SecureStorage.set('clube_cliente_id', cliente.id);
+        SecureStorage.set('clube_cliente_tel', tel);
         // Notificar admin sobre novo cadastro (fire-and-forget)
         notificarAdminNovoCliente(nome, tel);
         // Criar sessão segura
@@ -319,8 +319,8 @@ async function goApp() {
 // Auto-login seguro — verifica token de sessão antes de restaurar
 window.addEventListener('load', async () => {
   const sessao = validarSessaoCliente();
-  const tel = localStorage.getItem('clube_cliente_tel');
-  const clienteLocal = localStorage.getItem('clube_cliente_dados');
+  const tel = await SecureStorage.get('clube_cliente_tel');
+  const clienteLocal = await SecureStorage.get('clube_cliente_dados');
 
   // Só faz auto-login se a sessão for válida (não expirada)
   if (sessao && (tel || clienteLocal)) {
@@ -328,7 +328,7 @@ window.addEventListener('load', async () => {
     if (clienteLocal) {
       try {
         const dadosLocal = JSON.parse(clienteLocal);
-        const saldoLocal = parseInt(localStorage.getItem('clube_cliente_saldo') || '0');
+        const saldoLocal = parseInt(await SecureStorage.get('clube_cliente_saldo') || '0');
         preencherTela(dadosLocal, saldoLocal);
       } catch(e) {}
     }
@@ -342,8 +342,8 @@ window.addEventListener('load', async () => {
           const pts = r.ok ? await r.json() : [];
           const saldo = pts[0]?.saldo || 0;
           // Salvar dados atualizados localmente
-          localStorage.setItem('clube_cliente_dados', JSON.stringify(cliente));
-          localStorage.setItem('clube_cliente_saldo', String(saldo));
+          SecureStorage.set('clube_cliente_dados', JSON.stringify(cliente));
+          SecureStorage.set('clube_cliente_saldo', String(saldo));
           preencherTela(cliente, saldo);
         } else if (clienteLocal) {
           // Banco não respondeu mas temos dados locais — manter logado
@@ -382,8 +382,8 @@ async function acessarCartao() {
       const r = await fetch(`${SUPA_URL}/rest/v1/pontos?cliente_id=eq.${cliente.id}`, { headers: SH });
       const pts = r.ok ? await r.json() : [];
       await preencherTela(cliente, pts[0]?.saldo || 0);
-      localStorage.setItem('clube_cliente_id', cliente.id);
-      localStorage.setItem('clube_cliente_tel', tel);
+      SecureStorage.set('clube_cliente_id', cliente.id);
+      SecureStorage.set('clube_cliente_tel', tel);
       // Criar sessão segura para manter logado
       salvarSessaoCliente(cliente);
       // Sugerir criação de PIN se não tem
@@ -476,14 +476,14 @@ function salvarSessaoCliente(cliente) {
     expiraEm: Date.now() + (30 * 24 * 60 * 60 * 1000), // 30 dias
     ultimoAcesso: Date.now()
   };
-  localStorage.setItem('clube_sessao', JSON.stringify(sessao));
+  SecureStorage.set('clube_sessao', JSON.stringify(sessao));
   return sessao;
 }
 
 // Validar sessão existente
 function validarSessaoCliente() {
   try {
-    const raw = localStorage.getItem('clube_sessao');
+    const raw = localStorage.getItem('clube_sessao'); // TODO: migrate to async SecureStorage.get after init
     if (!raw) return null;
     const sessao = JSON.parse(raw);
     // Verificar expiração
@@ -498,7 +498,7 @@ function validarSessaoCliente() {
     }
     // Atualizar último acesso
     sessao.ultimoAcesso = Date.now();
-    localStorage.setItem('clube_sessao', JSON.stringify(sessao));
+    SecureStorage.set('clube_sessao', JSON.stringify(sessao));
     return sessao;
   } catch(e) {
     limparSessaoCliente();
@@ -508,28 +508,28 @@ function validarSessaoCliente() {
 
 // Limpar sessão (logout)
 function limparSessaoCliente() {
-  localStorage.removeItem('clube_sessao');
-  localStorage.removeItem('clube_cliente_id');
-  localStorage.removeItem('clube_cliente_tel');
-  localStorage.removeItem('clube_cliente_dados');
-  localStorage.removeItem('clube_cliente_saldo');
+  SecureStorage.remove('clube_sessao');
+  SecureStorage.remove('clube_cliente_id');
+  SecureStorage.remove('clube_cliente_tel');
+  SecureStorage.remove('clube_cliente_dados');
+  SecureStorage.remove('clube_cliente_saldo');
 }
 
 // Marcar PIN como verificado na sessão atual (não pede de novo)
 function marcarPinVerificado() {
   try {
-    const raw = localStorage.getItem('clube_sessao');
+    const raw = localStorage.getItem('clube_sessao'); // TODO: migrate to async SecureStorage.get after init
     if (!raw) return;
     const sessao = JSON.parse(raw);
     sessao.pinVerificado = true;
-    localStorage.setItem('clube_sessao', JSON.stringify(sessao));
+    SecureStorage.set('clube_sessao', JSON.stringify(sessao));
   } catch(e) {}
 }
 
 // Renovar sessão (estende por mais 30 dias se estiver perto de expirar)
 function renovarSessaoSeNecessario() {
   try {
-    const raw = localStorage.getItem('clube_sessao');
+    const raw = localStorage.getItem('clube_sessao'); // TODO: migrate to async SecureStorage.get after init
     if (!raw) return;
     const sessao = JSON.parse(raw);
     const diasRestantes = (sessao.expiraEm - Date.now()) / (24 * 60 * 60 * 1000);
@@ -537,7 +537,7 @@ function renovarSessaoSeNecessario() {
     if (diasRestantes < 7) {
       sessao.expiraEm = Date.now() + (30 * 24 * 60 * 60 * 1000);
       sessao.ultimoAcesso = Date.now();
-      localStorage.setItem('clube_sessao', JSON.stringify(sessao));
+      SecureStorage.set('clube_sessao', JSON.stringify(sessao));
     }
   } catch(e) {}
 }
@@ -1581,7 +1581,7 @@ let cardapioProdutos = [];
 let pedidoAtual = {}; // { produtoId: { qty, obs } }
 let filtroTagAtual = 'todos';
 let tipoEntregaAtual = 'entrega';
-let favoritosCliente = JSON.parse(localStorage.getItem('clube_favoritos') || '[]');
+let favoritosCliente = JSON.parse(localStorage.getItem('clube_favoritos') || '[]'); // TODO: migrate to async SecureStorage.get after init
 
 async function carregarCardapioCliente() {
   try {
@@ -1658,7 +1658,7 @@ function toggleFavorito(prodId, btn) {
   const idx = favoritosCliente.indexOf(prodId);
   if (idx >= 0) { favoritosCliente.splice(idx, 1); btn.classList.remove('active'); btn.textContent = '🤍'; }
   else { favoritosCliente.push(prodId); btn.classList.add('active'); btn.textContent = '❤️'; }
-  localStorage.setItem('clube_favoritos', JSON.stringify(favoritosCliente));
+  SecureStorage.set('clube_favoritos', JSON.stringify(favoritosCliente));
 }
 
 function setFiltroTag(tag, btn) {
@@ -1687,13 +1687,13 @@ function setTipoEntrega(tipo, btn) {
 function abrirPedido() {
   if (!clienteId) { alert('Faça login para enviar pedidos!'); return; }
   // Verificar perfil completo
-  const dados = JSON.parse(localStorage.getItem('clube_cliente_dados') || '{}');
+  const dados = JSON.parse(localStorage.getItem('clube_cliente_dados') || '{}'); // TODO: migrate to async SecureStorage.get after init
   if (!dados.rua || !dados.numero || !dados.bairro || !dados.cidade) {
     alert('Complete seu endereço no Perfil antes de fazer pedidos!');
     return;
   }
   // Verificar se há último pedido
-  const ultimo = localStorage.getItem('clube_ultimo_pedido');
+  const ultimo = localStorage.getItem('clube_ultimo_pedido'); // TODO: migrate to async SecureStorage.get after init
   document.getElementById('ultimo-pedido-box').style.display = ultimo ? 'block' : 'none';
   // Renderizar itens
   renderizarItensPedido();
@@ -1737,7 +1737,7 @@ function alterarQtdPedido(prodId, delta) {
 }
 
 function repetirUltimoPedido() {
-  const ultimo = JSON.parse(localStorage.getItem('clube_ultimo_pedido') || '{}');
+  const ultimo = JSON.parse(localStorage.getItem('clube_ultimo_pedido') || '{}'); // TODO: migrate to async SecureStorage.get after init
   if (ultimo.itens) {
     pedidoAtual = {};
     ultimo.itens.forEach(item => {
@@ -1756,8 +1756,8 @@ async function enviarPedidoWhatsApp() {
   if (!data) { alert('Selecione a data de entrega!'); return; }
   if (!horario) { alert('Selecione o horário!'); return; }
 
-  const dados = JSON.parse(localStorage.getItem('clube_cliente_dados') || '{}');
-  const saldo = localStorage.getItem('clube_cliente_saldo') || '0';
+  const dados = JSON.parse(await SecureStorage.get('clube_cliente_dados') || '{}');
+  const saldo = await SecureStorage.get('clube_cliente_saldo') || '0';
   const obsGeral = document.getElementById('pedido-obs').value.trim();
 
   // Montar itens para salvar
@@ -1782,7 +1782,7 @@ async function enviarPedidoWhatsApp() {
   } catch(e) { console.warn('Erro ao salvar pedido no Supabase:', e); }
 
   // Salvar último pedido no localStorage
-  localStorage.setItem('clube_ultimo_pedido', JSON.stringify({ itens: itensSalvar }));
+  SecureStorage.set('clube_ultimo_pedido', JSON.stringify({ itens: itensSalvar }));
 
   // Montar mensagem WhatsApp
   const endereco = [dados.rua, dados.numero, dados.bairro, dados.cidade, dados.uf].filter(Boolean).join(', ');
