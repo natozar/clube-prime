@@ -218,8 +218,27 @@ async function publicar(dadosArtigo) {
   await atualizarSitemap(dados.slug);
 
   // 5. Push notification
-  console.log('5/5 Enviando push notification...');
-  await enviarPush(dados);
+  console.log('5/6 Enviando push notification...');
+  const pushResult = await enviarPush(dados);
+
+  // 6. Marcar push como enviada no Supabase
+  if (pushResult && pushResult.sent && SUPABASE_SERVICE_KEY) {
+    console.log('6/6 Atualizando push_enviado no Supabase...');
+    try {
+      const patchRes = await fetch(`${SUPABASE_URL}/rest/v1/seo_artigos?slug=eq.${encodeURIComponent(dados.slug)}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': SUPABASE_SERVICE_KEY,
+          'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({ push_enviado: true })
+      });
+      if (patchRes.ok) console.log('✓ push_enviado = true no Supabase');
+      else console.warn('⚠ Falha ao atualizar push_enviado:', patchRes.status);
+    } catch(e) { console.warn('⚠ Erro ao atualizar push_enviado:', e.message); }
+  }
 
   console.log(`\n✓ Publicação concluída: https://carnesrodrigues.com.br/${dados.slug}\n`);
 
