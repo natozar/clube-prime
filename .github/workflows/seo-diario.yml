@@ -60,6 +60,9 @@ jobs:
           git config user.name "Clube Prime SEO Bot"
           git config user.email "seo@carnesrodrigues.com.br"
           git add -A
-          git diff --staged --quiet && echo "Nenhuma mudança" && exit 0
+          if git diff --staged --quiet; then
+            echo "Nenhuma mudança para commitar"
+            exit 0
+          fi
           git commit -m "seo: artigo diário $(date +%Y-%m-%d)"
           git push

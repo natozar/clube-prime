@@ -49,33 +49,24 @@ async function registrarArtigo(dados) {
     atualizado_em: new Date().toISOString(),
   };
 
-  // Tentar upsert — se slug já existe, atualizar
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/seo_artigos?slug=eq.${encodeURIComponent(dados.slug)}`, {
-    method: 'PATCH',
+  // Upsert via POST com resolution=merge-duplicates (slug é unique)
+  body.publicado_em = body.publicado_em || new Date().toISOString();
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/seo_artigos`, {
+    method: 'POST',
     headers: {
       'apikey': SUPABASE_SERVICE_KEY,
       'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
       'Content-Type': 'application/json',
-      'Prefer': 'return=minimal'
+      'Prefer': 'return=minimal,resolution=merge-duplicates'
     },
     body: JSON.stringify(body)
   });
 
-  if (response.status === 404 || (response.ok && response.status === 200)) {
-    // Pode não ter encontrado — tentar insert
-    const insertRes = await fetch(`${SUPABASE_URL}/rest/v1/seo_artigos`, {
-      method: 'POST',
-      headers: {
-        'apikey': SUPABASE_SERVICE_KEY,
-        'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
-        'Content-Type': 'application/json',
-        'Prefer': 'return=minimal,resolution=ignore-duplicates'
-      },
-      body: JSON.stringify(body)
-    });
-    // Ignora erro de duplicata silenciosamente
+  if (!response.ok) {
+    console.error('Erro ao registrar artigo no Supabase:', response.status, await response.text().catch(() => ''));
+  } else {
+    console.log('✓ Artigo registrado no Supabase');
   }
-  console.log('✓ Artigo registrado no Supabase');
 }
 
 // --- Disparar push notification via OneSignal REST API ---

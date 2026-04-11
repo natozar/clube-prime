@@ -149,7 +149,8 @@ async function salvarIndicadores(dados) {
 // Resumo (último valor de cada indicador)
 // ────────────────────────────────────────────────
 async function getResumoMercado() {
-  const key = SUPABASE_SERVICE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1yb3VyemR4cmFocHlzc2Nja3htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODMzMTUsImV4cCI6MjA4ODU1OTMxNX0.A4ueyDJgOu4cbxcHxsMTDBNHkxAOUlWFoYuv88LdnU4';
+  const key = SUPABASE_SERVICE_KEY;
+  if (!key) { console.warn('SUPABASE_SERVICE_KEY não definida'); return {}; }
   const H = { 'apikey': key, 'Authorization': `Bearer ${key}` };
   const resumo = {};
 
@@ -169,7 +170,8 @@ async function getResumoMercado() {
 }
 
 async function getHistoricoIndicador(indicador, dias = 30) {
-  const key = SUPABASE_SERVICE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1yb3VyemR4cmFocHlzc2Nja3htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODMzMTUsImV4cCI6MjA4ODU1OTMxNX0.A4ueyDJgOu4cbxcHxsMTDBNHkxAOUlWFoYuv88LdnU4';
+  const key = SUPABASE_SERVICE_KEY;
+  if (!key) { console.warn('SUPABASE_SERVICE_KEY não definida'); return []; }
   const r = await fetch(`${SUPABASE_URL}/rest/v1/mercado_indicadores?indicador=eq.${indicador}&order=data.desc&limit=${dias}`, {
     headers: { 'apikey': key, 'Authorization': `Bearer ${key}` }
   });
