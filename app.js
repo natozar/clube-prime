@@ -104,6 +104,35 @@
     });
   });
 
+// ── API CACHE ────────────────────────────────────────────
+// In-memory cache for API responses to reduce network requests
+var ApiCache = (function() {
+  var cache = new Map();
+  return {
+    get: function(key) {
+      var entry = cache.get(key);
+      if (!entry) return null;
+      if (Date.now() > entry.expiry) { cache.delete(key); return null; }
+      return entry.data;
+    },
+    set: function(key, data, ttlMs) {
+      cache.set(key, { data: data, expiry: Date.now() + (ttlMs || 300000) });
+    },
+    clear: function() { cache.clear(); }
+  };
+})();
+
+// Debounce helper for search inputs
+function debounce(fn, delay) {
+  var timer;
+  return function() {
+    var args = arguments;
+    var ctx = this;
+    clearTimeout(timer);
+    timer = setTimeout(function() { fn.apply(ctx, args); }, delay);
+  };
+}
+
 // ── MAIN APP ────────────────────────────────────────────
 const params=new URLSearchParams(window.location.search);
 const ref=params.get('ref');
@@ -206,17 +235,18 @@ async function preencherTela(cliente, saldo) {
   // Modal excluir conta
   const delPtsEl = document.getElementById('del-pontos');
   if (delPtsEl) delPtsEl.textContent = pts.toLocaleString('pt-BR') + ' pontos';
-  // Carregar regras do servidor
-  await carregarRegrasDoServidor();
-  // Carregar stats reais do banco
-  carregarStats(cliente.id, pts);
+  // Carregar dados em paralelo (regras, stats, extrato, rede)
   atualizarLinkConvite();
   verificar5k(pts);
   gerarQRCode(cliente.codigo);
-  carregarExtrato(cliente.id);
   atualizarStatusResgate(pts);
-  carregarRede(cliente, pts);
   preencherPerfil(cliente);
+  await Promise.all([
+    carregarRegrasDoServidor(),
+    carregarStats(cliente.id, pts),
+    carregarExtrato(cliente.id),
+    carregarRede(cliente, pts)
+  ]);
   document.getElementById('screen-cad').classList.remove('active');
   document.getElementById('screen-cartao').classList.add('active');
   document.getElementById('bnav').style.display = 'flex';
@@ -771,11 +801,17 @@ function getRegrasCliente() {
 
 async function carregarRegrasDoServidor() {
   try {
+    var cached = ApiCache.get('regras');
+    if (cached) {
+      localStorage.setItem('clube-prime-regras', JSON.stringify(cached));
+      return cached;
+    }
     const r = await fetch(`${SUPA_URL}/rest/v1/configuracoes?chave=eq.regras_pontuacao&select=valor`, { headers: SH });
     if (!r.ok) return null;
     const d = await r.json();
     if (d.length > 0 && d[0].valor) {
       const regras = JSON.parse(d[0].valor);
+      ApiCache.set('regras', regras, 300000);
       localStorage.setItem('clube-prime-regras', JSON.stringify(regras));
       return regras;
     }
@@ -869,9 +905,15 @@ async function carregarVitrine(saldo) {
   const el = document.getElementById('vitrine-recompensas');
   if (!el) return;
   try {
-    const r = await fetch(`${SUPA_URL}/rest/v1/recompensas?ativo=eq.true&order=pontos_necessarios.asc`, { headers: SH });
-    if (!r.ok) { el.innerHTML = '<p style="color:var(--red);font-size:12px">Erro ao carregar recompensas</p>'; return; } // SANITIZED: static
-    recompensasCliente = await r.json();
+    var cached = ApiCache.get('recompensas');
+    if (cached) {
+      recompensasCliente = cached;
+    } else {
+      const r = await fetch(`${SUPA_URL}/rest/v1/recompensas?ativo=eq.true&order=pontos_necessarios.asc`, { headers: SH });
+      if (!r.ok) { el.innerHTML = '<p style="color:var(--red);font-size:12px">Erro ao carregar recompensas</p>'; return; } // SANITIZED: static
+      recompensasCliente = await r.json();
+      ApiCache.set('recompensas', recompensasCliente, 300000);
+    }
     if (!Array.isArray(recompensasCliente) || !recompensasCliente.length) {
       el.innerHTML = '<p style="color:var(--gray);font-size:12px">Nenhuma recompensa disponível no momento</p>'; // SANITIZED: static
       return;
@@ -1585,14 +1627,23 @@ let favoritosCliente = JSON.parse(localStorage.getItem('clube_favoritos') || '[]
 
 async function carregarCardapioCliente() {
   try {
-    const [rCat, rProd] = await Promise.all([
-      fetch(`${SUPA_URL}/rest/v1/cardapio_categorias?select=*&ativo=eq.true&order=ordem`, { headers: SH }),
-      fetch(`${SUPA_URL}/rest/v1/cardapio_produtos?select=*&ativo=eq.true&order=ordem,nome`, { headers: SH })
-    ]);
-    cardapioCategorias = rCat.ok ? await rCat.json() : [];
-    cardapioProdutos = rProd.ok ? await rProd.json() : [];
-    if (!Array.isArray(cardapioCategorias)) cardapioCategorias = [];
-    if (!Array.isArray(cardapioProdutos)) cardapioProdutos = [];
+    var cachedCat = ApiCache.get('cardapio_categorias');
+    var cachedProd = ApiCache.get('cardapio_produtos');
+    if (cachedCat && cachedProd) {
+      cardapioCategorias = cachedCat;
+      cardapioProdutos = cachedProd;
+    } else {
+      const [rCat, rProd] = await Promise.all([
+        fetch(`${SUPA_URL}/rest/v1/cardapio_categorias?select=*&ativo=eq.true&order=ordem`, { headers: SH }),
+        fetch(`${SUPA_URL}/rest/v1/cardapio_produtos?select=*&ativo=eq.true&order=ordem,nome`, { headers: SH })
+      ]);
+      cardapioCategorias = rCat.ok ? await rCat.json() : [];
+      cardapioProdutos = rProd.ok ? await rProd.json() : [];
+      if (!Array.isArray(cardapioCategorias)) cardapioCategorias = [];
+      if (!Array.isArray(cardapioProdutos)) cardapioProdutos = [];
+      ApiCache.set('cardapio_categorias', cardapioCategorias, 300000);
+      ApiCache.set('cardapio_produtos', cardapioProdutos, 300000);
+    }
     renderizarCardapioCliente();
   } catch(e) { console.error('carregarCardapioCliente:', e); }
 }
@@ -1668,7 +1719,8 @@ function setFiltroTag(tag, btn) {
   renderizarCardapioCliente();
 }
 
-function filtrarCardapioCliente() { renderizarCardapioCliente(); }
+function _filtrarCardapioClienteImpl() { renderizarCardapioCliente(); }
+var filtrarCardapioCliente = debounce(_filtrarCardapioClienteImpl, 200);
 
 function atualizarCarrinhoBar() {
   const total = Object.values(pedidoAtual).reduce((s, v) => s + v.qty, 0);
