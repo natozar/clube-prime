@@ -125,7 +125,7 @@ let qrUrl = ''; // URL do QR para reutilizar no expandido
 function gerarQRCode(codigo) {
   const box = document.getElementById('qr-box');
   if (!box) return;
-  box.innerHTML = '';
+  box.innerHTML = ''; // SANITIZED: static
   qrUrl = window.location.origin + window.location.pathname + '?scan=' + codigo;
   new QRCode(box, {
     text: qrUrl,
@@ -143,7 +143,7 @@ function abrirQRExpandido() {
   const box = document.getElementById('qr-overlay-box');
   const nome = document.getElementById('qr-overlay-nome');
   const codigo = document.getElementById('qr-overlay-codigo');
-  box.innerHTML = '';
+  box.innerHTML = ''; // SANITIZED: static
   new QRCode(box, {
     text: qrUrl,
     width: 280,
@@ -363,7 +363,7 @@ window.addEventListener('load', async () => {
     // Destacar que basta informar o telefone para entrar novamente
     const hintEl = document.querySelector('.cad-hint');
     if (hintEl) {
-      hintEl.innerHTML = '<strong style="color:#C9A84C">Bem-vindo de volta!</strong> Informe apenas seu WhatsApp para acessar seu cartão.';
+      hintEl.innerHTML = '<strong style="color:#C9A84C">Bem-vindo de volta!</strong> Informe apenas seu WhatsApp para acessar seu cartão.'; // SANITIZED: static
     }
     // Focar no campo de telefone
     const telInput = document.getElementById('inp-tel');
@@ -432,17 +432,17 @@ async function carregarBlogUsuario() {
       const el = document.getElementById('blog-artigos-lista');
       if (artigos.length) {
         el.innerHTML = artigos.map(a =>
-          '<a href="/' + a.slug + '" style="display:flex;gap:12px;align-items:center;text-decoration:none;padding:10px;background:rgba(201,168,76,.04);border:1px solid rgba(201,168,76,.1);border-radius:10px">' +
+          '<a href="/' + encodeURI(a.slug) + '" style="display:flex;gap:12px;align-items:center;text-decoration:none;padding:10px;background:rgba(201,168,76,.04);border:1px solid rgba(201,168,76,.1);border-radius:10px">' +
             '<div style="font-size:24px;flex-shrink:0">' + (catIcons[a.categoria]||'📄') + '</div>' +
             '<div style="flex:1;min-width:0">' +
-              '<div style="font-size:12px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + a.titulo + '</div>' +
-              '<div style="font-size:10px;color:var(--gray);margin-top:2px">' + (a.conteudo_resumo || '') + '</div>' +
+              '<div style="font-size:12px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escapeHTML(a.titulo) + '</div>' +
+              '<div style="font-size:10px;color:var(--gray);margin-top:2px">' + escapeHTML(a.conteudo_resumo || '') + '</div>' +
             '</div>' +
             '<div style="color:var(--gold);font-size:16px;flex-shrink:0">›</div>' +
           '</a>'
-        ).join('');
+        ).join(''); // SANITIZED
       } else {
-        el.innerHTML = '<div style="text-align:center;padding:16px;color:var(--gray);font-size:11px">Nenhum artigo publicado ainda.</div>';
+        el.innerHTML = '<div style="text-align:center;padding:16px;color:var(--gray);font-size:11px">Nenhum artigo publicado ainda.</div>'; // SANITIZED: static
       }
     }
     blogUsuarioCarregado = true;
@@ -585,7 +585,7 @@ function verificar5k(saldo) {
     const codeEl = document.getElementById('cupom-code');
     const descEl = document.getElementById('cupom-valor-desc');
     if (titleEl) titleEl.textContent = `Você chegou aos ${regras.metaPontos.toLocaleString('pt-BR')} pontos!`;
-    if (textEl) textEl.innerHTML = `Parabéns! Você acumulou <strong style="color:var(--gold)">${regras.metaPontos.toLocaleString('pt-BR')} pontos Prime</strong>.<br>Troque por um cupom de desconto!<br><br><span style="font-size:10px;color:var(--gray)">⏰ Válido por ${regras.validadeCupom} dias · Compras acima de R$${regras.compraMinima}</span>`;
+    if (textEl) textEl.innerHTML = `Parabéns! Você acumulou <strong style="color:var(--gold)">${escapeHTML(String(regras.metaPontos.toLocaleString('pt-BR')))} pontos Prime</strong>.<br>Troque por um cupom de desconto!<br><br><span style="font-size:10px;color:var(--gray)">⏰ Válido por ${escapeHTML(String(regras.validadeCupom))} dias · Compras acima de R$${escapeHTML(String(regras.compraMinima))}</span>`; // SANITIZED
     if (codeEl) codeEl.textContent = 'PRIME' + regras.valorCupom;
     if (descEl) descEl.textContent = `R$ ${regras.valorCupom} de desconto · compras acima de R$${regras.compraMinima}`;
     setTimeout(()=>{
@@ -846,7 +846,7 @@ async function carregarExtrato(clienteId) {
   if (!lista) return;
   const trans = await buscarTransacoes(clienteId);
   if (!trans || trans.length === 0) {
-    lista.innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Nenhuma transação ainda</div>';
+    lista.innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Nenhuma transação ainda</div>'; // SANITIZED: static
     return;
   }
   lista.innerHTML = trans.map(t => {
@@ -856,7 +856,7 @@ async function carregarExtrato(clienteId) {
     const cls = isCompra ? 'pi' : 'po';
     const data = new Date(t.created_at).toLocaleDateString('pt-BR', {day:'2-digit', month:'short'});
     const desc = isCompra ? 'Compra · R$' + t.valor_reais.toFixed(0) : 'Resgate';
-    return `<div class="tl-item"><div class="tl-icon">${icon}</div><div class="tl-info"><div class="tl-title">${desc}</div><div class="tl-meta">${data}</div></div><div class="tl-pts ${cls}">${pts}</div></div>`;
+    return `<div class="tl-item"><div class="tl-icon">${icon}</div><div class="tl-info"><div class="tl-title">${escapeHTML(desc)}</div><div class="tl-meta">${escapeHTML(data)}</div></div><div class="tl-pts ${cls}">${escapeHTML(pts)}</div></div>`; // SANITIZED
   }).join('');
 }
 
@@ -870,10 +870,10 @@ async function carregarVitrine(saldo) {
   if (!el) return;
   try {
     const r = await fetch(`${SUPA_URL}/rest/v1/recompensas?ativo=eq.true&order=pontos_necessarios.asc`, { headers: SH });
-    if (!r.ok) { el.innerHTML = '<p style="color:var(--red);font-size:12px">Erro ao carregar recompensas</p>'; return; }
+    if (!r.ok) { el.innerHTML = '<p style="color:var(--red);font-size:12px">Erro ao carregar recompensas</p>'; return; } // SANITIZED: static
     recompensasCliente = await r.json();
     if (!Array.isArray(recompensasCliente) || !recompensasCliente.length) {
-      el.innerHTML = '<p style="color:var(--gray);font-size:12px">Nenhuma recompensa disponível no momento</p>';
+      el.innerHTML = '<p style="color:var(--gray);font-size:12px">Nenhuma recompensa disponível no momento</p>'; // SANITIZED: static
       return;
     }
     el.innerHTML = recompensasCliente.map(rc => {
@@ -894,10 +894,10 @@ async function carregarVitrine(saldo) {
           }
         </div>
       </div>`;
-    }).join('');
+    }).join(''); // SANITIZED
   } catch(e) {
     console.error('carregarVitrine:', e);
-    el.innerHTML = '<p style="color:var(--red);font-size:12px">Erro ao carregar recompensas</p>';
+    el.innerHTML = '<p style="color:var(--red);font-size:12px">Erro ao carregar recompensas</p>'; // SANITIZED: static
   }
 }
 
@@ -906,10 +906,10 @@ async function carregarMeusCupons() {
   if (!el || !clienteId) return;
   try {
     const r = await fetch(`${SUPA_URL}/rest/v1/resgate?cliente_id=eq.${clienteId}&order=created_at.desc&select=*,recompensas(nome)`, { headers: SH });
-    if (!r.ok) { el.innerHTML = '<p style="color:var(--red);font-size:12px">Erro ao carregar cupons</p>'; return; }
+    if (!r.ok) { el.innerHTML = '<p style="color:var(--red);font-size:12px">Erro ao carregar cupons</p>'; return; } // SANITIZED: static
     const lista = await r.json();
     if (!Array.isArray(lista) || !lista.length) {
-      el.innerHTML = '<p style="color:var(--gray);font-size:12px">Nenhum cupom ainda</p>';
+      el.innerHTML = '<p style="color:var(--gray);font-size:12px">Nenhum cupom ainda</p>'; // SANITIZED: static
       return;
     }
     el.innerHTML = lista.map(rg => {
@@ -922,8 +922,8 @@ async function carregarMeusCupons() {
         recusado: {cor:'#c0392b',txt:'Recusado',icon:'❌'},
         expirado: {cor:'var(--gray)',txt:'Expirado',icon:'⏰'}
       };
-      const st = statusMap[rg.status] || {cor:'var(--gray)',txt:rg.status,icon:'❓'};
-      const cupom = rg.codigo_cupom || '—';
+      const st = statusMap[rg.status] || {cor:'var(--gray)',txt:escapeHTML(rg.status),icon:'❓'};
+      const cupom = escapeHTML(rg.codigo_cupom || '—');
       const validade = rg.validade ? new Date(rg.validade).toLocaleDateString('pt-BR') : '';
       return `
       <div style="padding:10px 0;border-bottom:1px solid rgba(201,168,76,.1)">
@@ -938,7 +938,7 @@ async function carregarMeusCupons() {
           </div>
         </div>
       </div>`;
-    }).join('');
+    }).join(''); // SANITIZED
   } catch(e) {
     console.error('carregarMeusCupons:', e);
   }
@@ -1053,9 +1053,9 @@ async function carregarRede(cliente, saldo) {
   if (elSub) elSub.textContent = '0 indicados · 2% permanente';
 
   const listaEl = document.getElementById('rede-indicados');
-  if (listaEl) listaEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Nenhum indicado ainda</div>';
+  if (listaEl) listaEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Nenhum indicado ainda</div>'; // SANITIZED: static
   const bonusEl = document.getElementById('bonus-lista');
-  if (bonusEl) bonusEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Nenhum bônus ainda</div>';
+  if (bonusEl) bonusEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Nenhum bônus ainda</div>'; // SANITIZED: static
 }
 
 async function buscarTransacoes(clienteId) {
@@ -1607,7 +1607,7 @@ function renderizarCardapioCliente() {
   else if (filtroTagAtual === 'favoritos') prods = prods.filter(p => favoritosCliente.includes(p.id));
 
   if (!prods.length) {
-    el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--gray);font-size:12px">Nenhum produto encontrado</div>';
+    el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--gray);font-size:12px">Nenhum produto encontrado</div>'; // SANITIZED: static
     return;
   }
 
@@ -1628,7 +1628,7 @@ function renderizarCardapioCliente() {
         <div class="cardapio-item-info">
           <div class="cardapio-item-nome">${sanitize(p.nome)}${badge}</div>
           <div class="cardapio-item-apres">${sanitize(p.apresentacao||'')}</div>
-          ${qty > 0 ? `<input class="fi" style="margin-top:6px;padding:6px 10px;font-size:11px" placeholder="Obs: sem tempero, corte fino..." value="${obs.replace(/"/g,'&quot;')}" onchange="setObsItem(${p.id},this.value)">` : ''}
+          ${qty > 0 ? `<input class="fi" style="margin-top:6px;padding:6px 10px;font-size:11px" placeholder="Obs: sem tempero, corte fino..." value="${escapeHTML(obs)}" onchange="setObsItem(${p.id},this.value)">` : ''}
         </div>
         <div class="cardapio-qty">
           <button data-action="alterarQtd" data-id="${p.id}" data-delta="-1">−</button>
@@ -1639,7 +1639,7 @@ function renderizarCardapioCliente() {
     });
     html += '</div>';
   });
-  el.innerHTML = html;
+  el.innerHTML = html; // SANITIZED
   atualizarCarrinhoBar();
 }
 
@@ -1707,7 +1707,7 @@ function abrirPedido() {
 function renderizarItensPedido() {
   const el = document.getElementById('pedido-itens-lista');
   const ids = Object.keys(pedidoAtual).filter(id => pedidoAtual[id].qty > 0);
-  if (!ids.length) { el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Nenhum item selecionado</div>'; return; }
+  if (!ids.length) { el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Nenhum item selecionado</div>'; return; } // SANITIZED: static
   el.innerHTML = ids.map(id => {
     const p = cardapioProdutos.find(pr => pr.id === Number(id));
     const item = pedidoAtual[id];

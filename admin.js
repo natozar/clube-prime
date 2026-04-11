@@ -205,7 +205,7 @@ async function listarClientes() {
     const rankEl = document.getElementById('ranking-lista');
     const alertEl = document.getElementById('alertas-lista');
     if(el) {
-      el.innerHTML = !lista.length ? '<p style="opacity:.5;padding:8px">Nenhum cliente cadastrado</p>'
+      el.innerHTML = !lista.length ? '<p style="opacity:.5;padding:8px">Nenhum cliente cadastrado</p>' // SANITIZED: static or sanitize() on all dynamic data
         : lista.map(c=>{
           const temPin = c.pin_hash ? '<span style="font-size:8px;background:#27ae60;color:#fff;padding:1px 5px;border-radius:4px">PIN</span>' : '<span style="font-size:8px;background:#555;color:#aaa;padding:1px 5px;border-radius:4px">Sem PIN</span>';
           const btnReset = c.pin_hash ? `<button class="btn bo" style="font-size:8px;padding:2px 6px;border-radius:4px" data-action="resetarPinClientePorId" data-id="${c.id}" data-nome="${sanitize(c.nome)}">🔐 Reset</button>` : '';
@@ -216,14 +216,14 @@ async function listarClientes() {
     }
     if(rankEl) {
       rankEl.innerHTML = lista.slice(0,10).map((c,i)=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #333">
-        <span style="opacity:.5;margin-right:8px">${i+1}º</span><span>${sanitize(c.nome)}</span><span style="opacity:.6;font-size:12px">${sanitize(c.codigo)}</span></div>`).join('')
+        <span style="opacity:.5;margin-right:8px">${i+1}º</span><span>${sanitize(c.nome)}</span><span style="opacity:.6;font-size:12px">${sanitize(c.codigo)}</span></div>`).join('') // SANITIZED
         || '<p style="opacity:.5;padding:8px">Sem dados</p>';
     }
     if(alertEl) {
       const hoje = new Date();
       const venc = []; // TODO: implementar verificação de vencimento baseada em última transação
       alertEl.innerHTML = venc.length ? venc.map(c=>`<div style="padding:8px 0;border-bottom:1px solid #333">
-        <span style="color:#f90">⚠️</span> ${sanitize(c.nome)} — pontos próximos do vencimento</div>`).join('')
+        <span style="color:#f90">⚠️</span> ${sanitize(c.nome)} — pontos próximos do vencimento</div>`).join('') // SANITIZED
         : '<p style="opacity:.5;padding:8px">Nenhum alerta no momento</p>';
     }
     return lista;
@@ -328,7 +328,7 @@ async function listarResgatesPendentes() {
     const el = document.getElementById('resgates-lista');
     if (!el) return lista;
     if (!Array.isArray(lista) || !lista.length) {
-      el.innerHTML = '<p style="opacity:.5;padding:8px">Nenhum resgate ainda</p>';
+      el.innerHTML = '<p style="opacity:.5;padding:8px">Nenhum resgate ainda</p>'; // SANITIZED: static
       return lista;
     }
     const statusMap = {
@@ -338,8 +338,8 @@ async function listarResgatesPendentes() {
       pendente: { cor: '#f39c12', txt: 'Pendente' },
       expirado: { cor: '#666', txt: 'Expirado' }
     };
-    el.innerHTML = lista.map(rg => {
-      const st = statusMap[rg.status] || { cor: '#888', txt: rg.status };
+    el.innerHTML = lista.map(rg => { // SANITIZED
+      const st = statusMap[rg.status] || { cor: '#888', txt: sanitize(rg.status) };
       const dt = new Date(rg.created_at).toLocaleDateString('pt-BR');
       const nome = rg.recompensas?.nome || rg.recompensa || '—';
       const cupom = rg.codigo_cupom || '—';
@@ -364,13 +364,13 @@ async function buscarCupom() {
   const input = document.getElementById('busca-cupom');
   const el = document.getElementById('cupom-resultado');
   const codigo = input.value.trim().toUpperCase();
-  if (!codigo) { el.innerHTML = ''; return; }
+  if (!codigo) { el.innerHTML = ''; return; } // SANITIZED: static empty
   try {
     const r = await fetch(`${SUPA_URL}/rest/v1/resgate?codigo_cupom=eq.${codigo}&select=*,clientes(nome,codigo,telefone),recompensas(nome)`, { headers: SH });
-    if (!r.ok) { el.innerHTML = '<div style="padding:12px;background:rgba(192,57,43,.1);border-radius:8px;color:#e74c3c;font-size:13px">Erro ao buscar cupom</div>'; return; }
+    if (!r.ok) { el.innerHTML = '<div style="padding:12px;background:rgba(192,57,43,.1);border-radius:8px;color:#e74c3c;font-size:13px">Erro ao buscar cupom</div>'; return; } // SANITIZED: static
     const lista = await r.json();
     if (!Array.isArray(lista) || !lista.length) {
-      el.innerHTML = '<div style="padding:12px;background:rgba(192,57,43,.1);border-radius:8px;color:#e74c3c;font-size:13px">Cupom não encontrado</div>';
+      el.innerHTML = '<div style="padding:12px;background:rgba(192,57,43,.1);border-radius:8px;color:#e74c3c;font-size:13px">Cupom não encontrado</div>'; // SANITIZED: static
       return;
     }
     const rg = lista[0];
@@ -380,23 +380,23 @@ async function buscarCupom() {
     if (rg.status === 'utilizado') {
       el.innerHTML = `<div style="padding:12px;background:rgba(100,100,100,.1);border-radius:8px;font-size:13px;color:var(--gray)">
         Este cupom já foi utilizado em ${rg.aprovado_em ? new Date(rg.aprovado_em).toLocaleDateString('pt-BR') : '—'}
-      </div>`;
+      </div>`; // SANITIZED: date via toLocaleDateString
     } else if (expirado) {
       el.innerHTML = `<div style="padding:12px;background:rgba(192,57,43,.1);border-radius:8px;font-size:13px;color:#e74c3c">
         Cupom expirado em ${validade}
-      </div>`;
+      </div>`; // SANITIZED: date via toLocaleDateString
     } else {
-      el.innerHTML = `
-      <div style="padding:14px;background:rgba(39,174,96,.08);border:1px solid rgba(39,174,96,.3);border-radius:10px">
+      el.innerHTML = // SANITIZED
+      `<div style="padding:14px;background:rgba(39,174,96,.08);border:1px solid rgba(39,174,96,.3);border-radius:10px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
           <div>
-            <div style="font-weight:700;font-size:15px;color:var(--gold-light)">${nome}</div>
+            <div style="font-weight:700;font-size:15px;color:var(--gold-light)">${sanitize(nome)}</div>
             <div style="font-size:12px;color:var(--gray);margin-top:2px">${rg.pontos_usados.toLocaleString('pt-BR')} pts</div>
           </div>
-          <div style="font-family:'Fira Code',monospace;font-size:18px;font-weight:700;color:#27ae60;letter-spacing:2px">${codigo}</div>
+          <div style="font-family:'Fira Code',monospace;font-size:18px;font-weight:700;color:#27ae60;letter-spacing:2px">${sanitize(codigo)}</div>
         </div>
         <div style="font-size:12px;color:var(--gray);margin-bottom:10px">
-          Cliente: <strong>${rg.clientes?.nome || '—'}</strong> · Válido até ${validade}
+          Cliente: <strong>${sanitize(rg.clientes?.nome || '—')}</strong> · Válido até ${validade}
         </div>
         <button data-action="marcarCupomUtilizado" data-id="${rg.id}" style="width:100%;background:#27ae60;color:#fff;border:none;padding:10px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:.5px">
           ✓ MARCAR COMO UTILIZADO
@@ -404,7 +404,7 @@ async function buscarCupom() {
       </div>`;
     }
   } catch(e) {
-    el.innerHTML = '<div style="padding:12px;color:#e74c3c">Erro ao buscar cupom</div>';
+    el.innerHTML = '<div style="padding:12px;color:#e74c3c">Erro ao buscar cupom</div>'; // SANITIZED: static
   }
 }
 
@@ -417,7 +417,7 @@ async function marcarCupomUtilizado(id) {
       body: JSON.stringify({ status: 'utilizado', aprovado_em: new Date().toISOString() })
     });
     if (!rr.ok) throw new Error('Erro ao atualizar');
-    document.getElementById('cupom-resultado').innerHTML = '<div style="padding:12px;background:rgba(39,174,96,.1);border-radius:8px;color:#27ae60;font-size:13px;font-weight:600">Cupom validado com sucesso!</div>';
+    document.getElementById('cupom-resultado').innerHTML = '<div style="padding:12px;background:rgba(39,174,96,.1);border-radius:8px;color:#27ae60;font-size:13px;font-weight:600">Cupom validado com sucesso!</div>'; // SANITIZED: static
     document.getElementById('busca-cupom').value = '';
     await listarResgatesPendentes();
   } catch(e) { alert('Erro: ' + e.message); }
@@ -800,11 +800,11 @@ async function listarAniversariantes() {
     const lista = await r.json();
     const el = document.getElementById('aniversariantes-lista');
     if(!el) return;
-    if(!lista.length){ el.innerHTML='<p style="opacity:.5;padding:8px">Nenhum aniversariante este mês</p>'; return; }
-    el.innerHTML = lista.map(c=>{
+    if(!lista.length){ el.innerHTML='<p style="opacity:.5;padding:8px">Nenhum aniversariante este mês</p>'; return; } // SANITIZED: static
+    el.innerHTML = lista.map(c=>{ // SANITIZED
       const dia = c.nacimento?.split('-')[2] || '??';
       return `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #333">
-        <span>${sanitize(c.nome)}</span><span style="opacity:.6">dia ${dia}</span></div>`;
+        <span>${sanitize(c.nome)}</span><span style="opacity:.6">dia ${sanitize(dia)}</span></div>`;
     }).join('');
   } catch(e){ console.error('listarAniversariantes',e); }
 }
@@ -958,8 +958,8 @@ async function carregarCardapioAdmin() {
 
 function renderizarCategorias() {
   const el = document.getElementById('cat-lista');
-  if (!categoriasCache.length) { el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Nenhuma categoria cadastrada</div>'; return; }
-  el.innerHTML = categoriasCache.map((c, i) => {
+  if (!categoriasCache.length) { el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Nenhuma categoria cadastrada</div>'; return; } // SANITIZED: static
+  el.innerHTML = categoriasCache.map((c, i) => { // SANITIZED
     const qtd = produtosCache.filter(p => p.categoria_id === c.id).length;
     return `<div class="toggle-row" style="gap:10px">
       <div style="flex:1;min-width:0">
@@ -982,8 +982,8 @@ function renderizarProdutos() {
   let lista = [...produtosCache].sort((a,b) => (a.ordem||0) - (b.ordem||0) || a.nome.localeCompare(b.nome, 'pt-BR'));
   if (filtCat) lista = lista.filter(p => String(p.categoria_id) === filtCat);
   if (busca) lista = lista.filter(p => p.nome.toLowerCase().includes(busca));
-  if (!lista.length) { el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Nenhum produto encontrado</div>'; return; }
-  el.innerHTML = lista.map((p, i) => {
+  if (!lista.length) { el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Nenhum produto encontrado</div>'; return; } // SANITIZED: static
+  el.innerHTML = lista.map((p, i) => { // SANITIZED
     const cat = categoriasCache.find(c => c.id === p.categoria_id);
     const badge = p.destaque === 'promocao' ? '<span style="background:var(--red);color:#fff;border-radius:6px;padding:1px 6px;font-size:8px;margin-left:6px">PROMO</span>'
       : p.destaque === 'novidade' ? '<span style="background:var(--blue);color:#fff;border-radius:6px;padding:1px 6px;font-size:8px;margin-left:6px">NOVO</span>' : '';
@@ -1009,7 +1009,7 @@ function atualizarSelectsCat() {
     if (!sel) return;
     const val = sel.value;
     const opts = id === 'filtro-cat-prod' ? '<option value="">Todas as categorias</option>' : '<option value="">Selecione...</option>';
-    sel.innerHTML = opts + ativas.map(c => `<option value="${c.id}">${sanitize(c.nome)}</option>`).join('');
+    sel.innerHTML = opts + ativas.map(c => `<option value="${c.id}">${sanitize(c.nome)}</option>`).join(''); // SANITIZED
     sel.value = val;
   });
 }
@@ -1026,11 +1026,11 @@ async function listarRecompensas() {
     const el = document.getElementById('recompensas-lista');
     if (!el) return;
     if (!recompensasCache.length) {
-      el.innerHTML = '<p style="opacity:.5;padding:8px">Nenhuma recompensa cadastrada</p>';
+      el.innerHTML = '<p style="opacity:.5;padding:8px">Nenhuma recompensa cadastrada</p>'; // SANITIZED: static
       return;
     }
-    el.innerHTML = recompensasCache.map(rc => `
-      <div style="padding:10px 0;border-bottom:1px solid #333;display:flex;align-items:center;justify-content:space-between">
+    el.innerHTML = recompensasCache.map(rc => // SANITIZED
+    `<div style="padding:10px 0;border-bottom:1px solid #333;display:flex;align-items:center;justify-content:space-between">
         <div>
           <div style="font-weight:600;color:${rc.ativo ? 'var(--gold-light)' : 'var(--gray)'}">${rc.ativo ? '' : '⏸ '}${sanitize(rc.nome)}</div>
           <div style="font-size:11px;color:var(--gray);margin-top:2px">${sanitize(rc.descricao || '—')}</div>
@@ -1236,7 +1236,7 @@ async function carregarBlogAdmin() {
     renderizarBlog();
     carregarStatsBlog();
   } catch(e) {
-    document.getElementById('blog-lista').innerHTML = '<div style="text-align:center;padding:20px;color:var(--red);font-size:12px">Erro ao carregar artigos: ' + e.message + '</div>';
+    document.getElementById('blog-lista').innerHTML = '<div style="text-align:center;padding:20px;color:var(--red);font-size:12px">Erro ao carregar artigos: ' + sanitize(e.message) + '</div>'; // SANITIZED
   }
 }
 
@@ -1247,11 +1247,11 @@ function renderizarBlog() {
   let lista = [...blogCache];
   if (filtCat) lista = lista.filter(a => a.categoria === filtCat);
   if (busca) lista = lista.filter(a => a.titulo.toLowerCase().includes(busca) || a.slug.toLowerCase().includes(busca));
-  if (!lista.length) { el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Nenhum artigo encontrado</div>'; return; }
+  if (!lista.length) { el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Nenhum artigo encontrado</div>'; return; } // SANITIZED: static
 
   const catLabels = {cotacao:'Cotação',raca:'Raça',cruzamento:'Cruzamento',corte:'Corte',regiao:'Região',guia:'Guia',churrasco:'Churrasco',familia:'Família'};
 
-  el.innerHTML = lista.map(a => {
+  el.innerHTML = lista.map(a => { // SANITIZED
     const catLabel = catLabels[a.categoria] || a.categoria;
     const statusBadge = a.ativo
       ? '<span style="background:rgba(76,175,80,.15);color:#4CAF50;padding:2px 8px;border-radius:4px;font-size:9px;font-weight:600">ATIVO</span>'
@@ -1261,16 +1261,16 @@ function renderizarBlog() {
       '<div style="flex:1;min-width:0">' +
         '<div style="font-size:12px;font-weight:600;color:#fff;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + sanitize(a.titulo) + '</div>' +
         '<div style="font-size:10px;color:var(--gray);display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
-          '<span style="background:rgba(201,168,76,.12);color:var(--gold);padding:1px 6px;border-radius:3px;font-size:9px">' + catLabel + '</span>' +
+          '<span style="background:rgba(201,168,76,.12);color:var(--gold);padding:1px 6px;border-radius:3px;font-size:9px">' + sanitize(catLabel) + '</span>' +
           statusBadge +
           '<span>/' + sanitize(a.slug) + '</span>' +
           '<span>' + data + '</span>' +
         '</div>' +
       '</div>' +
       '<div style="display:flex;gap:4px;flex-shrink:0;align-items:center">' +
-        '<a href="/' + a.slug + '" target="_blank" class="btn bo bsm" style="text-decoration:none;font-size:10px" title="Ver no site">👁️</a>' +
-        '<button class="btn bo bsm" data-action="editarBlog" data-slug="' + a.slug.replace(/"/g, '&quot;') + '" style="font-size:10px" title="Editar">✏️</button>' +
-        '<div class="tog ' + (a.ativo ? 'on' : '') + '" data-action="toggleBlog" data-slug="' + a.slug.replace(/"/g, '&quot;') + '" data-val="' + (a.ativo ? 'false' : 'true') + '"><div class="tog-d"></div></div>' +
+        '<a href="/' + sanitize(a.slug) + '" target="_blank" class="btn bo bsm" style="text-decoration:none;font-size:10px" title="Ver no site">👁️</a>' +
+        '<button class="btn bo bsm" data-action="editarBlog" data-slug="' + sanitize(a.slug) + '" style="font-size:10px" title="Editar">✏️</button>' +
+        '<div class="tog ' + (a.ativo ? 'on' : '') + '" data-action="toggleBlog" data-slug="' + sanitize(a.slug) + '" data-val="' + (a.ativo ? 'false' : 'true') + '"><div class="tog-d"></div></div>' +
       '</div>' +
     '</div>';
   }).join('');
