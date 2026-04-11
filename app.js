@@ -207,7 +207,20 @@ async function preencherTela(cliente, saldo) {
 
   // OneSignal — vincula este dispositivo ao ID do cliente para receber notificações
   if (window.OneSignalDeferred) {
-    OneSignalDeferred.push(os => os.login(String(cliente.id)));
+    OneSignalDeferred.push(async (OneSignal) => {
+      try {
+        await OneSignal.login(String(cliente.id));
+        console.log('[Push] OneSignal login:', cliente.id);
+      } catch(e) {
+        console.warn('[Push] OneSignal login falhou, retry em 5s:', e);
+        setTimeout(() => {
+          OneSignalDeferred.push(async (os) => {
+            try { await os.login(String(cliente.id)); console.log('[Push] OneSignal login retry OK'); }
+            catch(e2) { console.error('[Push] OneSignal login retry falhou:', e2); }
+          });
+        }, 5000);
+      }
+    });
   }
   // Mostrar banner customizado de notificações (se ainda não aceitou)
   mostrarBannerNotif();
