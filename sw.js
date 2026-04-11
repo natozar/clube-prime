@@ -61,52 +61,7 @@ self.addEventListener('fetch', e => {
   );
 });
 
-// Push notifications — suporte completo para artigos SEO
-self.addEventListener('push', e => {
-  const data = e.data ? e.data.json() : {};
-  const options = {
-    body: data.body || data.mensagem || '',
-    icon: data.icon || '/icon-192.png',
-    badge: '/icon-96.png',
-    image: data.image || undefined,
-    tag: data.tag || 'clube-prime',
-    data: {
-      url: data.url || '/'
-    },
-    actions: [
-      { action: 'open', title: 'Ler artigo' },
-      { action: 'share', title: 'Compartilhar' }
-    ],
-    vibrate: [200, 100, 200]
-  };
-
-  e.waitUntil(
-    self.registration.showNotification(data.title || data.titulo || 'Clube Prime', options)
-  );
-});
-
-// Clique na notificação — abrir URL do artigo
-self.addEventListener('notificationclick', e => {
-  e.notification.close();
-
-  const url = e.notification.data && e.notification.data.url ? e.notification.data.url : '/';
-
-  if (e.action === 'share') {
-    // Abrir WhatsApp share
-    const shareUrl = 'https://api.whatsapp.com/send?text=' + encodeURIComponent('Veja no Clube Prime: ' + url);
-    e.waitUntil(clients.openWindow(shareUrl));
-    return;
-  }
-
-  // Abrir ou focar na aba com o artigo
-  e.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windowClients => {
-      for (const client of windowClients) {
-        if (client.url.includes(url) && 'focus' in client) {
-          return client.focus();
-        }
-      }
-      return clients.openWindow(url);
-    })
-  );
-});
+// Push notifications e notificationclick são gerenciados inteiramente
+// pelo OneSignal SDK (importado na linha 1). Handlers customizados
+// conflitavam com o SDK e foram removidos.
+// Ícone, botões e URL são configurados no payload da REST API (publicar.js).
