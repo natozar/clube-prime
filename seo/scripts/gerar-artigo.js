@@ -83,7 +83,7 @@ async function gerarArtigo(dados) {
   // Gerar Related HTML
   const relatedHtml = (dados.relacionados || []).map(r => `
                 <a href="/${r.slug}" class="related-card">
-                    <img src="${r.imageUrl || 'https://images.unsplash.com/photo-1558030006-450675393462?w=400&h=225&fit=crop'}" alt="${r.titulo}" width="400" height="225" loading="lazy">
+                    <img src="${r.imageUrl || 'https://carnesrodrigues.com.br/og-default.png'}" alt="${r.titulo}" width="400" height="225" loading="lazy">
                     <div class="related-card-body">
                         <h4>${r.titulo}</h4>
                         <span>${CATEGORIA_LABELS[r.categoria] || ''}</span>
@@ -105,7 +105,7 @@ async function gerarArtigo(dados) {
     '{{TITULO_CURTO}}': dados.tituloCurto || dados.titulo,
     '{{SLUG}}': dados.slug,
     '{{IMAGE_SLUG}}': dados.slug.replace(/\//g, '-'),
-    '{{IMAGE_URL}}': dados.imageUrl || `https://images.unsplash.com/photo-1558030006-450675393462?w=1200&h=630&fit=crop`,
+    '{{IMAGE_URL}}': dados.imageUrl || 'https://carnesrodrigues.com.br/og-default.png',
     '{{META_DESCRIPTION}}': dados.metaDescription,
     '{{OG_DESCRIPTION}}': dados.ogDescription || dados.metaDescription,
     '{{CATEGORIA}}': dados.categoria,

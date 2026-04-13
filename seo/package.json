@@ -9,7 +9,9 @@
     "gerar-artigo": "node scripts/gerar-artigo.js",
     "publicar": "node scripts/publicar.js",
     "foto": "node scripts/unsplash.js",
-    "test-push": "node scripts/test-push.js"
+    "test-push": "node scripts/test-push.js",
+    "check-images": "node scripts/check-images.js",
+    "sync-blog": "node scripts/sync-blog.js"
   },
   "dependencies": {
     "cheerio": "^1.0.0",

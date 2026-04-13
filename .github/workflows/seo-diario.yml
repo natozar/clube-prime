@@ -45,6 +45,10 @@ jobs:
           ONESIGNAL_REST_KEY: ${{ secrets.ONESIGNAL_REST_KEY }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
 
+      - name: Health check — imagens dos artigos
+        run: node seo/scripts/check-images.js
+        continue-on-error: true
+
       - name: Scraping cotação CEPEA
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
