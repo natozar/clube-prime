@@ -9,7 +9,7 @@ VALUES
     'Quanta Carne por Pessoa no Churrasco? Guia Definitivo',
     'churrasco',
     'Tabela de quantidade de carne por pessoa no churrasco brasileiro. Picanha, costela, frango, linguiça — quanto comprar para cada tipo de evento.',
-    'https://images.unsplash.com/photo-1558030006-450675393462?w=1200&h=630&fit=crop',
+    'https://plus.unsplash.com/premium_photo-1723478557023-1f739ec06671?w=1200&h=630&fit=crop&q=80',
     'Guia prático: quanta carne comprar por pessoa no seu churrasco, sem sobrar nem faltar.',
     NOW(), NOW(), true
   ),
@@ -27,7 +27,7 @@ VALUES
     'A Tradição do Churrasco em Família: Por Que a Carne Une Gerações',
     'churrasco',
     'O churrasco como tradição familiar brasileira: memórias, receitas de avô, dicas para reunir a família ao redor da churrasqueira.',
-    'https://images.unsplash.com/photo-1558030006-450675393462?w=1200&h=630&fit=crop',
+    'https://images.unsplash.com/photo-1623855244183-52fd8d3ce2f7?w=1200&h=630&fit=crop',
     'Churrasco é mais que carne — é família, tradição e memória afetiva.',
     NOW(), NOW(), true
   ),
@@ -36,7 +36,7 @@ VALUES
     'Cotação da Arroba do Boi Gordo Hoje — CEPEA/Esalq',
     'cotacao',
     'Cotação da arroba do boi gordo atualizada diariamente segundo o indicador CEPEA/Esalq. Acompanhe o preço e a variação no mercado pecuário.',
-    'https://images.unsplash.com/photo-1605721911519-3dfeb3be25e7?w=1200&h=630&fit=crop',
+    'https://images.unsplash.com/photo-1560769629-975ec94e6a86?w=1200&h=630&fit=crop',
     'Acompanhe a cotação diária da arroba do boi gordo e entenda o que move o mercado.',
     NOW(), NOW(), true
   ),
@@ -45,7 +45,7 @@ VALUES
     'Carne de Pasto vs Confinamento: Qual É Melhor?',
     'guia',
     'Diferenças entre carne de boi a pasto e de confinamento: sabor, textura, valor nutricional, sustentabilidade e preço. Guia completo do consumidor.',
-    'https://images.unsplash.com/photo-1547036967-23d11aacaee0?w=1200&h=630&fit=crop',
+    'https://images.unsplash.com/photo-1690983325563-fe4412c4c347?w=1200&h=630&fit=crop&q=80',
     'Pasto ou confinamento? Diferenças de sabor, nutrição e preço — um guia para o consumidor.',
     NOW(), NOW(), true
   ),
@@ -63,7 +63,7 @@ VALUES
     'Raça Angus: A Origem da Carne Premium',
     'raca',
     'Angus: características, origem escocesa, marmoreio, qualidade da carne e por que é considerada a raça premium do mundo.',
-    'https://images.unsplash.com/photo-1603048297172-c92544798d5a?w=1200&h=630&fit=crop',
+    'https://images.unsplash.com/photo-1605721911519-3dfeb3be25e7?w=1200&h=630&fit=crop',
     'Angus — a raça que define o padrão premium da carne no mundo.',
     NOW(), NOW(), true
   ),
@@ -72,7 +72,7 @@ VALUES
     'Raça Hereford: Tradição Britânica no Pasto Brasileiro',
     'raca',
     'Hereford: a raça britânica de bovinos famosa pela rusticidade, qualidade da carne e adaptação ao clima brasileiro.',
-    'https://images.unsplash.com/photo-1500595046743-cd271d694d30?w=1200&h=630&fit=crop',
+    'https://plus.unsplash.com/premium_photo-1668453206347-922efbff8d54?w=1200&h=630&fit=crop&q=80',
     'Hereford — tradição britânica, rusticidade e qualidade no pasto brasileiro.',
     NOW(), NOW(), true
   ),
@@ -81,7 +81,7 @@ VALUES
     'Alta Mogiana: A Região do Boi de Pasto Premium',
     'regiao',
     'Alta Mogiana, em São Paulo: a região famosa pelo boi de pasto premium, terroir, clima ideal e tradição pecuária centenária.',
-    'https://images.unsplash.com/photo-1500595046743-cd271d694d30?w=1200&h=630&fit=crop',
+    'https://images.unsplash.com/photo-1513379733131-47fc74b45fc7?w=1200&h=630&fit=crop',
     'Alta Mogiana — terroir, clima e tradição que produzem o boi premium do Sudeste.',
     NOW(), NOW(), true
   )
