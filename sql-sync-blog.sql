@@ -18,7 +18,7 @@ VALUES
     'Costela no Fogo de Chão: Receita Tradicional Gaúcha',
     'churrasco',
     'A receita autêntica da costela no fogo de chão gaúcho. Passo a passo, tempo de cocção, tempero e dicas de churrasqueiro experiente.',
-    'https://images.unsplash.com/photo-1544025162-d76694265947?w=1200&h=630&fit=crop',
+    'https://carnesrodrigues.com.br/og-default.png',
     'Costela no fogo de chão: receita tradicional gaúcha, com tempero, tempo e técnica.',
     NOW(), NOW(), true
   ),
@@ -27,7 +27,7 @@ VALUES
     'A Tradição do Churrasco em Família: Por Que a Carne Une Gerações',
     'churrasco',
     'O churrasco como tradição familiar brasileira: memórias, receitas de avô, dicas para reunir a família ao redor da churrasqueira.',
-    'https://images.unsplash.com/photo-1623855244183-52fd8d3ce2f7?w=1200&h=630&fit=crop',
+    'https://carnesrodrigues.com.br/og-default.png',
     'Churrasco é mais que carne — é família, tradição e memória afetiva.',
     NOW(), NOW(), true
   ),
@@ -36,7 +36,7 @@ VALUES
     'Cotação da Arroba do Boi Gordo Hoje — CEPEA/Esalq',
     'cotacao',
     'Cotação da arroba do boi gordo atualizada diariamente segundo o indicador CEPEA/Esalq. Acompanhe o preço e a variação no mercado pecuário.',
-    'https://images.unsplash.com/photo-1560769629-975ec94e6a86?w=1200&h=630&fit=crop',
+    'https://carnesrodrigues.com.br/og-default.png',
     'Acompanhe a cotação diária da arroba do boi gordo e entenda o que move o mercado.',
     NOW(), NOW(), true
   ),
@@ -63,7 +63,7 @@ VALUES
     'Raça Angus: A Origem da Carne Premium',
     'raca',
     'Angus: características, origem escocesa, marmoreio, qualidade da carne e por que é considerada a raça premium do mundo.',
-    'https://images.unsplash.com/photo-1605721911519-3dfeb3be25e7?w=1200&h=630&fit=crop',
+    'https://carnesrodrigues.com.br/og-default.png',
     'Angus — a raça que define o padrão premium da carne no mundo.',
     NOW(), NOW(), true
   ),
@@ -81,7 +81,7 @@ VALUES
     'Alta Mogiana: A Região do Boi de Pasto Premium',
     'regiao',
     'Alta Mogiana, em São Paulo: a região famosa pelo boi de pasto premium, terroir, clima ideal e tradição pecuária centenária.',
-    'https://images.unsplash.com/photo-1513379733131-47fc74b45fc7?w=1200&h=630&fit=crop',
+    'https://carnesrodrigues.com.br/og-default.png',
     'Alta Mogiana — terroir, clima e tradição que produzem o boi premium do Sudeste.',
     NOW(), NOW(), true
   )

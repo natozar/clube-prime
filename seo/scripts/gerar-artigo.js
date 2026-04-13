@@ -105,6 +105,10 @@ async function gerarArtigo(dados) {
     '{{TITULO_CURTO}}': dados.tituloCurto || dados.titulo,
     '{{SLUG}}': dados.slug,
     '{{IMAGE_SLUG}}': dados.slug.replace(/\//g, '-'),
+    // IMPORTANTE: sem UNSPLASH_ACCESS_KEY, dados.imageUrl é null e TODOS os
+    // artigos gerados caem no og-default.png (logo do Clube Prime). Para ter
+    // fotos temáticas diferentes por artigo, configurar UNSPLASH_ACCESS_KEY
+    // nos secrets do GitHub Actions — aí buscarFoto() faz search por keyword.
     '{{IMAGE_URL}}': dados.imageUrl || 'https://carnesrodrigues.com.br/og-default.png',
     '{{META_DESCRIPTION}}': dados.metaDescription,
     '{{OG_DESCRIPTION}}': dados.ogDescription || dados.metaDescription,
