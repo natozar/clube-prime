@@ -27,7 +27,7 @@ VALUES
     'A Tradição do Churrasco em Família: Por Que a Carne Une Gerações',
     'churrasco',
     'O churrasco como tradição familiar brasileira: memórias, receitas de avô, dicas para reunir a família ao redor da churrasqueira.',
-    'https://images.unsplash.com/photo-1588347818481-17b5fda1ae59?w=1200&h=630&fit=crop',
+    'https://images.unsplash.com/photo-1558030006-450675393462?w=1200&h=630&fit=crop',
     'Churrasco é mais que carne — é família, tradição e memória afetiva.',
     NOW(), NOW(), true
   ),
@@ -63,7 +63,7 @@ VALUES
     'Raça Angus: A Origem da Carne Premium',
     'raca',
     'Angus: características, origem escocesa, marmoreio, qualidade da carne e por que é considerada a raça premium do mundo.',
-    'https://images.unsplash.com/photo-1605198179281-1e1f0e9b9b71?w=1200&h=630&fit=crop',
+    'https://images.unsplash.com/photo-1603048297172-c92544798d5a?w=1200&h=630&fit=crop',
     'Angus — a raça que define o padrão premium da carne no mundo.',
     NOW(), NOW(), true
   ),
