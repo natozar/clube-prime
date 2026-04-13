@@ -51,21 +51,28 @@ async function registrarArtigo(dados) {
 
   // Upsert via POST com resolution=merge-duplicates (slug é unique)
   body.publicado_em = body.publicado_em || new Date().toISOString();
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/seo_artigos`, {
-    method: 'POST',
-    headers: {
-      'apikey': SUPABASE_SERVICE_KEY,
-      'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
-      'Content-Type': 'application/json',
-      'Prefer': 'return=minimal,resolution=merge-duplicates'
-    },
-    body: JSON.stringify(body)
-  });
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/seo_artigos`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_SERVICE_KEY,
+        'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal,resolution=merge-duplicates'
+      },
+      body: JSON.stringify(body)
+    });
 
-  if (!response.ok) {
-    console.error('Erro ao registrar artigo no Supabase:', response.status, await response.text().catch(() => ''));
-  } else {
-    console.log('✓ Artigo registrado no Supabase');
+    if (!response.ok) {
+      console.error('⚠ Erro ao registrar artigo no Supabase:', response.status, await response.text().catch(() => ''));
+    } else {
+      console.log('✓ Artigo registrado no Supabase');
+    }
+  } catch (e) {
+    // CRÍTICO: nunca deixar o registro no Supabase quebrar o pipeline.
+    // O artigo HTML já foi gerado e commitado pelo workflow — push pode ser
+    // disparada mesmo assim. Logar e continuar.
+    console.error('⚠ Falha de rede ao registrar artigo no Supabase (continuando):', e.message);
   }
 }
 
@@ -245,30 +252,53 @@ async function publicar(dadosArtigo) {
   // 1. Buscar foto (se UNSPLASH_ACCESS_KEY disponível)
   if (process.env.UNSPLASH_ACCESS_KEY) {
     console.log('1/6 Buscando foto...');
-    const foto = await buscarFoto(dados.fotoKeyword, dados.slug.replace(/\//g, '-'), dados.categoria);
-    if (foto) {
-      dados.imageAlt = foto.alt;
-      dados.imageCredit = foto.credit;
+    try {
+      const foto = await buscarFoto(dados.fotoKeyword, dados.slug.replace(/\//g, '-'), dados.categoria);
+      if (foto) {
+        dados.imageAlt = foto.alt;
+        dados.imageCredit = foto.credit;
+      }
+    } catch (e) {
+      console.warn('⚠ Falha ao buscar foto (continuando):', e.message);
     }
   } else {
     console.log('1/6 Foto: UNSPLASH_ACCESS_KEY não definida — usando placeholder.');
   }
 
-  // 2. Gerar HTML
+  // 2. Gerar HTML — CRÍTICO: se isto falhar, abortar (sem artigo não há nada a publicar)
   console.log('2/6 Gerando artigo HTML...');
-  const outputPath = await gerarArtigo(dados);
+  let outputPath;
+  try {
+    outputPath = await gerarArtigo(dados);
+  } catch (e) {
+    console.error('✗ FATAL: falha ao gerar HTML do artigo:', e.message);
+    throw e; // Re-throw para que o workflow falhe explicitamente
+  }
 
-  // 3. Registrar no Supabase
+  // 3. Registrar no Supabase — não-crítico, artigo já existe em disco
   console.log('3/6 Registrando no Supabase...');
-  await registrarArtigo(dados);
+  try {
+    await registrarArtigo(dados);
+  } catch (e) {
+    console.warn('⚠ Falha ao registrar no Supabase (continuando):', e.message);
+  }
 
-  // 4. Atualizar sitemap
+  // 4. Atualizar sitemap — não-crítico
   console.log('4/6 Atualizando sitemap...');
-  await atualizarSitemap(dados.slug);
+  try {
+    await atualizarSitemap(dados.slug);
+  } catch (e) {
+    console.warn('⚠ Falha ao atualizar sitemap (continuando):', e.message);
+  }
 
-  // 5. Push notification
+  // 5. Push notification — não-crítico, push pode ser disparada manualmente depois
   console.log('5/6 Enviando push notification...');
-  const pushResult = await enviarPush(dados);
+  let pushResult = { sent: false, reason: 'skipped' };
+  try {
+    pushResult = await enviarPush(dados);
+  } catch (e) {
+    console.warn('⚠ Falha ao enviar push (continuando):', e.message);
+  }
 
   // 6. Marcar push como enviada no Supabase
   if (pushResult.sent && SUPABASE_SERVICE_KEY) {

@@ -13,11 +13,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const IMAGES_DIR = join(__dirname, '..', 'assets', 'images');
 
 const UNSPLASH_ACCESS_KEY = process.env.UNSPLASH_ACCESS_KEY;
-
-if (!UNSPLASH_ACCESS_KEY) {
-  console.error('ERRO: UNSPLASH_ACCESS_KEY não definida.');
-  process.exit(1);
-}
+// NOTA: não fazer process.exit(1) aqui — o publicar.js importa este módulo
+// e só chama buscarFoto() se UNSPLASH_ACCESS_KEY existir. Fazer exit no
+// import quebrava o pipeline inteiro quando a key não estava no ambiente.
 
 // Keywords de fallback por categoria
 const FALLBACK_KEYWORDS = {
@@ -39,6 +37,10 @@ const FALLBACK_KEYWORDS = {
  * @returns {{ url: string, localPath: string, alt: string, credit: string }}
  */
 async function buscarFoto(keyword, slug, categoria = 'cotacao') {
+  if (!UNSPLASH_ACCESS_KEY) {
+    console.warn('[Unsplash] UNSPLASH_ACCESS_KEY não definida — retornando null (usará placeholder)');
+    return null;
+  }
   console.log(`Buscando foto no Unsplash: "${keyword}"...`);
 
   // Tentar busca principal
