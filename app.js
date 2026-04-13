@@ -468,7 +468,7 @@ async function carregarBlogUsuario() {
       }
     }
     // Artigos
-    const artRes = await fetch(`${SUPA_URL}/rest/v1/seo_artigos?ativo=eq.true&order=publicado_em.desc&limit=10`, { headers: SH });
+    const artRes = await fetch(`${SUPA_URL}/rest/v1/seo_artigos?ativo=eq.true&order=publicado_em.desc&limit=30`, { headers: SH });
     if (artRes.ok) {
       const artigos = await artRes.json();
       const catIcons = {cotacao:'📈',raca:'🐂',cruzamento:'🧬',corte:'🥩',regiao:'🗺️',guia:'📖',churrasco:'🔥',familia:'👨‍👩‍👧‍👦'};
