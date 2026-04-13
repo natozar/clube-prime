@@ -227,3 +227,4 @@ export { scrapeDolar, scrapeOuro, scrapePetroleo, scrapeMilho, scrapeSoja, salva
 // Executar só se chamado diretamente
 const isMain = !process.argv[1] || process.argv[1].includes('mercado-scraper');
 if (isMain) main();
+                                         

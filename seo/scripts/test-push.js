@@ -152,8 +152,4 @@ async function testPush() {
       }
     }
   } catch (e) {
-    console.error(`  ‚ùå Erro ao enviar push: ${e.message}`);
-  }
-}
-
-testPush().catch(e => { console.error('Erro fatal:', e); process.exit(1); });
+    console.error(`  ‚ù

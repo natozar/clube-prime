@@ -128,13 +128,4 @@ export { buscarFoto, FALLBACK_KEYWORDS };
 
 // Executar se chamado via CLI
 if (process.argv[2]) {
-  const keyword = process.argv[2];
-  const slug = process.argv[3] || 'artigo';
-  const categoria = process.argv[4] || 'cotacao';
-
-  buscarFoto(keyword, slug, categoria).then(result => {
-    if (result) {
-      console.log('\nResultado:', JSON.stringify(result, null, 2));
-    }
-  });
-}
+  const keyword =

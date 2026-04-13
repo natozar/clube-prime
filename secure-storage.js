@@ -172,8 +172,4 @@ var SecureStorage = (function() {
 })();
 
 // Auto-migrate on load
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', function() { SecureStorage.migrateAll(); });
-} else {
-  SecureStorage.migrateAll();
-}
+i

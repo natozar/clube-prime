@@ -116,7 +116,4 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom))}
 .key.kconfirm{background:linear-gradient(135deg,var(--gold-dark),var(--gold));color:var(--black);border-color:var(--gold);font-family:'Montserrat',sans-serif;font-size:13px;font-weight:700}
 .value-display{background:var(--dark3);border:1px solid rgba(201,168,76,.2);border-radius:12px;padding:14px 18px;margin:0 16px 12px;display:flex;align-items:center;justify-content:space-between}
 .value-cursor{width:2px;height:28px;background:var(--gold);animation:blink 1s step-end infinite}
-@keyframes blink{50%{opacity:0}}
-/* PAINEL DONO */
-.pw{max-width:600px;margin:0 auto;padding:0 0 16px}
-/* ADMIN CLIENTES */
+@keyfr

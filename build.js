@@ -28,4 +28,4 @@ async function minify() {
   }
 }
 
-minify().catch(e => { console.error(e); process.exit(1); });
+minify().catch(e => { console.e
