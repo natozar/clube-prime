@@ -80,34 +80,38 @@ async function enviarPush(dados) {
     return { sent: false, reason: 'no_key' };
   }
 
-  // PRÉ-CHECK: validar a key consultando /apps/{id}
-  console.log('[Push] Validando REST API Key...');
-  const checkRes = await fetch(`https://api.onesignal.com/apps/${ONESIGNAL_APP_ID}`, {
-    headers: { 'Authorization': `Key ${ONESIGNAL_REST_KEY}` }
-  });
-  if (!checkRes.ok) {
-    const errTxt = await checkRes.text();
-    console.error(`✗ REST API Key INVÁLIDA ou sem permissão (HTTP ${checkRes.status})`);
-    console.error(`  Resposta: ${errTxt}`);
-    console.error(`  → Verifique o valor de ONESIGNAL_REST_KEY no GitHub Actions secrets`);
-    console.error(`  → Use a "REST API Key" do dashboard OneSignal, NÃO a "User Auth Key"`);
-    return { sent: false, reason: 'invalid_key', status: checkRes.status };
+  // ── PRÉ-CHECK: descobrir o formato de auth correto (Key ou Basic) ──
+  // OneSignal v11+ usa "Key xxx", o formato antigo usa "Basic xxx"
+  console.log('[Push] Detectando formato de autenticação...');
+  let authHeader = null;
+  for (const scheme of ['Key', 'Basic']) {
+    const r = await fetch(`https://api.onesignal.com/apps/${ONESIGNAL_APP_ID}`, {
+      headers: { 'Authorization': `${scheme} ${ONESIGNAL_REST_KEY}` }
+    });
+    if (r.ok) {
+      authHeader = `${scheme} ${ONESIGNAL_REST_KEY}`;
+      const info = await r.json();
+      const messageable = info.messageable_players || 0;
+      console.log(`[Push] ✓ Auth "${scheme}" OK | App: ${info.name} | Messageable: ${messageable}`);
+      if (messageable === 0) {
+        console.warn('⚠ ZERO subscribers — push não será entregue a ninguém.');
+        console.warn('  Acesse carnesrodrigues.com.br em um browser e aceite notificações.');
+      }
+      break;
+    } else {
+      console.warn(`[Push] ✗ Auth "${scheme}" falhou: HTTP ${r.status}`);
+    }
   }
-  const appInfo = await checkRes.json();
-  const messageable = appInfo.messageable_players || 0;
-  console.log(`[Push] App: ${appInfo.name} | Messageable players: ${messageable}`);
-  if (messageable === 0) {
-    console.warn('⚠ ZERO subscribers no OneSignal — push não será entregue a ninguém.');
-    console.warn('  Ação: acesse carnesrodrigues.com.br em um browser e aceite notificações.');
-    // Continua assim mesmo para logar resposta da API
+  if (!authHeader) {
+    console.error('✗ REST API Key INVÁLIDA em ambos formatos (Key e Basic)');
+    console.error('  → Verifique ONESIGNAL_REST_KEY no GitHub Actions secrets');
+    console.error('  → Use a "REST API Key" do dashboard OneSignal, NÃO a "User Auth Key"');
+    return { sent: false, reason: 'invalid_key' };
   }
 
   const articleUrl = `https://carnesrodrigues.com.br/${dados.slug}`;
-  // NOTA: target_channel é incompatível com included_segments.
-  // target_channel só deve ser usado com include_aliases/external_user_ids/subscription_ids.
-  const payload = {
+  const basePayload = {
     app_id: ONESIGNAL_APP_ID,
-    included_segments: ['Total Subscriptions'],
     headings: { pt: dados.pushTitulo || dados.titulo.substring(0, 60), en: dados.pushTitulo || dados.titulo.substring(0, 60) },
     contents: { pt: dados.pushBody || dados.ogDescription.substring(0, 100), en: dados.pushBody || dados.ogDescription.substring(0, 100) },
     url: articleUrl,
@@ -118,70 +122,86 @@ async function enviarPush(dados) {
       { id: 'share', text: 'Compartilhar', url: `https://api.whatsapp.com/send?text=${encodeURIComponent('Veja no Clube Prime: ' + articleUrl)}` }
     ]
   };
-
-  // Só incluir imagem se existir (string vazia causa erro na API)
   if (dados.imageUrl) {
-    payload.chrome_web_image = dados.imageUrl;
-    payload.big_picture = dados.imageUrl;
+    basePayload.chrome_web_image = dados.imageUrl;
+    basePayload.big_picture = dados.imageUrl;
   }
 
-  console.log('Push payload:', JSON.stringify(payload, null, 2));
+  // ── SHOTGUN: tentar múltiplas combinações de URL + targeting ──
+  // Se qualquer uma funcionar com recipients > 0, retornar sucesso.
+  const endpoints = [
+    'https://api.onesignal.com/notifications',      // API v11+ (atual)
+    'https://onesignal.com/api/v1/notifications',   // API v1 (legacy, ainda ativa)
+  ];
 
-  let response = await fetch('https://api.onesignal.com/notifications', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Key ${ONESIGNAL_REST_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload)
-  });
+  const targetingStrategies = [
+    { included_segments: ['Total Subscriptions'] },
+    { included_segments: ['Subscribed Users'] },
+    { included_segments: ['All'] },
+    { included_segments: ['Active Subscriptions'] },
+    // Fallback com filters: todos que tiveram sessão (sem depender de segment name)
+    { filters: [{ field: 'last_session', relation: '>', hours_ago: '1000000' }] },
+  ];
 
-  let body = await response.text();
-  console.log(`[Push] API resposta inicial: HTTP ${response.status}`);
-  console.log(`[Push] Body: ${body}`);
+  const attempts = [];
+  let bestResult = null;
 
-  // Se "Total Subscriptions" não existe ou falha por segmento, tentar "All" e "Subscribed Users"
-  if (!response.ok || (response.ok && body.includes('"recipients":0'))) {
-    for (const seg of ['All', 'Subscribed Users', 'Active Subscriptions']) {
-      console.warn(`⚠ Tentando segmento "${seg}"...`);
-      payload.included_segments = [seg];
-      response = await fetch('https://api.onesignal.com/notifications', {
-        method: 'POST',
-        headers: { 'Authorization': `Key ${ONESIGNAL_REST_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      body = await response.text();
-      console.log(`[Push] "${seg}" resposta: HTTP ${response.status} — ${body}`);
-      if (response.ok && !body.includes('"recipients":0')) break;
+  for (const url of endpoints) {
+    for (const targeting of targetingStrategies) {
+      const payload = { ...basePayload, ...targeting };
+      const label = `${url.replace('https://', '')} + ${Object.keys(targeting)[0]}=${JSON.stringify(Object.values(targeting)[0])}`;
+      console.log(`[Push] Tentando: ${label}`);
+
+      let resp, body;
+      try {
+        resp = await fetch(url, {
+          method: 'POST',
+          headers: { 'Authorization': authHeader, 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        body = await resp.text();
+      } catch (e) {
+        console.warn(`  ✗ Network error: ${e.message}`);
+        attempts.push({ label, error: e.message });
+        continue;
+      }
+
+      console.log(`  HTTP ${resp.status} — ${body.slice(0, 300)}`);
+      attempts.push({ label, status: resp.status, body: body.slice(0, 500) });
+
+      if (!resp.ok) continue;
+
+      let result;
+      try { result = JSON.parse(body); } catch { continue; }
+
+      const recipients = result.recipients || 0;
+      if (recipients > 0) {
+        console.log(`\n✓ PUSH ENVIADA — endpoint: ${url}`);
+        console.log(`  id: ${result.id}, recipients: ${recipients}`);
+        if (result.errors) console.warn(`  errors: ${JSON.stringify(result.errors)}`);
+        return { sent: true, recipients, id: result.id, endpoint: url, targeting };
+      }
+
+      // Salvar como "best result" se foi aceito mas 0 recipients
+      if (!bestResult && result.id) {
+        bestResult = { label, id: result.id, body };
+      }
     }
   }
 
-  if (!response.ok) {
-    console.error(`✗ Push FALHOU: HTTP ${response.status}`);
-    console.error(`  Resposta: ${body}`);
-    return { sent: false, reason: body };
+  // Nenhuma combinação deu recipients > 0
+  console.error('\n✗ PUSH FALHOU — nenhuma combinação funcionou');
+  console.error(`  Tentativas (${attempts.length}):`);
+  attempts.forEach(a => console.error(`    ${a.label}: ${a.status || 'ERR'} ${(a.body || a.error || '').slice(0, 150)}`));
+
+  if (bestResult) {
+    console.warn(`\n⚠ API aceitou mas 0 recipients em todas: ${bestResult.label} (id=${bestResult.id})`);
+    console.warn('  Isso significa: a KEY está correta, mas NÃO HÁ SUBSCRIBERS.');
+    console.warn('  Ação: aceite notificações em https://carnesrodrigues.com.br em um browser.');
+    return { sent: false, reason: 'zero_recipients', attempts };
   }
 
-  try {
-    const result = JSON.parse(body);
-    const recipients = result.recipients || 0;
-
-    if (recipients === 0) {
-      console.warn('⚠ Push enviada mas 0 RECIPIENTS!');
-      console.warn('  Verifique: subscribers no OneSignal dashboard, SW registrado, domínio correto');
-    } else {
-      console.log(`✓ Push enviada — id: ${result.id}, recipients: ${recipients}`);
-    }
-
-    if (result.errors && result.errors.length > 0) {
-      console.warn(`  Erros: ${JSON.stringify(result.errors)}`);
-    }
-
-    return { sent: true, recipients, id: result.id, errors: result.errors };
-  } catch (e) {
-    console.log(`✓ Push enviada — resposta raw: ${body.slice(0, 200)}`);
-    return { sent: true, body };
-  }
+  return { sent: false, reason: 'all_failed', attempts };
 }
 
 // --- Atualizar sitemap.xml ---
