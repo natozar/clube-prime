@@ -80,10 +80,33 @@ async function enviarPush(dados) {
     return { sent: false, reason: 'no_key' };
   }
 
+  // PRÉ-CHECK: validar a key consultando /apps/{id}
+  console.log('[Push] Validando REST API Key...');
+  const checkRes = await fetch(`https://api.onesignal.com/apps/${ONESIGNAL_APP_ID}`, {
+    headers: { 'Authorization': `Key ${ONESIGNAL_REST_KEY}` }
+  });
+  if (!checkRes.ok) {
+    const errTxt = await checkRes.text();
+    console.error(`✗ REST API Key INVÁLIDA ou sem permissão (HTTP ${checkRes.status})`);
+    console.error(`  Resposta: ${errTxt}`);
+    console.error(`  → Verifique o valor de ONESIGNAL_REST_KEY no GitHub Actions secrets`);
+    console.error(`  → Use a "REST API Key" do dashboard OneSignal, NÃO a "User Auth Key"`);
+    return { sent: false, reason: 'invalid_key', status: checkRes.status };
+  }
+  const appInfo = await checkRes.json();
+  const messageable = appInfo.messageable_players || 0;
+  console.log(`[Push] App: ${appInfo.name} | Messageable players: ${messageable}`);
+  if (messageable === 0) {
+    console.warn('⚠ ZERO subscribers no OneSignal — push não será entregue a ninguém.');
+    console.warn('  Ação: acesse carnesrodrigues.com.br em um browser e aceite notificações.');
+    // Continua assim mesmo para logar resposta da API
+  }
+
   const articleUrl = `https://carnesrodrigues.com.br/${dados.slug}`;
+  // NOTA: target_channel é incompatível com included_segments.
+  // target_channel só deve ser usado com include_aliases/external_user_ids/subscription_ids.
   const payload = {
     app_id: ONESIGNAL_APP_ID,
-    target_channel: 'push',
     included_segments: ['Total Subscriptions'],
     headings: { pt: dados.pushTitulo || dados.titulo.substring(0, 60), en: dados.pushTitulo || dados.titulo.substring(0, 60) },
     contents: { pt: dados.pushBody || dados.ogDescription.substring(0, 100), en: dados.pushBody || dados.ogDescription.substring(0, 100) },
@@ -114,17 +137,23 @@ async function enviarPush(dados) {
   });
 
   let body = await response.text();
+  console.log(`[Push] API resposta inicial: HTTP ${response.status}`);
+  console.log(`[Push] Body: ${body}`);
 
-  // Se "Total Subscriptions" não existe, tentar com "All"
-  if (!response.ok && (body.includes('segment') || body.includes('Segment'))) {
-    console.warn(`⚠ Segmento "Total Subscriptions" falhou (${response.status}), tentando "All"...`);
-    payload.included_segments = ['All'];
-    response = await fetch('https://api.onesignal.com/notifications', {
-      method: 'POST',
-      headers: { 'Authorization': `Key ${ONESIGNAL_REST_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    body = await response.text();
+  // Se "Total Subscriptions" não existe ou falha por segmento, tentar "All" e "Subscribed Users"
+  if (!response.ok || (response.ok && body.includes('"recipients":0'))) {
+    for (const seg of ['All', 'Subscribed Users', 'Active Subscriptions']) {
+      console.warn(`⚠ Tentando segmento "${seg}"...`);
+      payload.included_segments = [seg];
+      response = await fetch('https://api.onesignal.com/notifications', {
+        method: 'POST',
+        headers: { 'Authorization': `Key ${ONESIGNAL_REST_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      body = await response.text();
+      console.log(`[Push] "${seg}" resposta: HTTP ${response.status} — ${body}`);
+      if (response.ok && !body.includes('"recipients":0')) break;
+    }
   }
 
   if (!response.ok) {
@@ -195,26 +224,26 @@ async function publicar(dadosArtigo) {
 
   // 1. Buscar foto (se UNSPLASH_ACCESS_KEY disponível)
   if (process.env.UNSPLASH_ACCESS_KEY) {
-    console.log('1/5 Buscando foto...');
+    console.log('1/6 Buscando foto...');
     const foto = await buscarFoto(dados.fotoKeyword, dados.slug.replace(/\//g, '-'), dados.categoria);
     if (foto) {
       dados.imageAlt = foto.alt;
       dados.imageCredit = foto.credit;
     }
   } else {
-    console.log('1/5 Foto: UNSPLASH_ACCESS_KEY não definida — usando placeholder.');
+    console.log('1/6 Foto: UNSPLASH_ACCESS_KEY não definida — usando placeholder.');
   }
 
   // 2. Gerar HTML
-  console.log('2/5 Gerando artigo HTML...');
+  console.log('2/6 Gerando artigo HTML...');
   const outputPath = await gerarArtigo(dados);
 
   // 3. Registrar no Supabase
-  console.log('3/5 Registrando no Supabase...');
+  console.log('3/6 Registrando no Supabase...');
   await registrarArtigo(dados);
 
   // 4. Atualizar sitemap
-  console.log('4/5 Atualizando sitemap...');
+  console.log('4/6 Atualizando sitemap...');
   await atualizarSitemap(dados.slug);
 
   // 5. Push notification
@@ -222,7 +251,7 @@ async function publicar(dadosArtigo) {
   const pushResult = await enviarPush(dados);
 
   // 6. Marcar push como enviada no Supabase
-  if (pushResult && pushResult.sent && SUPABASE_SERVICE_KEY) {
+  if (pushResult.sent && SUPABASE_SERVICE_KEY) {
     console.log('6/6 Atualizando push_enviado no Supabase...');
     try {
       const patchRes = await fetch(`${SUPABASE_URL}/rest/v1/seo_artigos?slug=eq.${encodeURIComponent(dados.slug)}`, {
@@ -235,9 +264,16 @@ async function publicar(dadosArtigo) {
         },
         body: JSON.stringify({ push_enviado: true })
       });
-      if (patchRes.ok) console.log('✓ push_enviado = true no Supabase');
-      else console.warn('⚠ Falha ao atualizar push_enviado:', patchRes.status);
-    } catch(e) { console.warn('⚠ Erro ao atualizar push_enviado:', e.message); }
+      if (patchRes.ok) {
+        console.log('✓ push_enviado = true no Supabase');
+      } else {
+        console.warn(`⚠ Falha ao atualizar push_enviado: ${patchRes.status}`);
+      }
+    } catch (e) {
+      console.warn(`⚠ Erro ao atualizar push_enviado: ${e.message}`);
+    }
+  } else {
+    console.log('6/6 Push não enviada — pulando atualização de push_enviado.');
   }
 
   console.log(`\n✓ Publicação concluída: https://carnesrodrigues.com.br/${dados.slug}\n`);
