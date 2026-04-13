@@ -13,4 +13,6 @@
   },
   "dependencies": {
     "cheerio": "^1.0.0",
-    "node-fetch": 
+    "node-fetch": "^3.3.2"
+  }
+}

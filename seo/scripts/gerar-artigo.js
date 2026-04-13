@@ -311,4 +311,9 @@ function gerarPainelMercado(resumo, completo = true) {
 
 export { gerarArtigo, gerarPainelMercado };
 
-// CLI mode
+// CLI mode
+if (process.argv[2]) {
+  const jsonPath = process.argv[2];
+  const data = JSON.parse(await readFile(jsonPath, 'utf8'));
+  await gerarArtigo(data);
+}

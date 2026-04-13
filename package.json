@@ -8,4 +8,6 @@
     "build:watch": "node build.js --watch"
   },
   "devDependencies": {
-    "esbuild": "^0.20
+    "esbuild": "^0.20.0"
+  }
+}

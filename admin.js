@@ -1331,3 +1331,35 @@ async function salvarBlog() {
 
 async function toggleBlog(slug, novoEstado) {
   try {
+    await fetch(`${SUPA_URL}/rest/v1/seo_artigos?slug=eq.${encodeURIComponent(slug)}`, {
+      method: 'PATCH',
+      headers: authHeaders(),
+      body: JSON.stringify({ ativo: novoEstado, atualizado_em: new Date().toISOString() })
+    });
+    await carregarBlogAdmin();
+  } catch(e) { alert('Erro: ' + e.message); }
+}
+
+async function carregarStatsBlog() {
+  try {
+    document.getElementById('stat-total-artigos').textContent = blogCache.filter(a => a.ativo).length;
+
+    const views = await fetch(`${SUPA_URL}/rest/v1/seo_analytics?evento=eq.page_view&select=id`, { headers: authHeaders() });
+    if (views.ok) {
+      const data = await views.json();
+      document.getElementById('stat-total-views').textContent = data.length;
+    }
+
+    const shares = await fetch(`${SUPA_URL}/rest/v1/seo_analytics?evento=eq.share_whatsapp&select=id`, { headers: authHeaders() });
+    if (shares.ok) {
+      const data = await shares.json();
+      document.getElementById('stat-total-shares').textContent = data.length;
+    }
+
+    const cta = await fetch(`${SUPA_URL}/rest/v1/seo_analytics?evento=eq.cta_clube&select=id`, { headers: authHeaders() });
+    if (cta.ok) {
+      const data = await cta.json();
+      document.getElementById('stat-total-cta').textContent = data.length;
+    }
+  } catch(e) { console.warn('Stats blog erro:', e); }
+}
