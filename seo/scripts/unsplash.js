@@ -78,8 +78,17 @@ async function buscarFoto(keyword, slug, categoria = 'cotacao') {
   // Disparar download tracking (obrigatório pela API do Unsplash)
   await fetch(`${foto.links.download_location}&client_id=${UNSPLASH_ACCESS_KEY}`).catch(() => {});
 
+  // URL absoluta para OG tags e compartilhamento (Unsplash CDN, sempre disponível)
+  const ogImageUrl = `${foto.urls.raw}&w=1200&h=630&fit=crop&q=80`;
+  // URL local para o hero image no HTML (servida pelo GitHub Pages)
+  const localUrl = `/seo/assets/images/${fileName}`;
+  // URL absoluta local (fallback se Unsplash CDN falhar)
+  const absoluteLocalUrl = `https://carnesrodrigues.com.br/seo/assets/images/${fileName}`;
+
   const result = {
-    url: `/seo/assets/images/${fileName}`,
+    url: localUrl,
+    ogUrl: ogImageUrl,
+    absoluteUrl: absoluteLocalUrl,
     localPath,
     alt: `${foto.alt_description || foto.description || keyword} — Clube Prime, Empório Família Rodrigues`,
     credit: `Foto: ${foto.user.name} / Unsplash`,

@@ -121,7 +121,6 @@ async function enviarPush(dados) {
     app_id: ONESIGNAL_APP_ID,
     headings: { pt: dados.pushTitulo || dados.titulo.substring(0, 60), en: dados.pushTitulo || dados.titulo.substring(0, 60) },
     contents: { pt: dados.pushBody || dados.ogDescription.substring(0, 100), en: dados.pushBody || dados.ogDescription.substring(0, 100) },
-    url: articleUrl,
     web_url: articleUrl,
     chrome_web_icon: 'https://carnesrodrigues.com.br/icon-192.png',
     web_buttons: [
@@ -255,8 +254,11 @@ async function publicar(dadosArtigo) {
     try {
       const foto = await buscarFoto(dados.fotoKeyword, dados.slug.replace(/\//g, '-'), dados.categoria);
       if (foto) {
+        dados.imageUrl = foto.ogUrl;          // URL absoluta Unsplash para OG tags
+        dados.imageLocal = foto.url;           // Path local para hero image
         dados.imageAlt = foto.alt;
         dados.imageCredit = foto.credit;
+        console.log(`  ✓ imageUrl definida: ${foto.ogUrl.substring(0, 80)}...`);
       }
     } catch (e) {
       console.warn('⚠ Falha ao buscar foto (continuando):', e.message);

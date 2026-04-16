@@ -41,6 +41,18 @@ const CATEGORIA_URLS = {
   familia: 'churrasco/receita-costela-fogo-de-chao'
 };
 
+// Imagens temáticas por categoria para related cards (fallback quando slug não tem foto própria)
+const CATEGORIA_THUMBS = {
+  cotacao: 'https://carnesrodrigues.com.br/seo/assets/images/cotacao-arroba-boi-gordo-hoje-hero.jpg',
+  raca: 'https://carnesrodrigues.com.br/seo/assets/images/racas-angus-hero.jpg',
+  cruzamento: 'https://carnesrodrigues.com.br/seo/assets/images/racas-angus-hero.jpg',
+  corte: 'https://carnesrodrigues.com.br/seo/assets/images/churrasco-receita-costela-fogo-de-chao-hero.jpg',
+  regiao: 'https://carnesrodrigues.com.br/seo/assets/images/regioes-alta-mogiana-hero.jpg',
+  guia: 'https://carnesrodrigues.com.br/seo/assets/images/cotacao-arroba-boi-gordo-hoje-hero.jpg',
+  churrasco: 'https://carnesrodrigues.com.br/seo/assets/images/churrasco-receita-costela-fogo-de-chao-hero.jpg',
+  familia: 'https://carnesrodrigues.com.br/seo/assets/images/churrasco-tradicao-churrasco-familia-hero.jpg'
+};
+
 /**
  * Gera um artigo HTML completo
  * @param {Object} dados - Dados do artigo
@@ -80,15 +92,18 @@ async function gerarArtigo(dados) {
     `{"@type": "Question", "name": "${escapeJson(f.pergunta)}", "acceptedAnswer": {"@type": "Answer", "text": "${escapeJson(f.resposta)}"}}`
   ).join(',\n            ');
 
-  // Gerar Related HTML
-  const relatedHtml = (dados.relacionados || []).map(r => `
+  // Gerar Related HTML — usar imagem do artigo relacionado, ou thumb da categoria, ou default
+  const relatedHtml = (dados.relacionados || []).map(r => {
+    const thumbUrl = r.imageUrl || CATEGORIA_THUMBS[r.categoria] || 'https://carnesrodrigues.com.br/og-default.png';
+    return `
                 <a href="/${r.slug}" class="related-card">
-                    <img src="${r.imageUrl || 'https://carnesrodrigues.com.br/og-default.png'}" alt="${r.titulo}" width="400" height="225" loading="lazy">
+                    <img src="${thumbUrl}" alt="${r.titulo}" width="400" height="225" loading="lazy">
                     <div class="related-card-body">
                         <h4>${r.titulo}</h4>
                         <span>${CATEGORIA_LABELS[r.categoria] || ''}</span>
                     </div>
-                </a>`).join('');
+                </a>`;
+  }).join('');
 
   // Inserir mini-banners entre seções do conteúdo
   const conteudoComBanners = injetarMiniBanners(dados.conteudo, dados.categoria);
@@ -110,6 +125,7 @@ async function gerarArtigo(dados) {
     // fotos temáticas diferentes por artigo, configurar UNSPLASH_ACCESS_KEY
     // nos secrets do GitHub Actions — aí buscarFoto() faz search por keyword.
     '{{IMAGE_URL}}': dados.imageUrl || 'https://carnesrodrigues.com.br/og-default.png',
+    '{{HERO_IMAGE_SRC}}': dados.imageLocal || dados.imageUrl || 'https://carnesrodrigues.com.br/og-default.png',
     '{{META_DESCRIPTION}}': dados.metaDescription,
     '{{OG_DESCRIPTION}}': dados.ogDescription || dados.metaDescription,
     '{{CATEGORIA}}': dados.categoria,
