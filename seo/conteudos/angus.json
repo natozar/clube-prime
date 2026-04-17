@@ -26,22 +26,22 @@
       "slug": "cruzamentos/angus-x-nelore",
       "titulo": "Anerê: O Melhor do Angus com Nelore",
       "categoria": "cruzamento",
-      "imageUrl": "https://images.unsplash.com/photo-1681767254572-ff6b6ebac7c8?w=400&h=225&fit=crop"
+      "imageUrl": "/seo/assets/images/photo-1681767254572-ff6b6ebac7c8.jpg"
     },
     {
       "slug": "cortes/picanha",
       "titulo": "Picanha: Guia Completo do Corte Mais Brasileiro",
       "categoria": "corte",
-      "imageUrl": "https://images.unsplash.com/photo-1690983325563-fe4412c4c347?w=400&h=225&fit=crop"
+      "imageUrl": "/seo/assets/images/photo-1690983325563-fe4412c4c347.jpg"
     },
     {
       "slug": "cotacao-arroba-boi-gordo-hoje",
       "titulo": "Cotação da Arroba do Boi Gordo Hoje",
       "categoria": "cotacao",
-      "imageUrl": "https://plus.unsplash.com/premium_photo-1667860234741-0e500d0e5ba5?w=400&h=225&fit=crop"
+      "imageUrl": "/seo/assets/images/premium_photo-1667860234741-0e500d0e5ba5.jpg"
     }
   ],
-  "imageUrl": "https://images.unsplash.com/photo-1681767254572-ff6b6ebac7c8?w=1200&h=630&fit=crop&q=80",
+  "imageUrl": "/seo/assets/images/photo-1681767254572-ff6b6ebac7c8.jpg",
   "imageAlt": "Gado Angus preto em pastagem verde — Clube Prime, Empório Família Rodrigues",
   "imageCredit": "Foto: Unsplash",
   "tempoLeitura": 8

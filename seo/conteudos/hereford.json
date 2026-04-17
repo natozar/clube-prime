@@ -26,22 +26,22 @@
       "slug": "racas/angus",
       "titulo": "Angus: A Raça do Marmoreio Premium",
       "categoria": "raca",
-      "imageUrl": "https://images.unsplash.com/photo-1681767254572-ff6b6ebac7c8?w=400&h=225&fit=crop"
+      "imageUrl": "/seo/assets/images/photo-1681767254572-ff6b6ebac7c8.jpg"
     },
     {
       "slug": "churrasco/receita-costela-fogo-de-chao",
       "titulo": "Costela no Fogo de Chão: Receita Completa",
       "categoria": "churrasco",
-      "imageUrl": "https://images.unsplash.com/photo-1558030137-a56c1b004fa3?w=400&h=225&fit=crop"
+      "imageUrl": "/seo/assets/images/photo-1558030137-a56c1b004fa3.jpg"
     },
     {
       "slug": "cotacao-arroba-boi-gordo-hoje",
       "titulo": "Cotação da Arroba do Boi Gordo Hoje",
       "categoria": "cotacao",
-      "imageUrl": "https://plus.unsplash.com/premium_photo-1667860234741-0e500d0e5ba5?w=400&h=225&fit=crop"
+      "imageUrl": "/seo/assets/images/premium_photo-1667860234741-0e500d0e5ba5.jpg"
     }
   ],
-  "imageUrl": "https://plus.unsplash.com/premium_photo-1668453206347-922efbff8d54?w=1200&h=630&fit=crop&q=80",
+  "imageUrl": "/seo/assets/images/premium_photo-1668453206347-922efbff8d54.jpg",
   "imageAlt": "Gado Hereford com cara branca e corpo vermelho em pastagem — Clube Prime, Empório Família Rodrigues",
   "imageCredit": "Foto: Unsplash",
   "tempoLeitura": 8

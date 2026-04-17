@@ -26,23 +26,23 @@
       "slug": "racas/angus",
       "titulo": "Angus: A Raça que Revolucionou a Pecuária",
       "categoria": "raca",
-      "imageUrl": "https://images.unsplash.com/photo-1681767254572-ff6b6ebac7c8?w=400&h=225&fit=crop"
+      "imageUrl": "/seo/assets/images/photo-1681767254572-ff6b6ebac7c8.jpg"
     },
     {
       "slug": "cotacao-arroba-boi-gordo-hoje",
       "titulo": "Cotação da Arroba do Boi Gordo Hoje",
       "categoria": "cotacao",
-      "imageUrl": "https://plus.unsplash.com/premium_photo-1667860234741-0e500d0e5ba5?w=400&h=225&fit=crop"
+      "imageUrl": "/seo/assets/images/premium_photo-1667860234741-0e500d0e5ba5.jpg"
     },
     {
       "slug": "churrasco/receita-costela-fogo-de-chao",
       "titulo": "Costela no Fogo de Chão: Receita Completa",
       "categoria": "churrasco",
-      "imageUrl": "https://images.unsplash.com/photo-1558030137-a56c1b004fa3?w=400&h=225&fit=crop"
+      "imageUrl": "/seo/assets/images/photo-1558030137-a56c1b004fa3.jpg"
     }
   ],
-  "imageUrl": "https://plus.unsplash.com/premium_photo-1667860234741-0e500d0e5ba5?w=1200&h=630&fit=crop&q=80",
-  "imageAlt": "Paisagem de fazenda de gado na região da Alta Mogiana paulista — Clube Prime, Empório Família Rodrigues",
+  "imageUrl": "/seo/assets/images/photo-1560749610-c4b45c164e08.jpg",
+  "imageAlt": "Rebanho bovino em pastagem com serra ao fundo — paisagem típica da Alta Mogiana paulista — Clube Prime, Empório Família Rodrigues",
   "imageCredit": "Foto: Unsplash",
   "tempoLeitura": 8
 }

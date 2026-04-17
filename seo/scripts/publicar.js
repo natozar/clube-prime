@@ -254,11 +254,14 @@ async function publicar(dadosArtigo) {
     try {
       const foto = await buscarFoto(dados.fotoKeyword, dados.slug.replace(/\//g, '-'), dados.categoria);
       if (foto) {
-        dados.imageUrl = foto.ogUrl;          // URL absoluta Unsplash para OG tags
-        dados.imageLocal = foto.url;           // Path local para hero image
+        // SEMPRE usar URL local absoluta para og/twitter/schema — evita dependência
+        // do CDN do Unsplash (rate limit, downtime, link rot). A foto foi baixada
+        // para seo/assets/images/ por buscarFoto().
+        dados.imageUrl = foto.absoluteUrl;    // https://carnesrodrigues.com.br/seo/assets/images/{slug}-hero.jpg
+        dados.imageLocal = foto.url;           // /seo/assets/images/{slug}-hero.jpg (path relativo para <img>)
         dados.imageAlt = foto.alt;
         dados.imageCredit = foto.credit;
-        console.log(`  ✓ imageUrl definida: ${foto.ogUrl.substring(0, 80)}...`);
+        console.log(`  ✓ imageUrl definida: ${foto.absoluteUrl}`);
       }
     } catch (e) {
       console.warn('⚠ Falha ao buscar foto (continuando):', e.message);

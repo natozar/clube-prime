@@ -26,23 +26,23 @@
       "slug": "racas/angus",
       "titulo": "Angus: A Raça do Marmoreio Premium",
       "categoria": "raca",
-      "imageUrl": "https://images.unsplash.com/photo-1681767254572-ff6b6ebac7c8?w=400&h=225&fit=crop"
+      "imageUrl": "/seo/assets/images/photo-1681767254572-ff6b6ebac7c8.jpg"
     },
     {
       "slug": "regioes/alta-mogiana",
       "titulo": "Alta Mogiana: Polo da Carne Premium",
       "categoria": "regiao",
-      "imageUrl": "https://plus.unsplash.com/premium_photo-1667860234741-0e500d0e5ba5?w=400&h=225&fit=crop"
+      "imageUrl": "/seo/assets/images/premium_photo-1667860234741-0e500d0e5ba5.jpg"
     },
     {
       "slug": "churrasco/quantidade-carne-por-pessoa",
       "titulo": "Calculadora: Carne por Pessoa",
       "categoria": "churrasco",
-      "imageUrl": "https://plus.unsplash.com/premium_photo-1723478557023-1f739ec06671?w=400&h=225&fit=crop"
+      "imageUrl": "/seo/assets/images/premium_photo-1723478557023-1f739ec06671.jpg"
     }
   ],
-  "imageUrl": "https://images.unsplash.com/photo-1690983325563-fe4412c4c347?w=1200&h=630&fit=crop&q=80",
-  "imageAlt": "Gado bovino pastando em campo verde com céu azul — Clube Prime, Empório Família Rodrigues",
+  "imageUrl": "/seo/assets/images/photo-1760315200236-c4533439617a.jpg",
+  "imageAlt": "Gado bovino pastando em campo verde ilustrando criação a pasto versus confinamento — Clube Prime, Empório Família Rodrigues",
   "imageCredit": "Foto: Unsplash",
   "tempoLeitura": 8
 }

@@ -12,7 +12,7 @@
     <!-- Open Graph (WhatsApp, Facebook, etc) -->
     <meta property="og:title" content="Cotação da Arroba Hoje R$ 329.1 — Do Campo ao Prato: Como o Preço do Boi Afeta Sua Carne">
     <meta property="og:description" content="Arroba do boi gordo: R$ 329.1/@. Veja gráfico, análise e tendência.">
-    <meta property="og:image" content="https://carnesrodrigues.com.br/og-default.png">
+    <meta property="og:image" content="/seo/assets/images/premium_photo-1667860234741-0e500d0e5ba5.jpg">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:type" content="article">
@@ -26,7 +26,7 @@
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Cotação da Arroba Hoje R$ 329.1 — Do Campo ao Prato: Como o Preço do Boi Afeta Sua Carne">
     <meta name="twitter:description" content="Arroba do boi gordo: R$ 329.1/@. Veja gráfico, análise e tendência.">
-    <meta name="twitter:image" content="https://carnesrodrigues.com.br/og-default.png">
+    <meta name="twitter:image" content="/seo/assets/images/premium_photo-1667860234741-0e500d0e5ba5.jpg">
 
     <!-- Favicon & PWA -->
     <link rel="icon" href="/icon-96.png" type="image/png">
@@ -46,7 +46,7 @@
         "@type": "Article",
         "headline": "Cotação da Arroba Hoje R$ 329.1 — Do Campo ao Prato: Como o Preço do Boi Afeta Sua Carne",
         "description": "Cotação da arroba do boi gordo hoje: R$ 329.1/@ (CEPEA/Esalq). Gráfico de 30 dias, análise e tendência. Atualizado diariamente.",
-        "image": "https://carnesrodrigues.com.br/og-default.png",
+        "image": "/seo/assets/images/premium_photo-1667860234741-0e500d0e5ba5.jpg",
         "datePublished": "2026-04-15T13:15:00.973Z",
         "dateModified": "2026-04-15T13:15:00.973Z",
         "author": {
@@ -177,7 +177,78 @@
         }
         .site-nav a:hover { color: var(--gold); }
 
-        /* ── BREADCRUMB ── */
+                /* ── COTAÇÕES TICKER (carrossel de indicadores no topo) ── */
+        .cotacoes-ticker {
+            background: linear-gradient(180deg, #0E0E0E 0%, #1A1A1A 100%);
+            border-bottom: 1px solid var(--dark-border);
+            overflow: hidden;
+            position: relative;
+            height: 44px;
+            display: flex;
+            align-items: center;
+        }
+        .cotacoes-ticker::before,
+        .cotacoes-ticker::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 48px;
+            z-index: 2;
+            pointer-events: none;
+        }
+        .cotacoes-ticker::before { left: 0; background: linear-gradient(90deg, #0E0E0E 0%, transparent 100%); }
+        .cotacoes-ticker::after { right: 0; background: linear-gradient(270deg, #1A1A1A 0%, transparent 100%); }
+        .cotacoes-ticker-track {
+            display: flex;
+            align-items: center;
+            gap: 36px;
+            animation: cotacoes-scroll 50s linear infinite;
+            white-space: nowrap;
+            padding-left: 24px;
+            will-change: transform;
+        }
+        .cotacoes-ticker:hover .cotacoes-ticker-track { animation-play-state: paused; }
+        @keyframes cotacoes-scroll {
+            from { transform: translateX(0); }
+            to { transform: translateX(-50%); }
+        }
+        .cotacoes-ticker-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.82rem;
+            font-weight: 500;
+            color: var(--text);
+        }
+        .cotacoes-ticker-item .tk-icon { font-size: 1rem; line-height: 1; }
+        .cotacoes-ticker-item .tk-label { color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+        .cotacoes-ticker-item .tk-val { color: var(--gold); font-weight: 700; font-variant-numeric: tabular-nums; }
+        .cotacoes-ticker-item .tk-var { font-size: 0.75rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+        .cotacoes-ticker-item .tk-var.up { color: var(--green); }
+        .cotacoes-ticker-item .tk-var.down { color: var(--red); }
+        .cotacoes-ticker-item .tk-var.neutral { color: var(--text-muted); }
+        .cotacoes-ticker-link {
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.78rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border: 1px solid var(--gold);
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+        .cotacoes-ticker-link:hover { background: var(--gold-glow); }
+        .cotacoes-ticker-loading {
+            color: var(--text-muted);
+            font-size: 0.78rem;
+            padding-left: 24px;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .cotacoes-ticker-track { animation: none; }
+        }
+
+/* ── BREADCRUMB ── */
         .breadcrumb {
             max-width: var(--max-width);
             margin: 20px auto 0;
@@ -761,6 +832,56 @@
             </nav>
         </div>
     </header>
+    <!-- Carrossel de cotações (atualizado do Supabase em tempo real) -->
+    <div class="cotacoes-ticker" id="cotacoes-ticker" aria-label="Cotações de mercado atualizadas">
+        <div class="cotacoes-ticker-track" id="cotacoes-ticker-track">
+            <span class="cotacoes-ticker-loading">Carregando cotações…</span>
+        </div>
+    </div>
+    <script>
+    (function(){
+      var SUPA='https://mrourzdxrahpysscckxm.supabase.co/rest/v1';
+      var K='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1yb3VyemR4cmFocHlzc2Nja3htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODMzMTUsImV4cCI6MjA4ODU1OTMxNX0.A4ueyDJgOu4cbxcHxsMTDBNHkxAOUlWFoYuv88LdnU4';
+      var H={'apikey':K,'Authorization':'Bearer '+K};
+      var inds=[
+        {key:'boi',icon:'🐂',label:'Boi',pre:'R$',suf:'/@',dec:2},
+        {key:'dolar',icon:'💵',label:'Dólar',pre:'R$',suf:'',dec:4},
+        {key:'milho',icon:'🌽',label:'Milho',pre:'R$',suf:'/sc',dec:2},
+        {key:'soja',icon:'🫘',label:'Soja',pre:'R$',suf:'/sc',dec:2},
+        {key:'petroleo',icon:'🛢️',label:'Petróleo',pre:'US$',suf:'/bbl',dec:2},
+        {key:'ouro',icon:'🥇',label:'Ouro',pre:'R$',suf:'/g',dec:2}
+      ];
+      var data={}, done=0, total=inds.length;
+
+      function fmtN(v,d){return parseFloat(v).toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d})}
+      function arrow(v){return v>0?'▲':v<0?'▼':'●'}
+      function itemHtml(i){
+        var v=data[i.key];
+        var vc=v.var>0?'up':v.var<0?'down':'neutral';
+        var vs=v.var?(v.var>0?'+':'')+v.var.toFixed(2)+'%':'—';
+        return '<span class="cotacoes-ticker-item"><span class="tk-icon">'+i.icon+'</span><span class="tk-label">'+i.label+'</span><span class="tk-val">'+i.pre+fmtN(v.val,i.dec)+i.suf+'</span><span class="tk-var '+vc+'">'+arrow(v.var)+' '+vs+'</span></span>';
+      }
+      function render(){
+        var track=document.getElementById('cotacoes-ticker-track');
+        if(!track) return;
+        var present=inds.filter(function(i){return data[i.key]});
+        if(present.length===0){track.parentElement.style.display='none';return;}
+        var items=present.map(itemHtml).join('');
+        var link='<a href="/mercado" class="cotacoes-ticker-link">Ver painel completo →</a>';
+        track.innerHTML=items+link+items+link;
+      }
+
+      fetch(SUPA+'/cotacao_arroba?order=data.desc&limit=1',{headers:H}).then(function(r){return r.json()}).then(function(rows){
+        if(rows&&rows[0])data.boi={val:parseFloat(rows[0].preco_rs),var:rows[0].variacao_pct?parseFloat(rows[0].variacao_pct):null};
+      }).catch(function(){}).finally(function(){done++;if(done>=total)render();});
+      ['dolar','petroleo','ouro','milho','soja'].forEach(function(ind){
+        fetch(SUPA+'/mercado_indicadores?indicador=eq.'+ind+'&order=data.desc&limit=1',{headers:H}).then(function(r){return r.json()}).then(function(rows){
+          if(rows&&rows[0])data[ind]={val:parseFloat(rows[0].valor),var:rows[0].variacao_pct?parseFloat(rows[0].variacao_pct):null};
+        }).catch(function(){}).finally(function(){done++;if(done>=total)render();});
+      });
+    })();
+    </script>
+
 
     <!-- Breadcrumb -->
     <nav class="breadcrumb" role="navigation" aria-label="Breadcrumb">
@@ -783,60 +904,13 @@
 
         <img
             class="hero-image"
-            src="https://carnesrodrigues.com.br/og-default.png"
-            alt="Raw meat hanging in a butcher shop window. — Clube Prime, Empório Família Rodrigues"
+            src="/seo/assets/images/premium_photo-1667860234741-0e500d0e5ba5.jpg"
+            alt="Gado Nelore em pastagem ao entardecer — indicador CEPEA/Esalq do boi gordo — Clube Prime, Empório Família Rodrigues"
             width="1200"
             height="630"
             loading="eager"
         >
         <p class="hero-credit">Foto: Eric Prouzet / Unsplash</p>
-
-        <!-- Painel de Mercado (carrega do Supabase em tempo real) -->
-        <div id="painel-mercado-container"></div>
-        <script>
-        (function(){
-          var SUPA='https://mrourzdxrahpysscckxm.supabase.co/rest/v1';
-          var K='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1yb3VyemR4cmFocHlzc2Nja3htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODMzMTUsImV4cCI6MjA4ODU1OTMxNX0.A4ueyDJgOu4cbxcHxsMTDBNHkxAOUlWFoYuv88LdnU4';
-          var H={'apikey':K,'Authorization':'Bearer '+K};
-          var inds=[
-            {key:'boi',icon:'🐂',label:'Boi Gordo',pre:'R$',suf:'/@',dec:2},
-            {key:'dolar',icon:'💵',label:'Dolar',pre:'R$',suf:'',dec:4},
-            {key:'petroleo',icon:'🛢️',label:'Petroleo',pre:'US$',suf:'/bbl',dec:2},
-            {key:'ouro',icon:'🥇',label:'Ouro',pre:'R$',suf:'/g',dec:2},
-            {key:'milho',icon:'🌽',label:'Milho',pre:'R$',suf:'/sc',dec:2},
-            {key:'soja',icon:'🫘',label:'Soja',pre:'R$',suf:'/sc',dec:2}
-          ];
-          var data={};
-          var done=0;
-          var total=inds.length;
-
-          function fmtN(v,d){return parseFloat(v).toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d})}
-          function render(){
-            var el=document.getElementById('painel-mercado-container');
-            var has=Object.keys(data).length;
-            if(!has){el.innerHTML='';return;}
-            var cards=inds.filter(function(i){return data[i.key]}).map(function(i){
-              var v=data[i.key];
-              var vc=v.var>0?'up':v.var<0?'down':'neutral';
-              var vs=v.var?(v.var>0?'+':'')+v.var.toFixed(2)+'%':'—';
-              return '<div class="painel-card"><div class="painel-card-icon">'+i.icon+'</div><div class="painel-card-label">'+i.label+'</div><div class="painel-card-valor">'+i.pre+fmtN(v.val,i.dec)+(i.suf?'<small style="font-size:0.75rem;color:var(--text-muted)">'+i.suf+'</small>':'')+'</div><div class="painel-card-var '+vc+'">'+vs+'</div></div>';
-            }).join('');
-            el.innerHTML='<div class="painel-mercado"><div class="painel-mercado-title">📊 Painel de Mercado <small>atualizado diariamente</small></div><div class="painel-grid">'+cards+'</div><a href="/mercado" class="painel-link">Ver todos os indicadores e graficos →</a></div>';
-          }
-
-          // Boi gordo
-          fetch(SUPA+'/cotacao_arroba?order=data.desc&limit=1',{headers:H}).then(function(r){return r.json()}).then(function(rows){
-            if(rows&&rows[0])data.boi={val:parseFloat(rows[0].preco_rs),var:rows[0].variacao_pct?parseFloat(rows[0].variacao_pct):null};
-          }).catch(function(){}).finally(function(){done++;if(done>=total)render();});
-
-          // Outros
-          ['dolar','petroleo','ouro','milho','soja'].forEach(function(ind){
-            fetch(SUPA+'/mercado_indicadores?indicador=eq.'+ind+'&order=data.desc&limit=1',{headers:H}).then(function(r){return r.json()}).then(function(rows){
-              if(rows&&rows[0])data[ind]={val:parseFloat(rows[0].valor),var:rows[0].variacao_pct?parseFloat(rows[0].variacao_pct):null};
-            }).catch(function(){}).finally(function(){done++;if(done>=total)render();});
-          });
-        })();
-        </script>
 
         
         <p>A <strong>arroba do boi gordo</strong> está cotada em <strong>R$ 329.1</strong> hoje (15/04/2026) pelo indicador CEPEA/Esalq, variação de +0.18%. Mas o que esse número significa para você, consumidor?</p>
@@ -970,21 +1044,21 @@
             <div class="related-grid">
                 
                 <a href="/racas/angus" class="related-card">
-                    <img src="https://carnesrodrigues.com.br/og-default.png" alt="Angus: A Raça do Marmoreio Premium" width="400" height="225" loading="lazy">
+                    <img src="/seo/assets/images/photo-1572982205939-6ea96504ee4a.jpg" alt="Angus: A Raça do Marmoreio Premium" width="400" height="225" loading="lazy">
                     <div class="related-card-body">
                         <h4>Angus: A Raça do Marmoreio Premium</h4>
                         <span>Raças</span>
                     </div>
                 </a>
                 <a href="/guia/carne-de-pasto-vs-confinamento" class="related-card">
-                    <img src="https://carnesrodrigues.com.br/og-default.png" alt="Pasto vs Confinamento: Diferença na Carne" width="400" height="225" loading="lazy">
+                    <img src="/seo/assets/images/photo-1760315200236-c4533439617a.jpg" alt="Pasto vs Confinamento: Diferença na Carne" width="400" height="225" loading="lazy">
                     <div class="related-card-body">
                         <h4>Pasto vs Confinamento: Diferença na Carne</h4>
                         <span>Guia da Carne</span>
                     </div>
                 </a>
                 <a href="/churrasco/receita-costela-fogo-de-chao" class="related-card">
-                    <img src="https://carnesrodrigues.com.br/og-default.png" alt="Costela no Fogo de Chão" width="400" height="225" loading="lazy">
+                    <img src="/seo/assets/images/premium_photo-1664297875423-bb2de49cb277.jpg" alt="Costela no Fogo de Chão" width="400" height="225" loading="lazy">
                     <div class="related-card-body">
                         <h4>Costela no Fogo de Chão</h4>
                         <span>Churrasco</span>

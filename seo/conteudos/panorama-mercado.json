@@ -26,23 +26,23 @@
       "slug": "cotacao-arroba-boi-gordo-hoje",
       "titulo": "Cotação da Arroba do Boi Gordo Hoje",
       "categoria": "cotacao",
-      "imageUrl": "https://plus.unsplash.com/premium_photo-1667860234741-0e500d0e5ba5?w=400&h=225&fit=crop"
+      "imageUrl": "/seo/assets/images/premium_photo-1667860234741-0e500d0e5ba5.jpg"
     },
     {
       "slug": "guia/carne-de-pasto-vs-confinamento",
       "titulo": "Pasto vs Confinamento: Diferença na Carne",
       "categoria": "guia",
-      "imageUrl": "https://images.unsplash.com/photo-1690983325563-fe4412c4c347?w=400&h=225&fit=crop"
+      "imageUrl": "/seo/assets/images/photo-1690983325563-fe4412c4c347.jpg"
     },
     {
       "slug": "regioes/alta-mogiana",
       "titulo": "Alta Mogiana: Polo da Carne Premium",
       "categoria": "regiao",
-      "imageUrl": "https://plus.unsplash.com/premium_photo-1667860234741-0e500d0e5ba5?w=400&h=225&fit=crop"
+      "imageUrl": "/seo/assets/images/premium_photo-1667860234741-0e500d0e5ba5.jpg"
     }
   ],
-  "imageUrl": "https://plus.unsplash.com/premium_photo-1667860234741-0e500d0e5ba5?w=1200&h=630&fit=crop&q=80",
-  "imageAlt": "Gado no pasto ao entardecer representando o mercado agro — Clube Prime",
+  "imageUrl": "/seo/assets/images/premium_photo-1677850457238-37da154883bc.jpg",
+  "imageAlt": "Gado Nelore em confinamento — mercado pecuário e cadeia produtiva da carne — Clube Prime",
   "imageCredit": "Foto: Unsplash",
   "tempoLeitura": 9
 }
