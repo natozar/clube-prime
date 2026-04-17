@@ -44,12 +44,14 @@ async function collectHtmls() {
 }
 
 // ─── Blocos a injetar ───
-const TICKER_CSS = `        /* ── COTAÇÕES TICKER (carrossel de indicadores no topo) ── */
+const TICKER_CSS = `        /* ── COTAÇÕES TICKER (carrossel de indicadores — sticky logo abaixo do header) ── */
         .cotacoes-ticker {
             background: linear-gradient(180deg, #0E0E0E 0%, #1A1A1A 100%);
             border-bottom: 1px solid var(--dark-border);
             overflow: hidden;
-            position: relative;
+            position: sticky;
+            top: 60px; /* altura do .site-header */
+            z-index: 99; /* abaixo do site-header (z-index 100) */
             height: 44px;
             display: flex;
             align-items: center;

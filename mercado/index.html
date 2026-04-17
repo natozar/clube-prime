@@ -60,7 +60,9 @@
             .nav{display:none}
         }
         /* ── COTAÇÕES TICKER ── */
-        .cotacoes-ticker{background:linear-gradient(180deg,#0E0E0E 0%,#1A1A1A 100%);border-bottom:1px solid var(--dark-border);overflow:hidden;position:relative;height:44px;display:flex;align-items:center}
+        .cotacoes-ticker{background:linear-gradient(180deg,#0E0E0E 0%,#1A1A1A 100%);border-bottom:1px solid var(--dark-border);overflow:hidden;position: sticky;
+            top: 60px;
+            z-index: 99;height:44px;display:flex;align-items:center}
         .cotacoes-ticker::before,.cotacoes-ticker::after{content:'';position:absolute;top:0;bottom:0;width:48px;z-index:2;pointer-events:none}
         .cotacoes-ticker::before{left:0;background:linear-gradient(90deg,#0E0E0E 0%,transparent 100%)}
         .cotacoes-ticker::after{right:0;background:linear-gradient(270deg,#1A1A1A 0%,transparent 100%)}
