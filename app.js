@@ -357,8 +357,23 @@ async function goApp() {
   }
 }
 
+// Migração única: recupera sessão criptografada legada para localStorage plain
+async function migrarSessaoLegacy() {
+  try {
+    if (localStorage.getItem('clube_sessao')) return; // já está em plain
+    const encRaw = localStorage.getItem('cs_clube_sessao');
+    if (!encRaw) return;
+    const plain = await SecureStorage.get('clube_sessao');
+    if (plain) {
+      localStorage.setItem('clube_sessao', plain);
+    }
+    localStorage.removeItem('cs_clube_sessao'); // limpa a versão antiga de qualquer jeito
+  } catch(e) {}
+}
+
 // Auto-login seguro — verifica token de sessão antes de restaurar
 window.addEventListener('load', async () => {
+  await migrarSessaoLegacy();
   const sessao = validarSessaoCliente();
   const tel = await SecureStorage.get('clube_cliente_tel');
   const clienteLocal = await SecureStorage.get('clube_cliente_dados');
@@ -504,7 +519,15 @@ function gerarTokenSessao(clienteId, telefone) {
   return Math.abs(hash).toString(36) + '-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
 }
 
-// Salvar sessão segura no localStorage
+// Sessão efetivamente eterna — só sai via logout explícito, troca de cliente
+// ou bloqueio de dispositivo pelo admin. Valor simbólico de 100 anos.
+const SESSAO_DURACAO_MS = 100 * 365 * 24 * 60 * 60 * 1000;
+const SESSAO_KEY = 'clube_sessao';
+const SESSAO_KEY_LEGACY_ENC = 'cs_clube_sessao'; // SecureStorage antigo
+
+// Salvar sessão em localStorage direto — criptografia por fingerprint
+// causava logouts quando user-agent/tela mudava. Device binding na RPC
+// já é a camada real de segurança.
 function salvarSessaoCliente(cliente) {
   const token = gerarTokenSessao(cliente.id, cliente.telefone);
   const sessao = {
@@ -512,32 +535,30 @@ function salvarSessaoCliente(cliente) {
     clienteId: cliente.id,
     telefone: cliente.telefone,
     criadoEm: Date.now(),
-    expiraEm: Date.now() + (30 * 24 * 60 * 60 * 1000), // 30 dias
+    expiraEm: Date.now() + SESSAO_DURACAO_MS,
     ultimoAcesso: Date.now()
   };
-  SecureStorage.set('clube_sessao', JSON.stringify(sessao));
+  try { localStorage.setItem(SESSAO_KEY, JSON.stringify(sessao)); } catch(e) {}
+  try { localStorage.removeItem(SESSAO_KEY_LEGACY_ENC); } catch(e) {}
   return sessao;
 }
 
-// Validar sessão existente
+// Validar sessão existente — nunca expira por tempo; só rejeita se estiver corrompida
 function validarSessaoCliente() {
   try {
-    const raw = localStorage.getItem('clube_sessao'); // TODO: migrate to async SecureStorage.get after init
+    const raw = localStorage.getItem(SESSAO_KEY);
     if (!raw) return null;
     const sessao = JSON.parse(raw);
-    // Verificar expiração
-    if (!sessao.expiraEm || Date.now() > sessao.expiraEm) {
-      limparSessaoCliente();
-      return null;
-    }
-    // Verificar integridade (token + clienteId devem existir)
     if (!sessao.token || !sessao.clienteId || !sessao.telefone) {
       limparSessaoCliente();
       return null;
     }
-    // Atualizar último acesso
+    // Sessões antigas (30 dias) são migradas silenciosamente para eterna
+    if (!sessao.expiraEm || (sessao.expiraEm - Date.now()) < (60 * 24 * 60 * 60 * 1000)) {
+      sessao.expiraEm = Date.now() + SESSAO_DURACAO_MS;
+    }
     sessao.ultimoAcesso = Date.now();
-    SecureStorage.set('clube_sessao', JSON.stringify(sessao));
+    try { localStorage.setItem(SESSAO_KEY, JSON.stringify(sessao)); } catch(e) {}
     return sessao;
   } catch(e) {
     limparSessaoCliente();
@@ -547,28 +568,17 @@ function validarSessaoCliente() {
 
 // Limpar sessão (logout)
 function limparSessaoCliente() {
-  SecureStorage.remove('clube_sessao');
+  try { localStorage.removeItem(SESSAO_KEY); } catch(e) {}
+  try { localStorage.removeItem(SESSAO_KEY_LEGACY_ENC); } catch(e) {}
   SecureStorage.remove('clube_cliente_id');
   SecureStorage.remove('clube_cliente_tel');
   SecureStorage.remove('clube_cliente_dados');
   SecureStorage.remove('clube_cliente_saldo');
 }
 
-// Renovar sessão (estende por mais 30 dias se estiver perto de expirar)
-function renovarSessaoSeNecessario() {
-  try {
-    const raw = localStorage.getItem('clube_sessao'); // TODO: migrate to async SecureStorage.get after init
-    if (!raw) return;
-    const sessao = JSON.parse(raw);
-    const diasRestantes = (sessao.expiraEm - Date.now()) / (24 * 60 * 60 * 1000);
-    // Renovar se faltam menos de 7 dias
-    if (diasRestantes < 7) {
-      sessao.expiraEm = Date.now() + (30 * 24 * 60 * 60 * 1000);
-      sessao.ultimoAcesso = Date.now();
-      SecureStorage.set('clube_sessao', JSON.stringify(sessao));
-    }
-  } catch(e) {}
-}
+// Sessão nunca expira por tempo — validarSessaoCliente já cuida de migrar
+// sessões antigas. Esta função virou no-op e ficou apenas para retrocompat.
+function renovarSessaoSeNecessario() {}
 
 function getLinkConvite() {
   return window.location.origin + window.location.pathname.replace('index.html','') + '?ref=' + clienteCodigo;

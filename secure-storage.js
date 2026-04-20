@@ -147,14 +147,15 @@ var SecureStorage = (function() {
     // Migrate all known sensitive keys from plain to encrypted
     migrateAll: async function() {
       if (!CRYPTO_AVAILABLE) return;
+      // clube_sessao fica em plain localStorage — criptografia por fingerprint
+      // causava logouts quando o user-agent/tela mudava.
       var sensitiveKeys = [
         'clube_cliente_dados',
         'clube_cliente_saldo',
         'clube_cliente_tel',
         'clube_cliente_id',
         'clube_favoritos',
-        'clube_ultimo_pedido',
-        'clube_sessao'
+        'clube_ultimo_pedido'
       ];
       for (var i = 0; i < sensitiveKeys.length; i++) {
         var key = sensitiveKeys[i];
