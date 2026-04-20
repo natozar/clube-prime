@@ -230,10 +230,12 @@ async function preencherTela(cliente, saldo) {
   // Mostrar banner customizado de notificações (se ainda não aceitou)
   mostrarBannerNotif();
 
-  document.getElementById('display-nome').textContent = cliente.nome;
-  const nomes = cliente.nome.split(' ');
+  const displayNomeEl = document.getElementById('display-nome');
+  if (displayNomeEl) displayNomeEl.textContent = cliente.nome;
+  const nomes = (cliente.nome || '').split(' ');
   const sobrenomeInicial = nomes.length > 1 ? ' ' + nomes[nomes.length - 1][0] + '.' : '';
-  document.getElementById('card-nome').textContent = nomes[0] + sobrenomeInicial;
+  const cardNomeEl = document.getElementById('card-nome');
+  if (cardNomeEl) cardNomeEl.textContent = nomes[0] + sobrenomeInicial;
   const pts = saldo || 0;
   document.querySelectorAll('.pts-val, #saldo-pts').forEach(el => el.textContent = pts.toLocaleString('pt-BR'));
   // Código do cartão
@@ -265,9 +267,12 @@ async function preencherTela(cliente, saldo) {
     carregarExtrato(cliente.id),
     carregarRede(cliente, pts)
   ]);
-  document.getElementById('screen-cad').classList.remove('active');
-  document.getElementById('screen-cartao').classList.add('active');
-  document.getElementById('bnav').style.display = 'flex';
+  const sCad = document.getElementById('screen-cad');
+  if (sCad) sCad.classList.remove('active');
+  const sCart = document.getElementById('screen-cartao');
+  if (sCart) sCart.classList.add('active');
+  const bnav = document.getElementById('bnav');
+  if (bnav) bnav.style.display = 'flex';
 }
 
 async function goApp() {
