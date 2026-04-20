@@ -1386,7 +1386,14 @@ let cardapioProdutos = [];
 let pedidoAtual = {}; // { produtoId: { qty, obs } }
 let filtroTagAtual = 'todos';
 let tipoEntregaAtual = 'entrega';
-let favoritosCliente = JSON.parse(localStorage.getItem('clube_favoritos') || '[]'); // TODO: migrate to async SecureStorage.get after init
+let favoritosCliente = [];
+// Rehidrata favoritos de SecureStorage (async; fica vazio ate resolver)
+(async function(){
+  try {
+    var raw = await SecureStorage.get('clube_favoritos');
+    if (raw) favoritosCliente = JSON.parse(raw);
+  } catch(e) { favoritosCliente = []; }
+})();
 
 async function carregarCardapioCliente() {
   try {
@@ -1499,16 +1506,18 @@ function setTipoEntrega(tipo, btn) {
   btn.classList.add('active'); btn.classList.add('bg'); btn.classList.remove('bo');
 }
 
-function abrirPedido() {
+async function abrirPedido() {
   if (!clienteId) { alert('Faça login para enviar pedidos!'); return; }
-  // Verificar perfil completo
-  const dados = JSON.parse(localStorage.getItem('clube_cliente_dados') || '{}'); // TODO: migrate to async SecureStorage.get after init
+  // Verificar perfil completo — usa SecureStorage (dados ficam em cs_* apos migrate)
+  var raw = await SecureStorage.get('clube_cliente_dados');
+  var dados = {};
+  try { dados = raw ? JSON.parse(raw) : {}; } catch(e) { dados = {}; }
   if (!dados.rua || !dados.numero || !dados.bairro || !dados.cidade) {
     alert('Complete seu endereço no Perfil antes de fazer pedidos!');
     return;
   }
   // Verificar se há último pedido
-  const ultimo = localStorage.getItem('clube_ultimo_pedido'); // TODO: migrate to async SecureStorage.get after init
+  var ultimo = await SecureStorage.get('clube_ultimo_pedido');
   document.getElementById('ultimo-pedido-box').style.display = ultimo ? 'block' : 'none';
   // Renderizar itens
   renderizarItensPedido();
@@ -1551,8 +1560,10 @@ function alterarQtdPedido(prodId, delta) {
   atualizarCarrinhoBar();
 }
 
-function repetirUltimoPedido() {
-  const ultimo = JSON.parse(localStorage.getItem('clube_ultimo_pedido') || '{}'); // TODO: migrate to async SecureStorage.get after init
+async function repetirUltimoPedido() {
+  var raw = await SecureStorage.get('clube_ultimo_pedido');
+  var ultimo = {};
+  try { ultimo = raw ? JSON.parse(raw) : {}; } catch(e) { ultimo = {}; }
   if (ultimo.itens) {
     pedidoAtual = {};
     ultimo.itens.forEach(item => {
