@@ -194,7 +194,19 @@ async function preencherTela(cliente, saldo) {
   // SEGURANÇA: se trocou de cliente no mesmo dispositivo, zera sessão antiga
   const sessaoPrev = validarSessaoCliente();
   const trocouCliente = !sessaoPrev || String(sessaoPrev.clienteId) !== String(cliente.id);
-  if (trocouCliente) limparSessaoCliente();
+  if (trocouCliente) {
+    limparSessaoCliente();
+    // Limpa elementos da UI que possam conter dado do cliente anterior
+    try {
+      var nomeEls = document.querySelectorAll('#display-nome, #card-nome, #card-codigo, #pontos-codigo, #qr-overlay-nome, #qr-overlay-codigo, #del-pontos, #saldo-pts');
+      nomeEls.forEach(function(el){ if (el) el.textContent = ''; });
+      document.querySelectorAll('.pts-val').forEach(function(el){ el.textContent = '0'; });
+      document.querySelectorAll('.prog-fill').forEach(function(el){ el.style.width = '0%'; });
+      document.querySelectorAll('.prog-label').forEach(function(el){ el.textContent = ''; });
+      var qrBox = document.getElementById('qr-box');
+      if (qrBox) qrBox.innerHTML = '';
+    } catch(e) {}
+  }
 
   clienteId = cliente.id;
   clienteCodigo = cliente.codigo;
@@ -566,14 +578,48 @@ function validarSessaoCliente() {
   }
 }
 
-// Limpar sessão (logout)
+// Limpar sessão (logout) — wipe defensivo de TODO dado do cliente no device
 function limparSessaoCliente() {
   try { localStorage.removeItem(SESSAO_KEY); } catch(e) {}
   try { localStorage.removeItem(SESSAO_KEY_LEGACY_ENC); } catch(e) {}
-  SecureStorage.remove('clube_cliente_id');
-  SecureStorage.remove('clube_cliente_tel');
-  SecureStorage.remove('clube_cliente_dados');
-  SecureStorage.remove('clube_cliente_saldo');
+  // Remove todas as chaves conhecidas do cliente (plain + cs_* variante)
+  var clienteKeys = [
+    'clube_cliente_id',
+    'clube_cliente_tel',
+    'clube_cliente_dados',
+    'clube_cliente_saldo',
+    'clube_favoritos',
+    'clube_ultimo_pedido'
+  ];
+  clienteKeys.forEach(function(k){
+    try { SecureStorage.remove(k); } catch(e) {}
+  });
+  // Varre e apaga QUALQUER chave clube_*/cs_clube_* residual (defense-in-depth)
+  try {
+    var toRemove = [];
+    for (var i = 0; i < localStorage.length; i++) {
+      var key = localStorage.key(i);
+      if (!key) continue;
+      if (key.indexOf('clube_') === 0 || key.indexOf('cs_clube_') === 0) {
+        // Preserva APENAS o marker de versao global (boot-purge)
+        if (key === 'clube_app_version') continue;
+        toRemove.push(key);
+      }
+    }
+    toRemove.forEach(function(k){ try { localStorage.removeItem(k); } catch(e) {} });
+  } catch(e) {}
+  // Limpa cache em memoria
+  try { if (typeof ApiCache !== 'undefined') ApiCache.clear(); } catch(e) {}
+  // Zera variaveis globais do cliente ativo
+  try { clienteId = null; clienteCodigo = null; clienteNome = null; } catch(e) {}
+  // Logout do OneSignal para quebrar vinculo push
+  try {
+    if (window.OneSignalDeferred) {
+      OneSignalDeferred.push(async function(OneSignal){
+        try { await OneSignal.logout(); } catch(e) {}
+      });
+    }
+  } catch(e) {}
 }
 
 // Sessão nunca expira por tempo — validarSessaoCliente já cuida de migrar
@@ -648,6 +694,21 @@ if('serviceWorker' in navigator) {
       // Forçar verificação de update a cada carregamento
       reg.update().catch(() => {});
     }).catch(()=>{});
+  });
+
+  // SW envia FORCE_PURGE na ativacao de nova versao -> wipe local imediato + reload
+  navigator.serviceWorker.addEventListener('message', (evt) => {
+    const msg = evt && evt.data;
+    if (!msg) return;
+    if (msg.type === 'FORCE_PURGE') {
+      try { localStorage.clear(); } catch(e) {}
+      try { sessionStorage.clear(); } catch(e) {}
+      if (typeof caches !== 'undefined') {
+        caches.keys().then(ks => ks.forEach(k => caches.delete(k))).catch(()=>{});
+      }
+      // Pequeno delay para garantir flush de async clears
+      setTimeout(() => { try { location.reload(); } catch(e) {} }, 100);
+    }
   });
 }
 
