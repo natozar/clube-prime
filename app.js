@@ -284,9 +284,8 @@ async function goApp() {
     return;
   }
 
-  const btn = document.querySelector('.cad-btn');
-  btn.textContent = 'Aguarde...';
-  btn.disabled = true;
+  const btn = document.getElementById('cad-btn') || document.querySelector('.cad-btn');
+  if (btn) { btn.textContent = 'Aguarde...'; btn.disabled = true; }
 
   try {
     // 1. Autorizar dispositivo (vincula no 1º acesso, bloqueia dispositivo diferente)
@@ -346,8 +345,10 @@ async function goApp() {
     alert('Erro: ' + (e.message || 'Verifique sua conexão e tente novamente.'));
   } finally {
     const form = document.getElementById('cad-form');
-    btn.textContent = (form && form.dataset.mode === 'login') ? 'Entrar com WhatsApp →' : 'Entrar no Clube Prime →';
-    btn.disabled = false;
+    if (btn) {
+      btn.textContent = (form && form.dataset.mode === 'login') ? 'Entrar com WhatsApp →' : 'Entrar no Clube Prime →';
+      btn.disabled = false;
+    }
   }
 }
 
