@@ -320,9 +320,9 @@ async function goApp() {
     // 2. Se já cadastrado → entrar
     if (auth.acao === 'entrar' || auth.acao === 'vinculado') {
       const cliente = auth.cliente;
-      const r = await fetch(`${SUPA_URL}/rest/v1/pontos?cliente_id=eq.${cliente.id}`, { headers: SH });
-      const pts = r.ok ? await r.json() : [];
-      await preencherTela(cliente, pts[0]?.saldo || 0);
+      // Saldo via RPC segura (valida device)
+      const saldo = await buscarSaldoSeguro(cliente.id);
+      await preencherTela(cliente, saldo);
       SecureStorage.set('clube_cliente_id', cliente.id);
       SecureStorage.set('clube_cliente_tel', tel);
       salvarSessaoCliente(cliente);
@@ -407,9 +407,7 @@ window.addEventListener('load', async () => {
         const auth = await autorizarDispositivo(telSessao);
         if (auth.ok && auth.cliente) {
           const cliente = auth.cliente;
-          const r = await fetch(`${SUPA_URL}/rest/v1/pontos?cliente_id=eq.${cliente.id}`, { headers: SH });
-          const pts = r.ok ? await r.json() : [];
-          const saldo = pts[0]?.saldo || 0;
+          const saldo = await buscarSaldoSeguro(cliente.id);
           SecureStorage.set('clube_cliente_dados', JSON.stringify(cliente));
           SecureStorage.set('clube_cliente_saldo', String(saldo));
           preencherTela(cliente, saldo);
@@ -906,22 +904,46 @@ async function carregarRegrasDoServidor() {
   return null;
 }
 
-// Buscar cliente pelo telefone
+// Buscar cliente pelo telefone + device_id (RPC segura — bloqueia acesso de outro dispositivo)
 async function buscarCliente(telefone) {
   try {
     const telNorm = telefone.replace(/\D/g,'');
-    const r = await fetch(`${SUPA_URL}/rest/v1/clientes?telefone=eq.${telNorm}&select=*`, { headers: SH });
+    const r = await fetch(`${SUPA_URL}/rest/v1/rpc/obter_cliente_seguro`, {
+      method: 'POST', headers: SH,
+      body: JSON.stringify({ p_telefone: telNorm, p_device_id: getDeviceId() })
+    });
     if (!r.ok) {
-      const d = await r.json();
+      const d = await r.json().catch(() => null);
       console.error('Erro ao buscar cliente:', d);
-      throw new Error(d.message || 'Erro ao consultar banco');
+      throw new Error(d?.message || 'Erro ao consultar banco');
     }
     const d = await r.json();
-    return d[0] || null;
+    if (!d || !d.ok) {
+      // nao_cadastrado / bloqueado — propaga via null; caller decide
+      if (d && d.acao === 'bloqueado') throw new Error(d.erro || 'Dispositivo nao autorizado');
+      return null;
+    }
+    // Anexa saldo retornado para caller que precisa (compat com buscarCliente antigo)
+    var cli = d.cliente || null;
+    if (cli) cli.__saldo = d.saldo;
+    return cli;
   } catch(e) {
     console.error('buscarCliente exception:', e);
     throw e;
   }
+}
+
+// Saldo seguro (RPC com validacao de device)
+async function buscarSaldoSeguro(cid) {
+  try {
+    const r = await fetch(`${SUPA_URL}/rest/v1/rpc/obter_saldo_seguro`, {
+      method: 'POST', headers: SH,
+      body: JSON.stringify({ p_cliente_id: cid, p_device_id: getDeviceId() })
+    });
+    if (!r.ok) return 0;
+    const d = await r.json();
+    return (d && d.ok) ? (d.saldo || 0) : 0;
+  } catch(e) { return 0; }
 }
 
 // Cadastrar novo cliente via RPC server-side (cria cliente + pontos atomicamente)
@@ -953,13 +975,16 @@ async function cadastrarCliente(dados) {
   }
 }
 
-// Atualizar perfil do cliente
+// Atualizar perfil do cliente (RPC segura — server valida device_id; ignora campos nao-whitelisted)
 async function atualizarCliente(id, dados) {
   try {
-    await fetch(`${SUPA_URL}/rest/v1/clientes?id=eq.${id}`, {
-      method: 'PATCH', headers: SH, body: JSON.stringify(dados)
+    const r = await fetch(`${SUPA_URL}/rest/v1/rpc/atualizar_cliente_seguro`, {
+      method: 'POST', headers: SH,
+      body: JSON.stringify({ p_cliente_id: id, p_device_id: getDeviceId(), p_dados: dados })
     });
-    return true;
+    if (!r.ok) return false;
+    const d = await r.json();
+    return !!(d && d.ok);
   } catch(e) { return false; }
 }
 
@@ -1035,10 +1060,14 @@ async function carregarMeusCupons() {
   const el = document.getElementById('meus-cupons');
   if (!el || !clienteId) return;
   try {
-    const r = await fetch(`${SUPA_URL}/rest/v1/resgate?cliente_id=eq.${clienteId}&order=created_at.desc&select=*,recompensas(nome)`, { headers: SH });
+    const r = await fetch(`${SUPA_URL}/rest/v1/rpc/obter_resgates_seguros`, {
+      method: 'POST', headers: SH,
+      body: JSON.stringify({ p_cliente_id: clienteId, p_device_id: getDeviceId() })
+    });
     if (!r.ok) { el.innerHTML = '<p style="color:var(--red);font-size:12px">Erro ao carregar cupons</p>'; return; } // SANITIZED: static
-    const lista = await r.json();
-    if (!Array.isArray(lista) || !lista.length) {
+    const resp = await r.json();
+    const lista = (resp && resp.ok && Array.isArray(resp.resgates)) ? resp.resgates : [];
+    if (!lista.length) {
       el.innerHTML = '<p style="color:var(--gray);font-size:12px">Nenhum cupom ainda</p>'; // SANITIZED: static
       return;
     }
@@ -1137,19 +1166,19 @@ function atualizarStatusResgate(pts) {
   carregarMeusCupons();
 }
 
-// Carregar estatísticas reais do banco
+// Carregar estatísticas reais do banco via RPC segura
 async function carregarStats(clienteId, saldo) {
   try {
-    // Buscar total de compras
-    const rt = await fetch(`${SUPA_URL}/rest/v1/transacoes?cliente_id=eq.${clienteId}&tipo=eq.compra&select=id,valor_reais`, { headers: SH });
-    const trans = rt.ok ? await rt.json() : [];
-    const totalCompras = Array.isArray(trans) ? trans.length : 0;
-    const totalGasto = Array.isArray(trans) ? trans.reduce((s, t) => s + (t.valor_reais || 0), 0) : 0;
-
-    // Buscar indicados
-    const ri = await fetch(`${SUPA_URL}/rest/v1/clientes?indicado_por=eq.${clienteId}&select=id`, { headers: SH });
-    const indicados = ri.ok ? await ri.json() : [];
-    const totalIndicados = Array.isArray(indicados) ? indicados.length : 0;
+    const r = await fetch(`${SUPA_URL}/rest/v1/rpc/obter_rede_segura`, {
+      method: 'POST', headers: SH,
+      body: JSON.stringify({ p_cliente_id: clienteId, p_device_id: getDeviceId() })
+    });
+    const resp = r.ok ? await r.json() : null;
+    const compras = (resp && resp.ok && Array.isArray(resp.compras)) ? resp.compras : [];
+    const indicados = (resp && resp.ok && Array.isArray(resp.indicados)) ? resp.indicados : [];
+    const totalCompras = compras.length;
+    const totalGasto = compras.reduce((s, t) => s + (t.valor_reais || 0), 0);
+    const totalIndicados = indicados.length;
 
     // Atualizar stat-cards na tela do cartão
     const elCompras = document.getElementById('stat-compras');
@@ -1190,10 +1219,13 @@ async function carregarRede(cliente, saldo) {
 
 async function buscarTransacoes(clienteId) {
   try {
-    const r = await fetch(`${SUPA_URL}/rest/v1/transacoes?cliente_id=eq.${clienteId}&order=created_at.desc&limit=20`, { headers: SH });
+    const r = await fetch(`${SUPA_URL}/rest/v1/rpc/obter_transacoes_seguras`, {
+      method: 'POST', headers: SH,
+      body: JSON.stringify({ p_cliente_id: clienteId, p_device_id: getDeviceId(), p_limit: 20 })
+    });
     if (!r.ok) { console.error('buscarTransacoes erro:', r.status); return []; }
     const d = await r.json();
-    return Array.isArray(d) ? d : [];
+    return (d && d.ok && Array.isArray(d.transacoes)) ? d.transacoes : [];
   } catch(e) { return []; }
 }
 
@@ -1549,17 +1581,18 @@ async function enviarPedidoWhatsApp() {
     return { produto_id: Number(id), nome: p?.nome || '', qty: pedidoAtual[id].qty, obs: pedidoAtual[id].obs || '' };
   });
 
-  // Salvar no Supabase
+  // Salvar no Supabase via RPC segura (valida device)
   try {
-    await fetch(`${SUPA_URL}/rest/v1/pedidos`, {
+    await fetch(`${SUPA_URL}/rest/v1/rpc/registrar_pedido_seguro`, {
       method: 'POST', headers: SH,
       body: JSON.stringify({
-        cliente_id: clienteId,
-        itens: itensSalvar,
-        observacao_geral: obsGeral,
-        data_entrega: data,
-        horario_entrega: horario,
-        tipo_entrega: tipoEntregaAtual
+        p_cliente_id: clienteId,
+        p_device_id: getDeviceId(),
+        p_itens: itensSalvar,
+        p_observacao_geral: obsGeral,
+        p_data_entrega: data,
+        p_horario_entrega: horario,
+        p_tipo_entrega: tipoEntregaAtual
       })
     });
   } catch(e) { console.warn('Erro ao salvar pedido no Supabase:', e); }
