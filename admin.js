@@ -207,11 +207,11 @@ async function listarClientes() {
     if(el) {
       el.innerHTML = !lista.length ? '<p style="opacity:.5;padding:8px">Nenhum cliente cadastrado</p>' // SANITIZED: static or sanitize() on all dynamic data
         : lista.map(c=>{
-          const temPin = c.pin_hash ? '<span style="font-size:8px;background:#27ae60;color:#fff;padding:1px 5px;border-radius:4px">PIN</span>' : '<span style="font-size:8px;background:#555;color:#aaa;padding:1px 5px;border-radius:4px">Sem PIN</span>';
-          const btnReset = c.pin_hash ? `<button class="btn bo" style="font-size:8px;padding:2px 6px;border-radius:4px" data-action="resetarPinClientePorId" data-id="${c.id}" data-nome="${sanitize(c.nome)}">🔐 Reset</button>` : '';
+          const temDevice = c.device_id ? '<span style="font-size:8px;background:#27ae60;color:#fff;padding:1px 5px;border-radius:4px">📱 Vinculado</span>' : '<span style="font-size:8px;background:#555;color:#aaa;padding:1px 5px;border-radius:4px">Sem dispositivo</span>';
+          const btnLiberar = c.device_id ? `<button class="btn bo" style="font-size:8px;padding:2px 6px;border-radius:4px" data-action="liberarDispositivoClientePorId" data-id="${c.id}" data-nome="${sanitize(c.nome)}">📱 Liberar</button>` : '';
           return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #333">
           <div><div style="font-weight:600">${sanitize(c.nome)}</div><div style="opacity:.6;font-size:12px">${sanitize(c.codigo)} · ${sanitize(c.telefone)}</div></div>
-          <div style="display:flex;align-items:center;gap:6px">${temPin}${btnReset}</div></div>`;
+          <div style="display:flex;align-items:center;gap:6px">${temDevice}${btnLiberar}</div></div>`;
         }).join('');
     }
     if(rankEl) {
@@ -641,78 +641,61 @@ async function carregarCliente(textoScan) {
   document.getElementById('client-found').style.display='flex';
   document.getElementById('scan-area').style.display='none';
 
-  // Mostrar status do PIN
-  const pinBadge = document.getElementById('cli-pin-badge');
-  if (pinBadge) {
-    if (cliente.pin_hash) {
-      pinBadge.textContent = 'PIN ativo';
-      pinBadge.style.background = '#27ae60';
-      pinBadge.style.color = '#fff';
+  // Mostrar status do dispositivo vinculado
+  const deviceBadge = document.getElementById('cli-device-badge');
+  if (deviceBadge) {
+    if (cliente.device_id) {
+      deviceBadge.textContent = '📱 Vinculado';
+      deviceBadge.style.background = '#27ae60';
+      deviceBadge.style.color = '#fff';
     } else {
-      pinBadge.textContent = 'Sem PIN';
-      pinBadge.style.background = '#555';
-      pinBadge.style.color = '#aaa';
+      deviceBadge.textContent = 'Sem dispositivo';
+      deviceBadge.style.background = '#555';
+      deviceBadge.style.color = '#aaa';
     }
-    pinBadge.style.display = '';
+    deviceBadge.style.display = '';
   }
 }
 
-// ── RESET DE PIN ─────────────────────────────────────────
+// ── LIBERAR DISPOSITIVO ──────────────────────────────────
 
-// Resetar PIN do cliente selecionado (aba Caixa)
-async function resetarPinCliente() {
+// Liberar dispositivo do cliente selecionado (aba Caixa)
+async function liberarDispositivoCliente() {
   if (!clienteAtual) { alert('Nenhum cliente selecionado'); return; }
-  await resetarPinClientePorId(clienteAtual.id, clienteAtual.nome);
-  // Atualizar badge no card
-  clienteAtual.pin_hash = null;
-  const pinBadge = document.getElementById('cli-pin-badge');
-  if (pinBadge) {
-    pinBadge.textContent = 'Sem PIN';
-    pinBadge.style.background = '#555';
-    pinBadge.style.color = '#aaa';
+  await liberarDispositivoClientePorId(clienteAtual.id, clienteAtual.nome);
+  clienteAtual.device_id = null;
+  const deviceBadge = document.getElementById('cli-device-badge');
+  if (deviceBadge) {
+    deviceBadge.textContent = 'Sem dispositivo';
+    deviceBadge.style.background = '#555';
+    deviceBadge.style.color = '#aaa';
   }
 }
 
-// Resetar PIN de qualquer cliente por ID (usado na listagem e no caixa)
-async function resetarPinClientePorId(cId, nomeCliente) {
-  if (!confirm(`Resetar o PIN de segurança de ${nomeCliente}?\n\nO cliente receberá uma notificação para criar um novo PIN.`)) return;
+// Liberar dispositivo de qualquer cliente por ID (usado na listagem e no caixa)
+async function liberarDispositivoClientePorId(cId, nomeCliente) {
+  if (!confirm(`Liberar novo dispositivo para ${nomeCliente}?\n\nO cliente poderá vincular o próximo celular no próximo acesso ao app.`)) return;
 
   try {
-    // 1. Limpar PIN no banco e marcar reset pedido
-    const r = await fetch(`${SUPA_URL}/rest/v1/clientes?id=eq.${cId}`, {
-      method: 'PATCH',
-      headers: { ...authHeaders(), Prefer: 'return=representation' },
-      body: JSON.stringify({ pin_hash: null, pin_reset_pedido: true })
+    const r = await fetch(`${SUPA_URL}/rest/v1/rpc/liberar_dispositivo_cliente`, {
+      method: 'POST',
+      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_cliente_id: cId })
     });
+    const d = await r.json().catch(() => null);
 
-    if (!r.ok) {
-      alert('Erro ao resetar PIN. Tente novamente.');
+    if (!r.ok || !d || d.ok === false) {
+      alert(d?.erro || 'Erro ao liberar dispositivo. Tente novamente.');
       return;
     }
 
-    // 2. Enviar push notification para o cliente criar novo PIN
-    try {
-      await fetch(ONESIGNAL_PUSH_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`
-        },
-        body: JSON.stringify({
-          type: 'pin_reset',
-          clienteId: String(cId)
-        })
-      });
-    } catch(e) { console.warn('Push de reset PIN falhou:', e); }
+    alert(`Dispositivo de ${nomeCliente} liberado!\n\nO cliente poderá vincular o novo celular ao acessar o app.`);
 
-    alert(`PIN de ${nomeCliente} foi resetado!\n\nO cliente será notificado para criar um novo PIN.`);
-
-    // Atualizar listagem
     listarClientes();
 
   } catch(e) {
-    console.error('resetarPinCliente:', e);
-    alert('Erro ao resetar PIN.');
+    console.error('liberarDispositivoCliente:', e);
+    alert('Erro ao liberar dispositivo.');
   }
 }
 

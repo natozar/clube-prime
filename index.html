@@ -312,14 +312,6 @@
       </div>
     </div>
 
-    <!-- PIN DE SEGURANÇA -->
-    <div class="sec-card" style="margin:0 0 14px">
-      <div class="sec-title">🔐 PIN de Segurança</div>
-      <div style="font-size:12px;color:var(--gray);line-height:1.5;margin-bottom:10px" id="pin-perfil-status">Verificando...</div>
-      <button class="btn bg bsm" id="btn-pin-perfil" data-action="abrirAlterarPin" style="display:none">Alterar PIN</button>
-      <button class="btn bg bsm" id="btn-pin-criar-perfil" data-action="abrirCriarPin" style="display:none">Criar PIN</button>
-    </div>
-
     <!-- ZONA DE PERIGO -->
     <div class="sec-card" style="margin:0">
       <div class="dz"><div class="dzt">⚠️ Zona de perigo</div><div class="dzx">Ao excluir sua conta, todos os pontos e histórico serão removidos. Processado em até 15 dias (LGPD).</div><button class="btn bd" data-modal-open="mo-del">Excluir minha conta</button></div>
@@ -422,102 +414,6 @@
         ENVIAR PELO WHATSAPP
       </button>
       <button class="btn bo" style="width:100%;font-size:12px" data-modal-close="mo-pedido">Voltar ao cardápio</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL CRIAR PIN DE SEGURANÇA -->
-<div class="mo" id="mo-pin-criar">
-  <div class="md" style="text-align:center">
-    <div class="md-handle"></div>
-    <div style="font-size:40px;margin-bottom:8px">🔐</div>
-    <div class="md-title" style="color:var(--gold-light);justify-content:center;display:flex">Crie seu PIN de segurança</div>
-    <div class="md-text">Crie um PIN de 4 dígitos para proteger seus pontos. Ele será pedido nos resgates e operações sensíveis.</div>
-    <div style="display:flex;gap:10px;justify-content:center;margin-bottom:14px">
-      <input class="fi pin-input" id="pin-d1" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Dígito 1 do PIN" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-next="pin-d2">
-      <input class="fi pin-input" id="pin-d2" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Dígito 2 do PIN" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-next="pin-d3" data-pin-prev="pin-d1">
-      <input class="fi pin-input" id="pin-d3" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Dígito 3 do PIN" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-next="pin-d4" data-pin-prev="pin-d2">
-      <input class="fi pin-input" id="pin-d4" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Dígito 4 do PIN" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-prev="pin-d3">
-    </div>
-    <div id="pin-criar-erro" aria-live="assertive" style="color:#e74c3c;font-size:12px;min-height:16px;margin-bottom:8px"></div>
-    <div class="md-actions" style="justify-content:center;flex-direction:column;gap:8px">
-      <button class="btn bg" style="width:100%" id="btn-salvar-pin" data-action="salvarPinSeguranca">Salvar PIN</button>
-      <button class="btn bo" style="width:100%;font-size:12px;opacity:.7" data-action="pularCriacaoPin">Depois eu crio</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL PIN NO LOGIN (obrigatório) -->
-<div class="mo" id="mo-pin-login">
-  <div class="md" style="text-align:center">
-    <div class="md-handle"></div>
-    <div style="font-size:40px;margin-bottom:8px">🔐</div>
-    <div class="md-title" style="color:var(--gold-light);justify-content:center;display:flex">Digite seu PIN</div>
-    <div class="md-text">Informe seu PIN de 4 dígitos para acessar sua conta.</div>
-    <div style="display:flex;gap:10px;justify-content:center;margin-bottom:14px">
-      <input class="fi pin-input" id="lpin-d1" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Dígito 1 do PIN" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-next="lpin-d2">
-      <input class="fi pin-input" id="lpin-d2" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Dígito 2 do PIN" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-next="lpin-d3" data-pin-prev="lpin-d1">
-      <input class="fi pin-input" id="lpin-d3" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Dígito 3 do PIN" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-next="lpin-d4" data-pin-prev="lpin-d2">
-      <input class="fi pin-input" id="lpin-d4" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Dígito 4 do PIN" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-prev="lpin-d3">
-    </div>
-    <div id="pin-login-erro" aria-live="assertive" style="color:#e74c3c;font-size:12px;min-height:16px;margin-bottom:8px"></div>
-    <div class="md-actions" style="justify-content:center;flex-direction:column;gap:8px">
-      <button class="btn bg" style="width:100%" data-action="confirmarPinLogin">Entrar</button>
-    </div>
-    <div style="margin-top:12px;font-size:12px;color:var(--gray)">Esqueceu o PIN? Entre em contato com o Empório.</div>
-  </div>
-</div>
-
-<!-- MODAL VERIFICAR PIN (para resgate) -->
-<div class="mo" id="mo-pin-verificar">
-  <div class="md" style="text-align:center">
-    <div class="md-handle"></div>
-    <div style="font-size:40px;margin-bottom:8px">🔑</div>
-    <div class="md-title" style="color:var(--gold-light);justify-content:center;display:flex">Digite seu PIN</div>
-    <div class="md-text">Informe seu PIN de 4 dígitos para confirmar o resgate.</div>
-    <div style="display:flex;gap:10px;justify-content:center;margin-bottom:14px">
-      <input class="fi pin-input" id="vpin-d1" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Dígito 1 do PIN" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-next="vpin-d2">
-      <input class="fi pin-input" id="vpin-d2" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Dígito 2 do PIN" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-next="vpin-d3" data-pin-prev="vpin-d1">
-      <input class="fi pin-input" id="vpin-d3" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Dígito 3 do PIN" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-next="vpin-d4" data-pin-prev="vpin-d2">
-      <input class="fi pin-input" id="vpin-d4" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Dígito 4 do PIN" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-prev="vpin-d3">
-    </div>
-    <div id="pin-verificar-erro" aria-live="assertive" style="color:#e74c3c;font-size:12px;min-height:16px;margin-bottom:8px"></div>
-    <div class="md-actions" style="justify-content:center;flex-direction:column;gap:8px">
-      <button class="btn bg" style="width:100%" id="btn-confirmar-pin" data-action="confirmarPinResgate">Confirmar</button>
-      <button class="btn bo" style="width:100%" data-action="fecharModalPin" data-arg="mo-pin-verificar">Cancelar</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL ALTERAR PIN -->
-<div class="mo" id="mo-pin-alterar">
-  <div class="md" style="text-align:center">
-    <div class="md-handle"></div>
-    <div style="font-size:40px;margin-bottom:8px">🔄</div>
-    <div class="md-title" style="color:var(--gold-light);justify-content:center;display:flex">Alterar PIN</div>
-    <div class="md-text" id="pin-alterar-desc">Digite o PIN atual e o novo PIN.</div>
-    <div style="margin-bottom:12px">
-      <div style="font-size:12px;color:var(--gray);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px" id="pin-alt-label-atual">PIN Atual</div>
-      <div style="display:flex;gap:10px;justify-content:center">
-        <input class="fi pin-input" id="apin-a1" type="tel" maxlength="1" inputmode="numeric" aria-label="Dígito 1 do PIN atual" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-next="apin-a2">
-        <input class="fi pin-input" id="apin-a2" type="tel" maxlength="1" inputmode="numeric" aria-label="Dígito 2 do PIN atual" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-next="apin-a3" data-pin-prev="apin-a1">
-        <input class="fi pin-input" id="apin-a3" type="tel" maxlength="1" inputmode="numeric" aria-label="Dígito 3 do PIN atual" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-next="apin-a4" data-pin-prev="apin-a2">
-        <input class="fi pin-input" id="apin-a4" type="tel" maxlength="1" inputmode="numeric" aria-label="Dígito 4 do PIN atual" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-prev="apin-a3">
-      </div>
-    </div>
-    <div style="margin-bottom:14px">
-      <div style="font-size:12px;color:var(--gray);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">Novo PIN</div>
-      <div style="display:flex;gap:10px;justify-content:center">
-        <input class="fi pin-input" id="apin-n1" type="tel" maxlength="1" inputmode="numeric" aria-label="Dígito 1 do novo PIN" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-next="apin-n2">
-        <input class="fi pin-input" id="apin-n2" type="tel" maxlength="1" inputmode="numeric" aria-label="Dígito 2 do novo PIN" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-next="apin-n3" data-pin-prev="apin-n1">
-        <input class="fi pin-input" id="apin-n3" type="tel" maxlength="1" inputmode="numeric" aria-label="Dígito 3 do novo PIN" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-next="apin-n4" data-pin-prev="apin-n2">
-        <input class="fi pin-input" id="apin-n4" type="tel" maxlength="1" inputmode="numeric" aria-label="Dígito 4 do novo PIN" style="width:48px;height:54px;text-align:center;font-size:24px;font-weight:700;border-radius:12px;letter-spacing:0" data-pin-prev="apin-n3">
-      </div>
-    </div>
-    <div id="pin-alterar-erro" aria-live="assertive" style="color:#e74c3c;font-size:12px;min-height:16px;margin-bottom:8px"></div>
-    <div class="md-actions" style="justify-content:center;flex-direction:column;gap:8px">
-      <button class="btn bg" style="width:100%" data-action="alterarPinSeguranca">Salvar novo PIN</button>
-      <button class="btn bo" style="width:100%" data-action="fecharModalPin" data-arg="mo-pin-alterar">Cancelar</button>
     </div>
   </div>
 </div>

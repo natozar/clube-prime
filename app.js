@@ -191,15 +191,10 @@ function fecharQRExpandido() {
 }
 
 async function preencherTela(cliente, saldo) {
-  // SEGURANÇA: resetar estado global se for cliente diferente do anterior
-  // (evita herdar clientePinHash/pinVerificado de outro cliente logado no mesmo dispositivo)
+  // SEGURANÇA: se trocou de cliente no mesmo dispositivo, zera sessão antiga
   const sessaoPrev = validarSessaoCliente();
   const trocouCliente = !sessaoPrev || String(sessaoPrev.clienteId) !== String(cliente.id);
-  if (trocouCliente) {
-    clientePinHash = null;
-    pinResetPedido = false;
-    limparSessaoCliente();
-  }
+  if (trocouCliente) limparSessaoCliente();
 
   clienteId = cliente.id;
   clienteCodigo = cliente.codigo;
@@ -273,31 +268,6 @@ async function preencherTela(cliente, saldo) {
   document.getElementById('screen-cad').classList.remove('active');
   document.getElementById('screen-cartao').classList.add('active');
   document.getElementById('bnav').style.display = 'flex';
-
-  // Verificar PIN de segurança do cliente
-  const temPin = await verificarPinCliente(cliente.id);
-  atualizarPinPerfil(temPin);
-
-  // Verificar se PIN já foi confirmado nesta sessão
-  const sessaoAtual = validarSessaoCliente();
-  const pinJaVerificado = sessaoAtual && sessaoAtual.pinVerificado === true;
-
-  // Se admin pediu reset do PIN, forçar criação de novo PIN (sempre)
-  if (pinResetPedido && !temPin) {
-    setTimeout(() => abrirCriarPinObrigatorio(), 1000);
-  }
-  // Se PIN já verificado nesta sessão → entrar direto
-  else if (pinJaVerificado) {
-    // Nada a fazer — acesso liberado
-  }
-  // Se tem PIN mas ainda não verificou nesta sessão → pedir
-  else if (temPin) {
-    setTimeout(() => pedirPinLogin(), 500);
-  }
-  // Se não tem PIN → forçar criação (obrigatório)
-  else if (!temPin) {
-    setTimeout(() => abrirCriarPinObrigatorio(), 1000);
-  }
 }
 
 async function goApp() {
@@ -319,44 +289,46 @@ async function goApp() {
   btn.disabled = true;
 
   try {
-    // 1. Verificar se já é cadastrado pelo telefone
-    let cliente = await buscarCliente(tel);
+    // 1. Autorizar dispositivo (vincula no 1º acesso, bloqueia dispositivo diferente)
+    const auth = await autorizarDispositivo(tel);
 
-    if (cliente) {
-      // Já cadastrado — basta o telefone para entrar (nome não é obrigatório)
+    if (!auth.ok && auth.acao === 'bloqueado') {
+      alert(auth.erro || 'Este cartão está vinculado a outro dispositivo. Venha à loja para liberar o acesso.');
+      return;
+    }
+    if (!auth.ok) {
+      alert(auth.erro || 'Erro ao autorizar acesso.');
+      return;
+    }
+
+    // 2. Se já cadastrado → entrar
+    if (auth.acao === 'entrar' || auth.acao === 'vinculado') {
+      const cliente = auth.cliente;
       const r = await fetch(`${SUPA_URL}/rest/v1/pontos?cliente_id=eq.${cliente.id}`, { headers: SH });
       const pts = r.ok ? await r.json() : [];
       await preencherTela(cliente, pts[0]?.saldo || 0);
       SecureStorage.set('clube_cliente_id', cliente.id);
       SecureStorage.set('clube_cliente_tel', tel);
-      // Criar sessão segura
       salvarSessaoCliente(cliente);
-      // Sugerir criação de PIN se não tem e não foi lembrado recentemente
-      if (!clientePinHash && devesugerirPin()) sugerirCriacaoPin();
-    } else {
-      // Novo cadastro — nome é obrigatório
+      return;
+    }
+
+    // 3. Novo cadastro
+    if (auth.acao === 'nao_cadastrado') {
       if (!nome) {
         alert('Para o primeiro cadastro, preencha seu nome completo!');
-        btn.textContent = 'Entrar no Clube Prime →';
-        btn.disabled = false;
         return;
       }
-      // Aceitar termos é obrigatório para novos cadastros
       if (chk && !chk.checked) {
         alert('Por favor, aceite os Termos de Uso e Política de Privacidade para continuar.');
-        btn.textContent = 'Entrar no Clube Prime →';
-        btn.disabled = false;
         return;
       }
-      cliente = await cadastrarCliente({ nome, telefone: tel, nascimento: nasc || null });
-
+      const cliente = await cadastrarCliente({ nome, telefone: tel, nascimento: nasc || null, device_id: getDeviceId() });
       if (cliente) {
         preencherTela(cliente, 0);
         SecureStorage.set('clube_cliente_id', cliente.id);
         SecureStorage.set('clube_cliente_tel', tel);
-        // Notificar admin sobre novo cadastro (fire-and-forget)
         notificarAdminNovoCliente(nome, tel);
-        // Criar sessão segura
         salvarSessaoCliente(cliente);
       }
     }
@@ -385,25 +357,30 @@ window.addEventListener('load', async () => {
         preencherTela(dadosLocal, saldoLocal);
       } catch(e) {}
     }
-    // Atualizar em background com dados do banco
+    // Atualizar em background com dados do banco — valida device também
     const telSessao = sessao.telefone || tel;
     if (telSessao) {
       try {
-        const cliente = await buscarCliente(telSessao);
-        if (cliente) {
+        const auth = await autorizarDispositivo(telSessao);
+        if (auth.ok && auth.cliente) {
+          const cliente = auth.cliente;
           const r = await fetch(`${SUPA_URL}/rest/v1/pontos?cliente_id=eq.${cliente.id}`, { headers: SH });
           const pts = r.ok ? await r.json() : [];
           const saldo = pts[0]?.saldo || 0;
-          // Salvar dados atualizados localmente
           SecureStorage.set('clube_cliente_dados', JSON.stringify(cliente));
           SecureStorage.set('clube_cliente_saldo', String(saldo));
           preencherTela(cliente, saldo);
+        } else if (!auth.ok && auth.acao === 'bloqueado') {
+          // Dispositivo foi desvinculado ou é outro — deslogar
+          limparSessaoCliente();
+          document.getElementById('screen-cartao').classList.remove('active');
+          document.getElementById('screen-cad').classList.add('active');
+          const bnav = document.getElementById('bnav'); if (bnav) bnav.style.display = 'none';
+          alert(auth.erro || 'Este dispositivo não está autorizado. Venha à loja para liberar o acesso.');
         } else if (clienteLocal) {
-          // Banco não respondeu mas temos dados locais — manter logado
           console.log('Usando dados locais — banco indisponível');
         }
       } catch(e) {
-        // Erro de rede — usar dados locais, nunca deslogar
         console.log('Offline — usando dados locais');
       }
     }
@@ -430,20 +407,26 @@ async function acessarCartao() {
   const tel = pais + telRaw;
   if (!telRaw) { alert('Digite seu WhatsApp para acessar seu cartão!'); return; }
   try {
-    const cliente = await buscarCliente(tel);
-    if (cliente) {
-      const r = await fetch(`${SUPA_URL}/rest/v1/pontos?cliente_id=eq.${cliente.id}`, { headers: SH });
-      const pts = r.ok ? await r.json() : [];
-      await preencherTela(cliente, pts[0]?.saldo || 0);
-      SecureStorage.set('clube_cliente_id', cliente.id);
-      SecureStorage.set('clube_cliente_tel', tel);
-      // Criar sessão segura para manter logado
-      salvarSessaoCliente(cliente);
-      // Sugerir criação de PIN se não tem
-      if (!clientePinHash && devesugerirPin()) sugerirCriacaoPin();
-    } else {
-      alert('Número não encontrado. Faça seu cadastro!');
+    const auth = await autorizarDispositivo(tel);
+    if (!auth.ok && auth.acao === 'bloqueado') {
+      alert(auth.erro || 'Este cartão está vinculado a outro dispositivo. Venha à loja para liberar.');
+      return;
     }
+    if (auth.acao === 'nao_cadastrado') {
+      alert('Número não encontrado. Faça seu cadastro!');
+      return;
+    }
+    if (!auth.ok || !auth.cliente) {
+      alert(auth.erro || 'Erro ao acessar. Tente novamente.');
+      return;
+    }
+    const cliente = auth.cliente;
+    const r = await fetch(`${SUPA_URL}/rest/v1/pontos?cliente_id=eq.${cliente.id}`, { headers: SH });
+    const pts = r.ok ? await r.json() : [];
+    await preencherTela(cliente, pts[0]?.saldo || 0);
+    SecureStorage.set('clube_cliente_id', cliente.id);
+    SecureStorage.set('clube_cliente_tel', tel);
+    salvarSessaoCliente(cliente);
   } catch(e) {
     console.error('acessarCartao error:', e);
     alert('Erro ao buscar. Verifique sua conexão.');
@@ -566,17 +549,6 @@ function limparSessaoCliente() {
   SecureStorage.remove('clube_cliente_tel');
   SecureStorage.remove('clube_cliente_dados');
   SecureStorage.remove('clube_cliente_saldo');
-}
-
-// Marcar PIN como verificado na sessão atual (não pede de novo)
-function marcarPinVerificado() {
-  try {
-    const raw = localStorage.getItem('clube_sessao'); // TODO: migrate to async SecureStorage.get after init
-    if (!raw) return;
-    const sessao = JSON.parse(raw);
-    sessao.pinVerificado = true;
-    SecureStorage.set('clube_sessao', JSON.stringify(sessao));
-  } catch(e) {}
 }
 
 // Renovar sessão (estende por mais 30 dias se estiver perto de expirar)
@@ -887,7 +859,8 @@ async function cadastrarCliente(dados) {
         p_nome: dados.nome,
         p_telefone: dados.telefone,
         p_nascimento: dados.nascimento || null,
-        p_indicado_por: null // indicação pode ser adicionada futuramente
+        p_indicado_por: null,
+        p_device_id: dados.device_id || getDeviceId()
       })
     });
     if (!r.ok) {
@@ -1039,7 +1012,7 @@ function iniciarResgate(recompensaId) {
   if (!rc) return;
   if (saldoAtualCliente < rc.pontos_necessarios) { alert('Pontos insuficientes.'); return; }
   if (!confirm(`Resgatar "${rc.nome}" por ${rc.pontos_necessarios.toLocaleString('pt-BR')} pontos?\n\nUm cupom será gerado para você apresentar na loja.`)) return;
-  pedirPinParaResgate(() => executarResgate(rc));
+  executarResgate(rc);
 }
 
 async function executarResgate(rc) {
@@ -1151,424 +1124,34 @@ async function buscarTransacoes(clienteId) {
 }
 
 // (Funções de resgate movidas para seção VITRINE DE RECOMPENSAS acima)
-// ── PIN DE SEGURANÇA ─────────────────────────────────────
-let clientePinHash = null; // hash do PIN carregado do banco
-let pinResgateCallback = null; // callback após verificação do PIN no resgate
-
-// Navegação automática entre inputs do PIN
-function pinAutoNext(current, nextId) {
-  current.value = current.value.replace(/\D/g, '');
-  if (current.value.length === 1) {
-    const next = document.getElementById(nextId);
-    if (next) next.focus();
+// ── DEVICE BINDING ───────────────────────────────────────
+// Cada cliente é vinculado ao dispositivo (UUID em localStorage) no primeiro acesso.
+// Se tentar logar de outro aparelho → bloqueado até admin liberar na loja.
+function getDeviceId() {
+  let id = localStorage.getItem('clube_device_id');
+  if (!id) {
+    id = (crypto && crypto.randomUUID)
+      ? crypto.randomUUID()
+      : 'dev-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 12) + Math.random().toString(36).slice(2, 12);
+    localStorage.setItem('clube_device_id', id);
   }
-}
-function pinBackspace(event, current, prevId) {
-  if (event.key === 'Backspace' && current.value === '') {
-    const prev = document.getElementById(prevId);
-    if (prev) { prev.focus(); prev.select(); }
-  }
+  return id;
 }
 
-// Ler os 4 campos de PIN e retornar string
-function lerPin(prefix) {
-  return [1,2,3,4].map(i => {
-    const el = document.getElementById(prefix + i);
-    return el ? el.value : '';
-  }).join('');
-}
-
-// Limpar campos de PIN
-function limparPin(prefix) {
-  [1,2,3,4].forEach(i => {
-    const el = document.getElementById(prefix + i);
-    if (el) el.value = '';
-  });
-}
-
-// Hash do PIN com SALT ÚNICO POR CLIENTE — dois clientes com mesmo PIN produzem hashes DIFERENTES.
-// Requer clienteId para prevenir colisão de hashes (bug de segurança corrigido 2026-04-20).
-function hashPin(pin, clienteId) {
-  if (clienteId === undefined || clienteId === null || clienteId === '') {
-    throw new Error('hashPin: clienteId é obrigatório para gerar hash seguro');
-  }
-  let hash = 0;
-  const saltBase = 'clube-prime-2024';
-  const saltUnico = 'cli' + String(clienteId) + '::';
-  const str = saltBase + saltUnico + pin + saltUnico + saltBase;
-  for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) - hash) + str.charCodeAt(i);
-    hash |= 0;
-  }
-  return 'ph_' + Math.abs(hash).toString(36) + '_' + String(clienteId);
-}
-
-// Verificar se cliente tem PIN cadastrado (busca do banco)
-let pinResetPedido = false; // flag de reset solicitado pelo admin
-
-async function verificarPinCliente(cId) {
+// Chama RPC que verifica vinculação e (opcionalmente) vincula no primeiro acesso
+async function autorizarDispositivo(telefone) {
   try {
-    const r = await fetch(`${SUPA_URL}/rest/v1/clientes?id=eq.${cId}&select=pin_hash,pin_reset_pedido`, { headers: SH });
-    if (!r.ok) return false;
-    const d = await r.json();
-    if (d[0]) {
-      // Verificar se admin pediu reset
-      pinResetPedido = d[0].pin_reset_pedido === true;
-      if (d[0].pin_hash) {
-        clientePinHash = d[0].pin_hash;
-        return true;
-      }
-    }
-    clientePinHash = null;
-    return false;
-  } catch(e) {
-    return false;
-  }
-}
-
-// Salvar PIN no banco via RPC server-side (com validação)
-async function salvarPinNoBanco(cId, pinHash) {
-  try {
-    const r = await fetch(`${SUPA_URL}/rest/v1/rpc/salvar_pin_cliente`, {
+    const r = await fetch(`${SUPA_URL}/rest/v1/rpc/autorizar_dispositivo`, {
       method: 'POST', headers: SH,
-      body: JSON.stringify({ p_cliente_id: cId, p_pin_hash: pinHash })
+      body: JSON.stringify({ p_telefone: telefone, p_device_id: getDeviceId() })
     });
-    if (!r.ok) return false;
-    const d = await r.json();
-    if (d && d.ok) { pinResetPedido = false; return true; }
-    return false;
-  } catch(e) { return false; }
-}
-
-// Abrir modal de criar PIN
-function abrirCriarPin() {
-  limparPin('pin-d');
-  const erroEl = document.getElementById('pin-criar-erro');
-  if (erroEl) erroEl.textContent = '';
-  const moEl = document.getElementById('mo-pin-criar');
-  if (moEl) moEl.classList.add('open');
-  const pinD1 = document.getElementById('pin-d1');
-  if (pinD1) setTimeout(() => pinD1.focus(), 300);
-}
-
-// Sugerir criação de PIN após login por telefone
-function sugerirCriacaoPin() {
-  // Só mostra se o cliente não tem PIN ainda
-  if (!clientePinHash) {
-    setTimeout(() => abrirCriarPin(), 1500);
-  }
-}
-
-// Pedir PIN no login (para quem já tem PIN)
-let pinLoginTentativas = 0;
-function pedirPinLogin() {
-  pinLoginTentativas = 0;
-  limparPin('lpin-d');
-  const pinErro = document.getElementById('pin-login-erro');
-  if (pinErro) pinErro.textContent = '';
-  const moPin = document.getElementById('mo-pin-login');
-  if (moPin) moPin.classList.add('open');
-  const lpinD1 = document.getElementById('lpin-d1');
-  if (lpinD1) setTimeout(() => lpinD1.focus(), 300);
-}
-
-async function confirmarPinLogin() {
-  const pin = lerPin('lpin-d');
-  const erroEl = document.getElementById('pin-login-erro');
-  if (pin.length !== 4) {
-    erroEl.textContent = 'Digite os 4 dígitos do PIN.';
-    return;
-  }
-  if (!clienteId) {
-    erroEl.textContent = 'Sessão inválida. Faça login novamente.';
-    return;
-  }
-  erroEl.textContent = 'Verificando...';
-  let okServer = false;
-  let bloqueado = false;
-  let mensagemErro = null;
-  try {
-    const r = await fetch(`${SUPA_URL}/rest/v1/rpc/verificar_pin_cliente`, {
-      method: 'POST', headers: SH,
-      body: JSON.stringify({ p_cliente_id: clienteId, p_pin_hash: hashPin(pin, clienteId) })
-    });
-    const d = await r.json();
-    okServer = d && d.ok === true;
-    bloqueado = d && d.bloqueado === true;
-    mensagemErro = d && d.erro;
+    if (!r.ok) {
+      const err = await r.json().catch(() => null);
+      return { ok: false, acao: 'erro', erro: err?.message || 'Erro ao autorizar dispositivo.' };
+    }
+    return await r.json();
   } catch(e) {
-    erroEl.textContent = 'Erro de conexão. Tente novamente.';
-    return;
-  }
-
-  if (okServer) {
-    document.getElementById('mo-pin-login').classList.remove('open');
-    pinLoginTentativas = 0;
-    erroEl.textContent = '';
-    marcarPinVerificado();
-    return;
-  }
-
-  if (bloqueado) {
-    erroEl.textContent = mensagemErro || 'Muitas tentativas. Aguarde 15 minutos.';
-    setTimeout(() => {
-      document.getElementById('mo-pin-login').classList.remove('open');
-      document.getElementById('screen-cartao').classList.remove('active');
-      document.getElementById('screen-cad').classList.add('active');
-      document.getElementById('bnav').style.display = 'none';
-      limparSessaoCliente();
-      alert('PIN bloqueado por excesso de tentativas. Aguarde 15 minutos ou entre em contato com o Empório Família Rodrigues.');
-    }, 2000);
-    return;
-  }
-
-  pinLoginTentativas++;
-  limparPin('lpin-d');
-  document.getElementById('lpin-d1').focus();
-  erroEl.textContent = 'PIN incorreto. Tentativa ' + pinLoginTentativas + ' de 5.';
-}
-
-// Abrir criação de PIN obrigatória (após reset pelo admin)
-function abrirCriarPinObrigatorio() {
-  limparPin('pin-d');
-  document.getElementById('pin-criar-erro').textContent = '';
-  const titleEl = document.querySelector('#mo-pin-criar .md-title');
-  const descEl = document.querySelector('#mo-pin-criar .md-text');
-  if (pinResetPedido) {
-    if (titleEl) titleEl.textContent = 'Crie um novo PIN';
-    if (descEl) descEl.textContent = 'Seu PIN foi resetado pelo administrador. Por segurança, crie um novo PIN de 4 dígitos para proteger seus pontos.';
-  } else {
-    if (titleEl) titleEl.textContent = 'Crie seu PIN de segurança';
-    if (descEl) descEl.textContent = 'Para proteger sua conta e seus pontos, crie um PIN de 4 dígitos. Ele será pedido toda vez que você acessar o app.';
-  }
-  // Esconder botão "depois" — criação é obrigatória
-  const btnDepois = document.querySelector('#mo-pin-criar .btn.bo');
-  if (btnDepois) btnDepois.style.display = 'none';
-  const moEl = document.getElementById('mo-pin-criar');
-  if (moEl) moEl.classList.add('open');
-  const pinD1 = document.getElementById('pin-d1');
-  if (pinD1) setTimeout(() => pinD1.focus(), 300);
-}
-
-// Pular criação de PIN (lembrar por 7 dias)
-function pularCriacaoPin() {
-  localStorage.setItem('clube_pin_lembrar', Date.now().toString());
-  document.getElementById('mo-pin-criar').classList.remove('open');
-}
-
-// Verificar se deve sugerir PIN (não insistir toda hora)
-function devesugerirPin() {
-  const ultimo = localStorage.getItem('clube_pin_lembrar');
-  if (!ultimo) return true;
-  const dias = (Date.now() - parseInt(ultimo)) / (24 * 60 * 60 * 1000);
-  return dias >= 7; // Sugerir novamente após 7 dias
-}
-
-// Salvar PIN de segurança (ao criar)
-async function salvarPinSeguranca() {
-  const pin = lerPin('pin-d');
-  const erroEl = document.getElementById('pin-criar-erro');
-
-  if (pin.length !== 4) {
-    erroEl.textContent = 'Digite os 4 dígitos do PIN';
-    return;
-  }
-  if (/^(.)\1{3}$/.test(pin)) {
-    erroEl.textContent = 'PIN muito fraco. Evite números repetidos.';
-    return;
-  }
-  if (pin === '1234' || pin === '4321' || pin === '0000') {
-    erroEl.textContent = 'PIN muito comum. Escolha outro.';
-    return;
-  }
-
-  if (!clienteId) {
-    erroEl.textContent = 'Sessão inválida. Faça login novamente.';
-    return;
-  }
-
-  const btn = document.getElementById('btn-salvar-pin');
-  btn.textContent = 'Salvando...'; btn.disabled = true;
-
-  const pinHash = hashPin(pin, clienteId);
-  const ok = await salvarPinNoBanco(clienteId, pinHash);
-
-  if (ok) {
-    clientePinHash = pinHash;
-    document.getElementById('mo-pin-criar').classList.remove('open');
-    atualizarPinPerfil(true);
-    marcarPinVerificado(); // PIN acabou de ser criado — sessão verificada
-    // Restaurar modal ao estado padrão (caso tenha sido aberto como obrigatório)
-    const titleEl = document.querySelector('#mo-pin-criar .md-title');
-    if (titleEl) titleEl.textContent = 'Crie seu PIN de segurança';
-    const descEl = document.querySelector('#mo-pin-criar .md-text');
-    if (descEl) descEl.textContent = 'Crie um PIN de 4 dígitos para proteger seus pontos. Ele será pedido nos resgates e operações sensíveis.';
-    const btnDepois = document.querySelector('#mo-pin-criar .btn.bo');
-    if (btnDepois) btnDepois.style.display = '';
-    alert('PIN criado com sucesso!');
-  } else {
-    erroEl.textContent = 'Erro ao salvar. Tente novamente.';
-  }
-  btn.textContent = 'Salvar PIN'; btn.disabled = false;
-}
-
-// Fechar modal de PIN
-function fecharModalPin(id) {
-  document.getElementById(id).classList.remove('open');
-  pinResgateCallback = null;
-}
-
-// Abrir modal de alterar PIN
-function abrirAlterarPin() {
-  limparPin('apin-a');
-  limparPin('apin-n');
-  document.getElementById('pin-alterar-erro').textContent = '';
-  // Se não tem PIN, esconde campo "PIN Atual"
-  if (!clientePinHash) {
-    document.getElementById('pin-alt-label-atual').style.display = 'none';
-    ['apin-a1','apin-a2','apin-a3','apin-a4'].forEach(id => document.getElementById(id).parentElement.style.display = 'none');
-    document.getElementById('pin-alterar-desc').textContent = 'Crie seu novo PIN de 4 dígitos.';
-  } else {
-    document.getElementById('pin-alt-label-atual').style.display = '';
-    ['apin-a1','apin-a2','apin-a3','apin-a4'].forEach(id => document.getElementById(id).parentElement.style.display = '');
-    document.getElementById('pin-alterar-desc').textContent = 'Digite o PIN atual e o novo PIN.';
-  }
-  document.getElementById('mo-pin-alterar').classList.add('open');
-  setTimeout(() => {
-    const first = clientePinHash ? 'apin-a1' : 'apin-n1';
-    document.getElementById(first).focus();
-  }, 300);
-}
-
-// Alterar PIN (verifica PIN atual via server-side)
-async function alterarPinSeguranca() {
-  const erroEl = document.getElementById('pin-alterar-erro');
-  const pinAtual = lerPin('apin-a');
-  const pinNovo = lerPin('apin-n');
-
-  // Verificar PIN atual via server-side (se existir)
-  if (clientePinHash) {
-    if (pinAtual.length !== 4) {
-      erroEl.textContent = 'Digite os 4 dígitos do PIN atual';
-      return;
-    }
-    erroEl.textContent = 'Verificando PIN atual...';
-    try {
-      const rv = await fetch(`${SUPA_URL}/rest/v1/rpc/verificar_pin_cliente`, {
-        method: 'POST', headers: SH,
-        body: JSON.stringify({ p_cliente_id: clienteId, p_pin_hash: hashPin(pinAtual, clienteId) })
-      });
-      const dv = await rv.json();
-      if (!dv || !dv.ok) {
-        erroEl.textContent = dv?.bloqueado ? (dv.erro || 'Muitas tentativas. Aguarde 15 minutos.') : 'PIN atual incorreto';
-        return;
-      }
-    } catch(e) {
-      erroEl.textContent = 'Erro de conexão. Tente novamente.';
-      return;
-    }
-  }
-
-  if (pinNovo.length !== 4) {
-    erroEl.textContent = 'Digite os 4 dígitos do novo PIN';
-    return;
-  }
-  if (/^(.)\1{3}$/.test(pinNovo)) {
-    erroEl.textContent = 'PIN muito fraco. Evite números repetidos.';
-    return;
-  }
-
-  erroEl.textContent = 'Salvando...';
-  const novoHash = hashPin(pinNovo, clienteId);
-  const ok = await salvarPinNoBanco(clienteId, novoHash);
-
-  if (ok) {
-    clientePinHash = novoHash;
-    document.getElementById('mo-pin-alterar').classList.remove('open');
-    atualizarPinPerfil(true);
-    alert('PIN alterado com sucesso!');
-  } else {
-    erroEl.textContent = 'Erro ao salvar. Tente novamente.';
-  }
-}
-
-// Atualizar seção de PIN no perfil
-function atualizarPinPerfil(temPin) {
-  const statusEl = document.getElementById('pin-perfil-status');
-  const btnAlterar = document.getElementById('btn-pin-perfil');
-  const btnCriar = document.getElementById('btn-pin-criar-perfil');
-  if (temPin) {
-    statusEl.textContent = 'PIN ativo — seu PIN protege seus resgates de pontos.';
-    statusEl.style.color = '#27ae60';
-    btnAlterar.style.display = '';
-    btnCriar.style.display = 'none';
-  } else {
-    statusEl.textContent = 'Nenhum PIN cadastrado. Crie um para proteger seus pontos.';
-    statusEl.style.color = 'var(--gray)';
-    btnAlterar.style.display = 'none';
-    btnCriar.style.display = '';
-  }
-}
-
-// Verificar PIN antes do resgate
-function pedirPinParaResgate(callback) {
-  if (!clientePinHash) {
-    // Sem PIN — prosseguir direto
-    callback();
-    return;
-  }
-  // Com PIN — abrir modal de verificação
-  pinResgateCallback = callback;
-  limparPin('vpin-d');
-  const verErro = document.getElementById('pin-verificar-erro');
-  if (verErro) verErro.textContent = '';
-  const moVer = document.getElementById('mo-pin-verificar');
-  if (moVer) moVer.classList.add('open');
-  const vpinD1 = document.getElementById('vpin-d1');
-  if (vpinD1) setTimeout(() => vpinD1.focus(), 300);
-}
-
-// Confirmar PIN no resgate (verificação server-side com rate limiting)
-async function confirmarPinResgate() {
-  const pin = lerPin('vpin-d');
-  const erroEl = document.getElementById('pin-verificar-erro');
-
-  if (pin.length !== 4) {
-    erroEl.textContent = 'Digite os 4 dígitos do PIN';
-    return;
-  }
-
-  erroEl.textContent = 'Verificando...';
-
-  try {
-    const r = await fetch(`${SUPA_URL}/rest/v1/rpc/verificar_pin_cliente`, {
-      method: 'POST', headers: SH,
-      body: JSON.stringify({ p_cliente_id: clienteId, p_pin_hash: hashPin(pin, clienteId) })
-    });
-    if (!r.ok) throw new Error('Erro ao verificar PIN');
-    const d = await r.json();
-
-    if (d && d.ok) {
-      // PIN correto — fechar modal e executar callback
-      erroEl.textContent = '';
-      document.getElementById('mo-pin-verificar').classList.remove('open');
-      if (pinResgateCallback) {
-        pinResgateCallback();
-        pinResgateCallback = null;
-      }
-    } else if (d && d.bloqueado) {
-      erroEl.textContent = d.erro || 'Muitas tentativas. Aguarde 15 minutos.';
-      limparPin('vpin-d');
-    } else {
-      const restantes = d && d.tentativas_restantes !== undefined ? ` (${d.tentativas_restantes} restantes)` : '';
-      erroEl.textContent = (d?.erro || 'PIN incorreto.') + restantes;
-      limparPin('vpin-d');
-      const vpinRetry = document.getElementById('vpin-d1');
-      if (vpinRetry) setTimeout(() => vpinRetry.focus(), 100);
-    }
-  } catch(e) {
-    erroEl.textContent = 'Erro de conexão. Tente novamente.';
-    limparPin('vpin-d');
+    return { ok: false, acao: 'erro', erro: 'Erro de conexão.' };
   }
 }
 
