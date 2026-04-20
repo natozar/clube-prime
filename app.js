@@ -191,6 +191,16 @@ function fecharQRExpandido() {
 }
 
 async function preencherTela(cliente, saldo) {
+  // SEGURANÇA: resetar estado global se for cliente diferente do anterior
+  // (evita herdar clientePinHash/pinVerificado de outro cliente logado no mesmo dispositivo)
+  const sessaoPrev = validarSessaoCliente();
+  const trocouCliente = !sessaoPrev || String(sessaoPrev.clienteId) !== String(cliente.id);
+  if (trocouCliente) {
+    clientePinHash = null;
+    pinResetPedido = false;
+    limparSessaoCliente();
+  }
+
   clienteId = cliente.id;
   clienteCodigo = cliente.codigo;
   clienteNome = cliente.nome.split(' ')[0];
@@ -198,8 +208,8 @@ async function preencherTela(cliente, saldo) {
   SecureStorage.set('clube_cliente_dados', JSON.stringify(cliente));
   SecureStorage.set('clube_cliente_saldo', String(saldo));
   SecureStorage.set('clube_cliente_tel', cliente.telefone);
-  // Criar/renovar sessão segura se não existir
-  if (!validarSessaoCliente()) {
+  // Criar/renovar sessão segura — sempre nova se trocou de cliente
+  if (trocouCliente || !validarSessaoCliente()) {
     salvarSessaoCliente(cliente);
   } else {
     renovarSessaoSeNecessario();
@@ -1176,16 +1186,21 @@ function limparPin(prefix) {
   });
 }
 
-// Hash simples do PIN (para não salvar em texto puro)
-function hashPin(pin) {
+// Hash do PIN com SALT ÚNICO POR CLIENTE — dois clientes com mesmo PIN produzem hashes DIFERENTES.
+// Requer clienteId para prevenir colisão de hashes (bug de segurança corrigido 2026-04-20).
+function hashPin(pin, clienteId) {
+  if (clienteId === undefined || clienteId === null || clienteId === '') {
+    throw new Error('hashPin: clienteId é obrigatório para gerar hash seguro');
+  }
   let hash = 0;
-  const salt = 'clube-prime-2024';
-  const str = salt + pin + salt;
+  const saltBase = 'clube-prime-2024';
+  const saltUnico = 'cli' + String(clienteId) + '::';
+  const str = saltBase + saltUnico + pin + saltUnico + saltBase;
   for (let i = 0; i < str.length; i++) {
     hash = ((hash << 5) - hash) + str.charCodeAt(i);
     hash |= 0;
   }
-  return 'ph_' + Math.abs(hash).toString(36);
+  return 'ph_' + Math.abs(hash).toString(36) + '_' + String(clienteId);
 }
 
 // Verificar se cliente tem PIN cadastrado (busca do banco)
@@ -1257,37 +1272,60 @@ function pedirPinLogin() {
   if (lpinD1) setTimeout(() => lpinD1.focus(), 300);
 }
 
-function confirmarPinLogin() {
+async function confirmarPinLogin() {
   const pin = lerPin('lpin-d');
+  const erroEl = document.getElementById('pin-login-erro');
   if (pin.length !== 4) {
-    document.getElementById('pin-login-erro').textContent = 'Digite os 4 dígitos do PIN.';
+    erroEl.textContent = 'Digite os 4 dígitos do PIN.';
     return;
   }
-  const tentativa = hashPin(pin);
-  if (tentativa === clientePinHash) {
-    // PIN correto — marcar na sessão para não pedir de novo
+  if (!clienteId) {
+    erroEl.textContent = 'Sessão inválida. Faça login novamente.';
+    return;
+  }
+  erroEl.textContent = 'Verificando...';
+  let okServer = false;
+  let bloqueado = false;
+  let mensagemErro = null;
+  try {
+    const r = await fetch(`${SUPA_URL}/rest/v1/rpc/verificar_pin_cliente`, {
+      method: 'POST', headers: SH,
+      body: JSON.stringify({ p_cliente_id: clienteId, p_pin_hash: hashPin(pin, clienteId) })
+    });
+    const d = await r.json();
+    okServer = d && d.ok === true;
+    bloqueado = d && d.bloqueado === true;
+    mensagemErro = d && d.erro;
+  } catch(e) {
+    erroEl.textContent = 'Erro de conexão. Tente novamente.';
+    return;
+  }
+
+  if (okServer) {
     document.getElementById('mo-pin-login').classList.remove('open');
     pinLoginTentativas = 0;
+    erroEl.textContent = '';
     marcarPinVerificado();
-  } else {
-    // PIN incorreto
-    pinLoginTentativas++;
-    limparPin('lpin-d');
-    document.getElementById('lpin-d1').focus();
-    if (pinLoginTentativas >= 5) {
-      document.getElementById('pin-login-erro').textContent = 'Muitas tentativas erradas. Entre em contato com o Empório.';
-      // Bloquear — voltar para tela de cadastro
-      setTimeout(() => {
-        document.getElementById('mo-pin-login').classList.remove('open');
-        document.getElementById('screen-cartao').classList.remove('active');
-        document.getElementById('screen-cad').classList.add('active');
-        document.getElementById('bnav').style.display = 'none';
-        alert('PIN bloqueado por excesso de tentativas. Entre em contato com o Empório Família Rodrigues.');
-      }, 2000);
-    } else {
-      document.getElementById('pin-login-erro').textContent = 'PIN incorreto. Tentativa ' + pinLoginTentativas + ' de 5.';
-    }
+    return;
   }
+
+  if (bloqueado) {
+    erroEl.textContent = mensagemErro || 'Muitas tentativas. Aguarde 15 minutos.';
+    setTimeout(() => {
+      document.getElementById('mo-pin-login').classList.remove('open');
+      document.getElementById('screen-cartao').classList.remove('active');
+      document.getElementById('screen-cad').classList.add('active');
+      document.getElementById('bnav').style.display = 'none';
+      limparSessaoCliente();
+      alert('PIN bloqueado por excesso de tentativas. Aguarde 15 minutos ou entre em contato com o Empório Família Rodrigues.');
+    }, 2000);
+    return;
+  }
+
+  pinLoginTentativas++;
+  limparPin('lpin-d');
+  document.getElementById('lpin-d1').focus();
+  erroEl.textContent = 'PIN incorreto. Tentativa ' + pinLoginTentativas + ' de 5.';
 }
 
 // Abrir criação de PIN obrigatória (após reset pelo admin)
@@ -1344,10 +1382,15 @@ async function salvarPinSeguranca() {
     return;
   }
 
+  if (!clienteId) {
+    erroEl.textContent = 'Sessão inválida. Faça login novamente.';
+    return;
+  }
+
   const btn = document.getElementById('btn-salvar-pin');
   btn.textContent = 'Salvando...'; btn.disabled = true;
 
-  const pinHash = hashPin(pin);
+  const pinHash = hashPin(pin, clienteId);
   const ok = await salvarPinNoBanco(clienteId, pinHash);
 
   if (ok) {
@@ -1413,7 +1456,7 @@ async function alterarPinSeguranca() {
     try {
       const rv = await fetch(`${SUPA_URL}/rest/v1/rpc/verificar_pin_cliente`, {
         method: 'POST', headers: SH,
-        body: JSON.stringify({ p_cliente_id: clienteId, p_pin_hash: hashPin(pinAtual) })
+        body: JSON.stringify({ p_cliente_id: clienteId, p_pin_hash: hashPin(pinAtual, clienteId) })
       });
       const dv = await rv.json();
       if (!dv || !dv.ok) {
@@ -1436,7 +1479,7 @@ async function alterarPinSeguranca() {
   }
 
   erroEl.textContent = 'Salvando...';
-  const novoHash = hashPin(pinNovo);
+  const novoHash = hashPin(pinNovo, clienteId);
   const ok = await salvarPinNoBanco(clienteId, novoHash);
 
   if (ok) {
@@ -1500,7 +1543,7 @@ async function confirmarPinResgate() {
   try {
     const r = await fetch(`${SUPA_URL}/rest/v1/rpc/verificar_pin_cliente`, {
       method: 'POST', headers: SH,
-      body: JSON.stringify({ p_cliente_id: clienteId, p_pin_hash: hashPin(pin) })
+      body: JSON.stringify({ p_cliente_id: clienteId, p_pin_hash: hashPin(pin, clienteId) })
     });
     if (!r.ok) throw new Error('Erro ao verificar PIN');
     const d = await r.json();
