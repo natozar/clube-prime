@@ -4,17 +4,31 @@
 // Bump APP_VERSION para forcar nova purga global em toda a base instalada.
 (function () {
   'use strict';
-  var APP_VERSION = 'v10-2026-04-20';
+  var APP_VERSION = 'v11-2026-04-20';
   var VERSION_KEY = 'clube_app_version';
   var RELOAD_FLAG = '__clube_reloaded_' + APP_VERSION;
+  // Chaves que NUNCA devem ser apagadas mesmo em wipe total:
+  // - clube_device_id: UUID do dispositivo usado em device-binding auth.
+  //   Apagar forca o cliente a ir para 'compareca a loja' no proximo login.
+  var DEVICE_ID_KEY = 'clube_device_id';
 
   try {
     // Ja esta na versao atual -> nao faz nada
     if (localStorage.getItem(VERSION_KEY) === APP_VERSION) return;
 
+    // 0) Preserva device_id ANTES do wipe (regressao do v10: wipe total
+    //    quebrava device-binding de TODOS os clientes existentes).
+    var preservedDeviceId = null;
+    try { preservedDeviceId = localStorage.getItem(DEVICE_ID_KEY); } catch (e) {}
+
     // 1) Wipe total de estado do cliente (localStorage + sessionStorage)
     try { localStorage.clear(); } catch (e) {}
     try { sessionStorage.clear(); } catch (e) {}
+
+    // 1b) Restaura device_id APOS o wipe (mantem vinculo com a conta).
+    try {
+      if (preservedDeviceId) localStorage.setItem(DEVICE_ID_KEY, preservedDeviceId);
+    } catch (e) {}
 
     // 2) Marca versao DEPOIS da limpeza (evita loop)
     try { localStorage.setItem(VERSION_KEY, APP_VERSION); } catch (e) {}
