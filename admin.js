@@ -83,8 +83,8 @@
 // ── SUPABASE ──────────────────────────────────────────────
 const SUPA_URL = 'https://mrourzdxrahpysscckxm.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1yb3VyemR4cmFocHlzc2Nja3htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODMzMTUsImV4cCI6MjA4ODU1OTMxNX0.A4ueyDJgOu4cbxcHxsMTDBNHkxAOUlWFoYuv88LdnU4';
-const SH = { apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}`, 'Content-Type': 'application/json' };
-// Headers autenticados para operações de escrita (EXIGE token do admin)
+// Headers autenticados (EXIGE token do admin — reads e writes rodam como role authenticated,
+// evitando vazamento via anon Bearer e permitindo RLS deny-all para anon)
 function authHeaders() {
   if (!authToken) {
     throw new Error('Sessão expirada. Faça login novamente.');
@@ -198,7 +198,7 @@ async function enviarCampanha(titulo, mensagem, url) {
 // Listar todos os clientes
 async function listarClientes() {
   try {
-    const r = await fetch(`${SUPA_URL}/rest/v1/clientes?select=*&order=id.desc&limit=50`, { headers: SH });
+    const r = await fetch(`${SUPA_URL}/rest/v1/clientes?select=*&order=id.desc&limit=50`, { headers: authHeaders() });
     if (!r.ok) { console.error('listarClientes: status', r.status); return; }
     const lista = await r.json();
     const el = document.getElementById('clientes-lista');
@@ -234,7 +234,7 @@ async function listarClientes() {
 async function carregarEstatisticas() {
   try {
     // 1. Total de membros (select=* para compatibilidade com qualquer schema)
-    const rClientes = await fetch(`${SUPA_URL}/rest/v1/clientes?select=*`, { headers: SH });
+    const rClientes = await fetch(`${SUPA_URL}/rest/v1/clientes?select=*`, { headers: authHeaders() });
     const clientes = rClientes.ok ? await rClientes.json() : [];
     const totalMembros = Array.isArray(clientes) ? clientes.length : 0;
 
@@ -244,7 +244,7 @@ async function carregarEstatisticas() {
     const novosMes = Array.isArray(clientes) ? clientes.filter(c => c.created_at && c.created_at.startsWith(mesAtual)).length : 0;
 
     // 3. Total de compras (transações do tipo compra)
-    const rTrans = await fetch(`${SUPA_URL}/rest/v1/transacoes?select=valor_reais,tipo,created_at&tipo=eq.compra`, { headers: SH });
+    const rTrans = await fetch(`${SUPA_URL}/rest/v1/transacoes?select=valor_reais,tipo,created_at&tipo=eq.compra`, { headers: authHeaders() });
     const trans = rTrans.ok ? await rTrans.json() : [];
     const totalCompras = Array.isArray(trans) ? trans.reduce((s,t) => s + (t.valor_reais || 0), 0) : 0;
     const comprasMes = Array.isArray(trans) ? trans.filter(t => t.created_at && t.created_at.startsWith(mesAtual)).reduce((s,t) => s + (t.valor_reais || 0), 0) : 0;
@@ -253,7 +253,7 @@ async function carregarEstatisticas() {
     const indicacoes = Array.isArray(clientes) ? clientes.filter(c => c.indicado_por).length : 0;
 
     // 5. Pontos em circulação
-    const rPontos = await fetch(`${SUPA_URL}/rest/v1/pontos?select=saldo`, { headers: SH });
+    const rPontos = await fetch(`${SUPA_URL}/rest/v1/pontos?select=saldo`, { headers: authHeaders() });
     const pontos = rPontos.ok ? await rPontos.json() : [];
     const totalPontos = Array.isArray(pontos) ? pontos.reduce((s,p) => s + (p.saldo || 0), 0) : 0;
 
@@ -278,7 +278,7 @@ async function carregarEstatisticas() {
 // Buscar cliente pelo código do cartão (ex: CR-00847)
 async function buscarClientePorCodigo(codigo) {
   try {
-    const r = await fetch(`${SUPA_URL}/rest/v1/clientes?codigo=eq.${codigo}&select=*`, { headers: SH });
+    const r = await fetch(`${SUPA_URL}/rest/v1/clientes?codigo=eq.${codigo}&select=*`, { headers: authHeaders() });
     if (!r.ok) return null;
     const d = await r.json();
     return d[0] || null;
@@ -297,7 +297,7 @@ async function registrarCompra(clienteId, valorReais) {
     });
     if (!rt.ok) { const err = await rt.json(); throw new Error(err.message || 'Erro ao inserir transação'); }
     // 2. Buscar saldo atual
-    const r = await fetch(`${SUPA_URL}/rest/v1/pontos?cliente_id=eq.${clienteId}`, { headers: SH });
+    const r = await fetch(`${SUPA_URL}/rest/v1/pontos?cliente_id=eq.${clienteId}`, { headers: authHeaders() });
     if (!r.ok) throw new Error('Erro ao buscar pontos');
     const pontos = await r.json();
     if (!pontos[0]) throw new Error('Registro de pontos não encontrado para este cliente');
@@ -322,7 +322,7 @@ async function registrarCompra(clienteId, valorReais) {
 // Listar resgates recentes
 async function listarResgatesPendentes() {
   try {
-    const r = await fetch(`${SUPA_URL}/rest/v1/resgate?select=*,clientes(nome,codigo),recompensas(nome)&order=created_at.desc&limit=20`, { headers: SH });
+    const r = await fetch(`${SUPA_URL}/rest/v1/resgate?select=*,clientes(nome,codigo),recompensas(nome)&order=created_at.desc&limit=20`, { headers: authHeaders() });
     if (!r.ok) { console.error('listarResgates: status', r.status); return []; }
     const lista = await r.json();
     const el = document.getElementById('resgates-lista');
@@ -366,7 +366,7 @@ async function buscarCupom() {
   const codigo = input.value.trim().toUpperCase();
   if (!codigo) { el.innerHTML = ''; return; } // SANITIZED: static empty
   try {
-    const r = await fetch(`${SUPA_URL}/rest/v1/resgate?codigo_cupom=eq.${codigo}&select=*,clientes(nome,codigo,telefone),recompensas(nome)`, { headers: SH });
+    const r = await fetch(`${SUPA_URL}/rest/v1/resgate?codigo_cupom=eq.${codigo}&select=*,clientes(nome,codigo,telefone),recompensas(nome)`, { headers: authHeaders() });
     if (!r.ok) { el.innerHTML = '<div style="padding:12px;background:rgba(192,57,43,.1);border-radius:8px;color:#e74c3c;font-size:13px">Erro ao buscar cupom</div>'; return; } // SANITIZED: static
     const lista = await r.json();
     if (!Array.isArray(lista) || !lista.length) {
@@ -628,7 +628,7 @@ async function carregarCliente(textoScan) {
   if (!cliente) { alert('Cliente não encontrado!'); return; }
   clienteAtual = cliente;
   // Buscar saldo de pontos
-  const rp = await fetch(`${SUPA_URL}/rest/v1/pontos?cliente_id=eq.${cliente.id}`, { headers: SH });
+  const rp = await fetch(`${SUPA_URL}/rest/v1/pontos?cliente_id=eq.${cliente.id}`, { headers: authHeaders() });
   const pts = rp.ok ? await rp.json() : [];
   const saldo = pts[0]?.saldo || 0;
   clienteAtual.saldo = saldo;
@@ -778,7 +778,7 @@ async function listarAniversariantes() {
   try {
     const hoje = new Date();
     const mes = String(hoje.getMonth()+1).padStart(2,'0');
-    const r = await fetch(`${SUPA_URL}/rest/v1/clientes?select=nome,nacimento&nacimento=ilike.*-${mes}-*&order=nacimento`, { headers: SH });
+    const r = await fetch(`${SUPA_URL}/rest/v1/clientes?select=nome,nacimento&nacimento=ilike.*-${mes}-*&order=nacimento`, { headers: authHeaders() });
     if (!r.ok) return;
     const lista = await r.json();
     const el = document.getElementById('aniversariantes-lista');
@@ -897,7 +897,7 @@ async function salvarRegrasSupabase(regras) {
 
 async function carregarRegrasSupabase() {
   try {
-    const r = await fetch(`${SUPA_URL}/rest/v1/configuracoes?chave=eq.regras_pontuacao&select=valor`, { headers: SH });
+    const r = await fetch(`${SUPA_URL}/rest/v1/configuracoes?chave=eq.regras_pontuacao&select=valor`, { headers: authHeaders() });
     if (!r.ok) return null;
     const d = await r.json();
     if (d.length > 0 && d[0].valor) {
@@ -926,8 +926,8 @@ let produtosCache = [];
 async function carregarCardapioAdmin() {
   try {
     const [rCat, rProd] = await Promise.all([
-      fetch(`${SUPA_URL}/rest/v1/cardapio_categorias?select=*&order=ordem`, { headers: SH }),
-      fetch(`${SUPA_URL}/rest/v1/cardapio_produtos?select=*&order=ordem,nome`, { headers: SH })
+      fetch(`${SUPA_URL}/rest/v1/cardapio_categorias?select=*&order=ordem`, { headers: authHeaders() }),
+      fetch(`${SUPA_URL}/rest/v1/cardapio_produtos?select=*&order=ordem,nome`, { headers: authHeaders() })
     ]);
     categoriasCache = rCat.ok ? await rCat.json() : [];
     produtosCache = rProd.ok ? await rProd.json() : [];
@@ -1002,7 +1002,7 @@ let recompensasCache = [];
 
 async function listarRecompensas() {
   try {
-    const r = await fetch(`${SUPA_URL}/rest/v1/recompensas?select=*&order=pontos_necessarios.asc`, { headers: SH });
+    const r = await fetch(`${SUPA_URL}/rest/v1/recompensas?select=*&order=pontos_necessarios.asc`, { headers: authHeaders() });
     if (!r.ok) { console.error('listarRecompensas: status', r.status); return; }
     const lista = await r.json();
     recompensasCache = Array.isArray(lista) ? lista : [];
