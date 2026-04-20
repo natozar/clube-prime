@@ -87,10 +87,11 @@
     <div class="logo cad-logo"></div>
     <div class="cad-title">Clube Prime</div>
     <div class="cad-sub">Empório Família Rodrigues</div>
-    <div class="cad-form">
+    <div class="cad-form" id="cad-form" data-mode="cadastro">
       <div id="ref-banner" class="ref-banner" style="display:none"><span>Você foi indicado por</span><strong id="ref-name"></strong> 🎉</div>
-      <div class="cad-hint">Preencha os dados essenciais para começar. Você pode completar o perfil depois.</div>
-      <div class="fl"><label class="flabel">Nome completo *</label><input class="fi" id="inp-nome" placeholder="Seu nome completo" aria-label="Seu nome completo"></div>
+      <div class="cad-hint" id="cad-hint-cadastro">Preencha os dados essenciais para começar. Você pode completar o perfil depois.</div>
+      <div class="cad-hint cad-hint-login" id="cad-hint-login" style="background:rgba(201,168,76,.09);border-color:rgba(201,168,76,.25);color:var(--gold-light)"><strong>Bem-vindo de volta!</strong> Já é membro Prime? <strong>Basta digitar seu WhatsApp abaixo</strong> para entrar no seu cartão.</div>
+      <div class="fl only-cadastro"><label class="flabel">Nome completo *</label><input class="fi" id="inp-nome" placeholder="Seu nome completo" aria-label="Seu nome completo"></div>
       <div class="fl"><label class="flabel">WhatsApp *</label>
 <div style="display:flex;gap:6px;align-items:center">
   <select id="inp-pais" style="background:#1a1a1a;color:#fff;border:1px solid #333;border-radius:8px;padding:10px 6px;font-size:13px;min-width:110px;cursor:pointer">
@@ -127,19 +128,20 @@
   </select>
   <input class="fi" id="inp-tel" type="tel" placeholder="99999-0000" aria-label="WhatsApp" style="flex:1">
 </div></div>
-      <div class="fl"><label class="flabel">Data de nascimento *</label>
+      <div class="fl only-cadastro"><label class="flabel">Data de nascimento *</label>
         <div style="display:flex;gap:6px">
           <select class="fi" id="inp-nasc-dia" style="flex:1;padding:11px 8px;cursor:pointer"><option value="">Dia</option></select>
           <select class="fi" id="inp-nasc-mes" style="flex:1.2;padding:11px 8px;cursor:pointer"><option value="">Mês</option></select>
           <select class="fi" id="inp-nasc-ano" style="flex:1.2;padding:11px 8px;cursor:pointer;font-size:14px;font-weight:600"><option value="">Ano</option></select>
         </div>
       </div>
-      <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:14px">
+      <div class="only-cadastro" style="display:flex;align-items:flex-start;gap:8px;margin-bottom:14px">
         <input type="checkbox" id="chk-termos" style="margin-top:3px;accent-color:#C9A84C;width:16px;height:16px;flex-shrink:0">
         <label for="chk-termos" style="font-size:12px;color:#888;line-height:1.5">Li e concordo com os <a href="termos.html" target="_blank" style="color:#C9A84C">Termos de Uso e Política de Privacidade</a>. Autorizo o uso dos meus dados para operação do Clube Prime conforme a LGPD.</label>
       </div>
-      <button class="cad-btn" data-action="goApp">Entrar no Clube Prime →</button>
-      <div class="cad-link">Já é membro? <a data-action="acessarCartao">Acessar meu cartão</a></div>
+      <button class="cad-btn" id="cad-btn" data-action="goApp">Entrar no Clube Prime →</button>
+      <div class="cad-link only-cadastro">Já é membro? <a data-action="trocarModoLogin">Entrar com WhatsApp</a></div>
+      <div class="cad-link only-login">Primeira vez aqui? <a data-action="trocarModoCadastro">Criar cadastro</a></div>
     </div>
   </div>
 </div>

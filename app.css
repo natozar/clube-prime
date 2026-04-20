@@ -194,6 +194,8 @@ body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
 .hl{display:inline-flex;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.25);border-radius:5px;padding:1px 7px;font-size:12px;color:var(--gold);font-weight:600;white-space:nowrap}
 .ios-close{width:100%;margin-top:16px;padding:12px;background:transparent;border:1px solid rgba(201,168,76,.3);border-radius:10px;color:var(--gold);font-family:'Montserrat',sans-serif;font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer}
 .cad-hint{font-size:12px;color:var(--gray);line-height:1.6;background:rgba(201,168,76,.05);border:1px solid rgba(201,168,76,.1);border-radius:8px;padding:10px 13px;margin-bottom:18px}
+.cad-form[data-mode="cadastro"] .only-login,.cad-form[data-mode="cadastro"] #cad-hint-login{display:none}
+.cad-form[data-mode="login"] .only-cadastro,.cad-form[data-mode="login"] #cad-hint-cadastro{display:none}
 .perfil-progress{display:flex;gap:4px;margin-bottom:18px}
 .pp-step{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.08)}
 .pp-step.done{background:var(--gold)}

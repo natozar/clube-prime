@@ -310,11 +310,19 @@ async function goApp() {
       SecureStorage.set('clube_cliente_id', cliente.id);
       SecureStorage.set('clube_cliente_tel', tel);
       salvarSessaoCliente(cliente);
+      try { localStorage.setItem('clube_ja_logou', '1'); } catch(e) {}
       return;
     }
 
     // 3. Novo cadastro
     if (auth.acao === 'nao_cadastrado') {
+      const form = document.getElementById('cad-form');
+      if (form && form.dataset.mode === 'login') {
+        // Usuário em modo login tentou entrar com número não cadastrado — trocar para cadastro
+        trocarModoCadastro();
+        alert('Este WhatsApp ainda não está cadastrado. Complete os dados abaixo para criar sua conta!');
+        return;
+      }
       if (!nome) {
         alert('Para o primeiro cadastro, preencha seu nome completo!');
         return;
@@ -330,13 +338,15 @@ async function goApp() {
         SecureStorage.set('clube_cliente_tel', tel);
         notificarAdminNovoCliente(nome, tel);
         salvarSessaoCliente(cliente);
+        try { localStorage.setItem('clube_ja_logou', '1'); } catch(e) {}
       }
     }
   } catch(e) {
     console.error('goApp error:', e);
     alert('Erro: ' + (e.message || 'Verifique sua conexão e tente novamente.'));
   } finally {
-    btn.textContent = 'Entrar no Clube Prime →';
+    const form = document.getElementById('cad-form');
+    btn.textContent = (form && form.dataset.mode === 'login') ? 'Entrar com WhatsApp →' : 'Entrar no Clube Prime →';
     btn.disabled = false;
   }
 }
@@ -376,6 +386,7 @@ window.addEventListener('load', async () => {
           document.getElementById('screen-cartao').classList.remove('active');
           document.getElementById('screen-cad').classList.add('active');
           const bnav = document.getElementById('bnav'); if (bnav) bnav.style.display = 'none';
+          trocarModoLogin();
           alert(auth.erro || 'Este dispositivo não está autorizado. Venha à loja para liberar o acesso.');
         } else if (clienteLocal) {
           console.log('Usando dados locais — banco indisponível');
@@ -387,51 +398,37 @@ window.addEventListener('load', async () => {
     // Renovar sessão se perto de expirar
     renovarSessaoSeNecessario();
   } else if (!sessao && (tel || clienteLocal)) {
-    // Sessão expirada — limpar dados antigos, mostrar tela de login
+    // Sessão expirada — limpar dados antigos, mostrar tela de login enxuta
     limparSessaoCliente();
     console.log('Sessão expirada — necessário novo login');
-    // Destacar que basta informar o telefone para entrar novamente
-    const hintEl = document.querySelector('.cad-hint');
-    if (hintEl) {
-      hintEl.innerHTML = '<strong style="color:#C9A84C">Bem-vindo de volta!</strong> Informe apenas seu WhatsApp para acessar seu cartão.'; // SANITIZED: static
-    }
-    // Focar no campo de telefone
-    const telInput = document.getElementById('inp-tel');
-    if (telInput) setTimeout(() => telInput.focus(), 500);
+    trocarModoLogin();
+  } else if (localStorage.getItem('clube_ja_logou')) {
+    // Este dispositivo já logou alguma vez — dá preferência ao modo login
+    trocarModoLogin();
   }
 });
-async function acessarCartao() {
-  const paisEl = document.getElementById('inp-pais');
-  const pais = paisEl ? paisEl.value.replace('-CA','').replace('+','') : '55';
-  const telRaw = document.getElementById('inp-tel').value.trim().replace(/\D/g,'');
-  const tel = pais + telRaw;
-  if (!telRaw) { alert('Digite seu WhatsApp para acessar seu cartão!'); return; }
-  try {
-    const auth = await autorizarDispositivo(tel);
-    if (!auth.ok && auth.acao === 'bloqueado') {
-      alert(auth.erro || 'Este cartão está vinculado a outro dispositivo. Venha à loja para liberar.');
-      return;
-    }
-    if (auth.acao === 'nao_cadastrado') {
-      alert('Número não encontrado. Faça seu cadastro!');
-      return;
-    }
-    if (!auth.ok || !auth.cliente) {
-      alert(auth.erro || 'Erro ao acessar. Tente novamente.');
-      return;
-    }
-    const cliente = auth.cliente;
-    const r = await fetch(`${SUPA_URL}/rest/v1/pontos?cliente_id=eq.${cliente.id}`, { headers: SH });
-    const pts = r.ok ? await r.json() : [];
-    await preencherTela(cliente, pts[0]?.saldo || 0);
-    SecureStorage.set('clube_cliente_id', cliente.id);
-    SecureStorage.set('clube_cliente_tel', tel);
-    salvarSessaoCliente(cliente);
-  } catch(e) {
-    console.error('acessarCartao error:', e);
-    alert('Erro ao buscar. Verifique sua conexão.');
-  }
+function trocarModoLogin() {
+  const form = document.getElementById('cad-form');
+  if (!form) return;
+  form.dataset.mode = 'login';
+  const btn = document.getElementById('cad-btn');
+  if (btn) btn.textContent = 'Entrar com WhatsApp →';
+  const tel = document.getElementById('inp-tel');
+  if (tel) setTimeout(() => tel.focus(), 100);
 }
+
+function trocarModoCadastro() {
+  const form = document.getElementById('cad-form');
+  if (!form) return;
+  form.dataset.mode = 'cadastro';
+  const btn = document.getElementById('cad-btn');
+  if (btn) btn.textContent = 'Entrar no Clube Prime →';
+  const nome = document.getElementById('inp-nome');
+  if (nome) setTimeout(() => nome.focus(), 100);
+}
+
+// Alias mantido por compatibilidade — apenas alterna o modo para login
+function acessarCartao() { trocarModoLogin(); }
 
 function S(n,btn){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
