@@ -427,6 +427,44 @@
     </div>
   </div>
 
+  <!-- TELA: SUPORTE (Reportar Erros + Prompt IA) -->
+  <div class="screen" id="screen-suporte">
+    <div class="ph"><div class="logo ph-logo"></div><div><div class="ph-title">Suporte</div><div class="ph-sub">Clube Prime · Diagnóstico</div></div></div>
+    <div class="pw">
+      <div class="sec-card">
+        <div class="sec-title">🐛 Reportar Erro</div>
+        <div style="font-size:12px;color:var(--gray);margin-bottom:12px">Descreva o problema. O sistema anexa automaticamente device, URL, aba, erros do console e versão do app. Clique em <strong style="color:var(--gold)">Gerar prompt IA</strong> para copiar tudo pronto pro ChatGPT/Claude.</div>
+        <div class="fl"><label class="flabel">Título curto *</label><input class="fi" id="sup-titulo" placeholder="Ex: Botão 'Aprovar resgate' não responde"></div>
+        <div class="fl"><label class="flabel">O que você estava fazendo?</label><textarea class="fi" id="sup-passos" rows="3" placeholder="Ex: Cliquei em Resgates Pendentes, escolhi cupom CP-A3B7X2, apertei Aprovar..." style="resize:vertical"></textarea></div>
+        <div class="fl"><label class="flabel">O que esperava acontecer?</label><textarea class="fi" id="sup-esperado" rows="2" placeholder="Ex: O cupom sair da lista e marcar como utilizado" style="resize:vertical"></textarea></div>
+        <div class="fl"><label class="flabel">O que aconteceu?</label><textarea class="fi" id="sup-ocorrido" rows="2" placeholder="Ex: Nada. A tela ficou travada e depois voltou sem mudança" style="resize:vertical"></textarea></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+          <button class="btn bg" style="flex:1;min-width:140px" data-action="gerarPromptSuporte">🤖 Gerar prompt IA</button>
+          <button class="btn bo" style="flex:1;min-width:140px" data-action="enviarSuporteWhatsapp">💬 Enviar WhatsApp</button>
+        </div>
+        <div id="sup-status" style="font-size:12px;margin-top:8px;text-align:center" aria-live="polite"></div>
+      </div>
+
+      <div class="sec-card">
+        <div class="sec-title">📋 Prompt gerado</div>
+        <div style="font-size:12px;color:var(--gray);margin-bottom:8px">Texto completo que vai pro clipboard. Cole no ChatGPT/Claude com o repositório do projeto aberto.</div>
+        <textarea id="sup-prompt-out" readonly rows="12" style="width:100%;background:var(--dark2);border:1px solid rgba(201,168,76,.2);border-radius:8px;padding:10px;color:var(--white);font-family:'Fira Code',monospace;font-size:11px;resize:vertical" placeholder="Preencha o formulário acima e clique em Gerar prompt IA"></textarea>
+        <button class="btn bo bsm" style="margin-top:6px;width:100%" data-action="copiarPromptSuporte">📋 Copiar novamente</button>
+      </div>
+
+      <div class="sec-card">
+        <div class="sec-title">⚠️ Erros capturados automaticamente <button class="btn bo bsm" data-action="limparLogsSuporte" style="font-size:10px">Limpar</button></div>
+        <div style="font-size:12px;color:var(--gray);margin-bottom:8px">Últimos erros de JavaScript desde que você abriu o admin. Anexados ao prompt IA.</div>
+        <div id="sup-logs" aria-live="polite" style="font-family:'Fira Code',monospace;font-size:11px;max-height:260px;overflow-y:auto"><div style="text-align:center;padding:16px;color:var(--gray)">Nenhum erro capturado</div></div>
+      </div>
+
+      <div class="sec-card">
+        <div class="sec-title">🔍 Info do dispositivo</div>
+        <div id="sup-device" style="font-family:'Fira Code',monospace;font-size:11px;color:var(--gray);line-height:1.6"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- ADMIN NAV -->
   <nav class="admin-nav" role="navigation" aria-label="Menu administração">
     <button class="an active" data-tab="op" aria-label="Caixa"><span class="an-icon">🏪</span>Caixa</button>
@@ -434,6 +472,7 @@
     <button class="an" data-tab="cardapio" aria-label="Cardápio"><span class="an-icon">🍖</span>Cardápio</button>
     <button class="an" data-tab="blog" aria-label="Blog"><span class="an-icon">📰</span>Blog</button>
     <button class="an" data-tab="admin" aria-label="Admin"><span class="an-icon">⚙️</span>Admin</button>
+    <button class="an" data-tab="suporte" aria-label="Suporte"><span class="an-icon">🐛</span>Suporte</button>
     <button class="an" data-action="fazerLogout" style="color:#e74c3c" aria-label="Sair"><span class="an-icon">🚪</span>Sair</button>
   </nav>
 </div>

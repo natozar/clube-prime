@@ -1,3 +1,37 @@
+// ── SUPORTE: CAPTURA GLOBAL DE ERROS ────────────────────
+// Buffer circular em memória (até 30 erros). Usado pela aba Suporte
+// para anexar stack traces ao prompt enviado à IA.
+window.__clubeErros = window.__clubeErros || [];
+(function() {
+  var MAX = 30;
+  function push(entry) {
+    try {
+      window.__clubeErros.push(entry);
+      if (window.__clubeErros.length > MAX) window.__clubeErros.shift();
+    } catch (e) {}
+  }
+  window.addEventListener('error', function(ev) {
+    push({
+      t: new Date().toISOString(),
+      tipo: 'error',
+      msg: (ev && ev.message) || 'erro sem mensagem',
+      fonte: (ev && ev.filename) || '',
+      linha: (ev && ev.lineno) || 0,
+      coluna: (ev && ev.colno) || 0,
+      stack: (ev && ev.error && ev.error.stack) ? String(ev.error.stack).slice(0, 1200) : ''
+    });
+  });
+  window.addEventListener('unhandledrejection', function(ev) {
+    var reason = ev && ev.reason;
+    push({
+      t: new Date().toISOString(),
+      tipo: 'promise',
+      msg: reason && reason.message ? reason.message : String(reason),
+      stack: reason && reason.stack ? String(reason.stack).slice(0, 1200) : ''
+    });
+  });
+})();
+
 // ── EVENT DELEGATION ────────────────────────────────────
 // Replaces inline event handlers for CSP compliance
 (function() {
@@ -773,6 +807,7 @@ function A(n,btn){
   if(n==='painel') { listarClientes(); listarResgatesPendentes(); listarAniversariantes(); carregarEstatisticas(); }
   if(n==='cardapio') { carregarCardapioAdmin(); }
   if(n==='blog') { carregarBlogAdmin(); }
+  if(n==='suporte') { renderizarSuporte(); }
 }
 async function listarAniversariantes() {
   try {
@@ -1345,4 +1380,203 @@ async function carregarStatsBlog() {
       document.getElementById('stat-total-cta').textContent = data.length;
     }
   } catch(e) { console.warn('Stats blog erro:', e); }
+}
+
+// ── ABA SUPORTE: Reportar erros + Gerar prompt IA ───────
+// Coleta contexto técnico e devolve um prompt estruturado pronto
+// para colar em ChatGPT/Claude com o repositório do projeto aberto.
+const SUP_WHATSAPP = '5516999916690'; // destino padrão do botão WhatsApp
+
+function _supInfoDispositivo() {
+  var ua = navigator.userAgent || '';
+  var plataforma = navigator.platform || '';
+  var tela = (window.screen ? (window.screen.width + 'x' + window.screen.height) : '?');
+  var viewport = (window.innerWidth + 'x' + window.innerHeight);
+  var online = navigator.onLine ? 'sim' : 'nao';
+  var idioma = navigator.language || '';
+  var swAtivo = ('serviceWorker' in navigator) && navigator.serviceWorker.controller ? 'sim' : 'nao';
+  var appVersion = '';
+  try { appVersion = localStorage.getItem('clube_app_version') || '?'; } catch(e) { appVersion = '?'; }
+  var deviceId = '';
+  try { deviceId = (localStorage.getItem('clube_device_id') || '').slice(0,8) + '...'; } catch(e) { deviceId = '?'; }
+  return { ua, plataforma, tela, viewport, online, idioma, swAtivo, appVersion, deviceId };
+}
+
+function _supAbaAtiva() {
+  var ativa = document.querySelector('#admin-app .screen.active');
+  return ativa ? ativa.id.replace('screen-','') : '?';
+}
+
+function renderizarSuporte() {
+  try {
+    var info = _supInfoDispositivo();
+    var el = document.getElementById('sup-device');
+    if (el) {
+      el.innerHTML = ''; // seguro: só inserimos texto via textContent abaixo
+      var linhas = [
+        'App version: ' + info.appVersion,
+        'Device ID: ' + info.deviceId,
+        'Plataforma: ' + info.plataforma,
+        'Tela: ' + info.tela + ' (viewport ' + info.viewport + ')',
+        'Idioma: ' + info.idioma + ' · Online: ' + info.online + ' · SW: ' + info.swAtivo,
+        'User-Agent: ' + info.ua
+      ];
+      linhas.forEach(function(l){ var d = document.createElement('div'); d.textContent = l; el.appendChild(d); });
+    }
+    var logs = document.getElementById('sup-logs');
+    if (logs) {
+      var arr = (window.__clubeErros || []);
+      if (!arr.length) {
+        logs.innerHTML = '<div style="text-align:center;padding:16px;color:var(--gray)">Nenhum erro capturado</div>';
+      } else {
+        logs.innerHTML = '';
+        arr.slice().reverse().forEach(function(er) {
+          var box = document.createElement('div');
+          box.style.cssText = 'border-left:3px solid #e74c3c;background:rgba(192,57,43,.08);padding:8px 10px;margin-bottom:6px;border-radius:4px';
+          var hora = document.createElement('div');
+          hora.style.cssText = 'color:var(--gold-dark);font-size:10px;margin-bottom:4px';
+          hora.textContent = (er.t || '') + ' · ' + (er.tipo || '');
+          var msg = document.createElement('div');
+          msg.style.cssText = 'color:#e74c3c;font-weight:600;margin-bottom:2px';
+          msg.textContent = er.msg || '';
+          var meta = document.createElement('div');
+          meta.style.cssText = 'color:var(--gray);font-size:10px';
+          meta.textContent = (er.fonte ? er.fonte : '') + (er.linha ? (':' + er.linha + ':' + er.coluna) : '');
+          var stack = document.createElement('pre');
+          stack.style.cssText = 'color:var(--gray);font-size:10px;margin:4px 0 0;white-space:pre-wrap;word-break:break-word';
+          stack.textContent = er.stack || '';
+          box.appendChild(hora); box.appendChild(msg);
+          if (meta.textContent) box.appendChild(meta);
+          if (stack.textContent) box.appendChild(stack);
+          logs.appendChild(box);
+        });
+      }
+    }
+  } catch (e) { console.warn('renderizarSuporte', e); }
+}
+
+function _supMontarPrompt() {
+  var titulo   = (document.getElementById('sup-titulo')?.value || '').trim();
+  var passos   = (document.getElementById('sup-passos')?.value || '').trim();
+  var esperado = (document.getElementById('sup-esperado')?.value || '').trim();
+  var ocorrido = (document.getElementById('sup-ocorrido')?.value || '').trim();
+  var info = _supInfoDispositivo();
+  var aba = _supAbaAtiva();
+  var erros = (window.__clubeErros || []).slice(-10);
+
+  var txt = '';
+  txt += '# Bug report — Clube Prime (admin PWA)\n\n';
+  txt += '## Contexto do projeto\n';
+  txt += '- App: Clube Prime (PWA de fidelidade do Empório Família Rodrigues)\n';
+  txt += '- Repo: github.com/natozar/clube-prime  ·  Produção: https://carnesrodrigues.com.br\n';
+  txt += '- Stack: HTML/CSS/JS vanilla + Supabase (PostgREST + RLS) + OneSignal + GitHub Pages\n';
+  txt += '- Auth: device-binding (clientes.device_id) para clientes; Supabase Auth magic link para admin\n';
+  txt += '- Segurança: 5 tabelas sensíveis (clientes, pontos, transacoes, resgate, pedidos) com RLS deny-all anon; reads via 14 RPCs SECURITY DEFINER\n\n';
+  txt += '## Descrição do problema\n';
+  txt += '**Título:** ' + (titulo || '(não informado)') + '\n\n';
+  txt += '**Passos que reproduziram o erro:**\n' + (passos || '(não informado)') + '\n\n';
+  txt += '**Comportamento esperado:**\n' + (esperado || '(não informado)') + '\n\n';
+  txt += '**Comportamento observado:**\n' + (ocorrido || '(não informado)') + '\n\n';
+  txt += '## Estado no momento do report\n';
+  txt += '- Aba ativa: ' + aba + '\n';
+  txt += '- URL: ' + location.href + '\n';
+  txt += '- Timestamp: ' + new Date().toISOString() + '\n';
+  txt += '- App version (boot-purge): ' + info.appVersion + '\n';
+  txt += '- Device ID (prefix): ' + info.deviceId + '\n';
+  txt += '- Plataforma: ' + info.plataforma + '\n';
+  txt += '- Tela: ' + info.tela + ' (viewport ' + info.viewport + ')\n';
+  txt += '- Online: ' + info.online + ' · SW ativo: ' + info.swAtivo + '\n';
+  txt += '- User-Agent: ' + info.ua + '\n\n';
+  txt += '## Erros JS capturados (últimos ' + erros.length + ')\n';
+  if (!erros.length) {
+    txt += '_Nenhum erro registrado no buffer window.__clubeErros._\n\n';
+  } else {
+    txt += '```\n';
+    erros.forEach(function(er, i) {
+      txt += '[' + (i+1) + '] ' + er.t + ' (' + er.tipo + ')\n';
+      txt += '    msg: ' + (er.msg || '') + '\n';
+      if (er.fonte) txt += '    em: ' + er.fonte + ':' + er.linha + ':' + er.coluna + '\n';
+      if (er.stack) txt += '    stack:\n' + er.stack.split('\n').map(function(l){return '      '+l;}).join('\n') + '\n';
+    });
+    txt += '```\n\n';
+  }
+  txt += '## O que preciso\n';
+  txt += '1. Identifique a causa raiz olhando os arquivos relevantes (provavelmente `admin.js`, `admin.html`, `app.js`, `sql-*.sql` dependendo do domínio do bug).\n';
+  txt += '2. Proponha a menor correção possível — nada de refatoração ampla.\n';
+  txt += '3. Se o bug envolver Supabase/RLS, lembre que as 5 tabelas sensíveis estão com RLS deny-all anon + auth-all authenticated; use sempre `authHeaders()` (não `SH`).\n';
+  txt += '4. Se envolver cache/PWA, considere se precisa bumpar `APP_VERSION` em `boot-purge.js` e `CACHE_NAME` em `sw.js`.\n';
+  txt += '5. Devolva diff patch ou as linhas exatas a alterar.\n';
+  return txt;
+}
+
+async function _supCopiarTexto(txt) {
+  try {
+    await navigator.clipboard.writeText(txt);
+    return true;
+  } catch (e) {
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = txt;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      var ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      return ok;
+    } catch (e2) { return false; }
+  }
+}
+
+async function gerarPromptSuporte() {
+  var status = document.getElementById('sup-status');
+  var out = document.getElementById('sup-prompt-out');
+  var titulo = (document.getElementById('sup-titulo')?.value || '').trim();
+  if (!titulo) {
+    if (status) { status.textContent = '⚠️ Preencha ao menos o título do erro.'; status.style.color = '#e74c3c'; }
+    return;
+  }
+  var prompt = _supMontarPrompt();
+  if (out) out.value = prompt;
+  var ok = await _supCopiarTexto(prompt);
+  if (status) {
+    status.textContent = ok ? '✅ Prompt copiado para o clipboard. Cole no ChatGPT ou Claude.' : '⚠️ Não consegui copiar automaticamente — copie manualmente da caixa abaixo.';
+    status.style.color = ok ? 'var(--green)' : '#e74c3c';
+  }
+}
+
+async function copiarPromptSuporte() {
+  var out = document.getElementById('sup-prompt-out');
+  var txt = out ? out.value : '';
+  if (!txt) { gerarPromptSuporte(); return; }
+  var ok = await _supCopiarTexto(txt);
+  var status = document.getElementById('sup-status');
+  if (status) {
+    status.textContent = ok ? '✅ Copiado de novo.' : '⚠️ Falhou. Selecione o texto e copie manualmente.';
+    status.style.color = ok ? 'var(--green)' : '#e74c3c';
+  }
+}
+
+function enviarSuporteWhatsapp() {
+  var titulo = (document.getElementById('sup-titulo')?.value || '').trim();
+  if (!titulo) {
+    var status = document.getElementById('sup-status');
+    if (status) { status.textContent = '⚠️ Preencha ao menos o título do erro.'; status.style.color = '#e74c3c'; }
+    return;
+  }
+  var prompt = _supMontarPrompt();
+  var out = document.getElementById('sup-prompt-out');
+  if (out) out.value = prompt;
+  // WhatsApp trunca ~4000 chars no wa.me; mandamos resumo + aviso
+  var resumo = prompt.length > 3500 ? prompt.slice(0, 3400) + '\n\n[...truncado — prompt completo copiado no clipboard]' : prompt;
+  _supCopiarTexto(prompt);
+  var url = 'https://wa.me/' + SUP_WHATSAPP + '?text=' + encodeURIComponent(resumo);
+  window.open(url, '_blank', 'noopener');
+}
+
+function limparLogsSuporte() {
+  window.__clubeErros = [];
+  renderizarSuporte();
+  var status = document.getElementById('sup-status');
+  if (status) { status.textContent = '🗑️ Buffer de erros limpo.'; status.style.color = 'var(--gray)'; }
 }
