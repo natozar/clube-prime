@@ -4,7 +4,7 @@
 // Bump APP_VERSION para forcar nova purga global em toda a base instalada.
 (function () {
   'use strict';
-  var APP_VERSION = 'v11-2026-04-20';
+  var APP_VERSION = 'v12-2026-04-20';
   var VERSION_KEY = 'clube_app_version';
   var RELOAD_FLAG = '__clube_reloaded_' + APP_VERSION;
   // Chaves que NUNCA devem ser apagadas mesmo em wipe total:

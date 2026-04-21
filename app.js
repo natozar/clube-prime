@@ -1126,13 +1126,16 @@ async function executarResgate(rc) {
   validade.setDate(validade.getDate() + (regras.validadeCupom || 30));
   try {
     // Resgate atômico via RPC server-side (valida saldo + desconta + cria resgate)
+    // p_device_id obrigatório: RPC (v2) valida contra clientes.device_id para impedir
+    // terceiros de resgatar em nome de outro cliente conhecendo só o cliente_id.
     const rr = await fetch(`${SUPA_URL}/rest/v1/rpc/executar_resgate_cliente`, {
       method: 'POST', headers: SH,
       body: JSON.stringify({
         p_cliente_id: clienteId,
         p_recompensa_id: rc.id,
         p_codigo_cupom: codigo,
-        p_validade: validade.toISOString()
+        p_validade: validade.toISOString(),
+        p_device_id: getDeviceId()
       })
     });
     if (!rr.ok) { alert('Erro de conexão ao processar resgate.'); return; }
