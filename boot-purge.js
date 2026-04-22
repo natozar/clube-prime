@@ -10,7 +10,12 @@
   // Chaves que NUNCA devem ser apagadas mesmo em wipe total:
   // - clube_device_id: UUID do dispositivo usado em device-binding auth.
   //   Apagar forca o cliente a ir para 'compareca a loja' no proximo login.
+  // - clube-admin-auth: storageKey do Supabase Auth no admin.html. Apagar
+  //   desloga o admin, e o celular logado e o unico ponto de recuperacao
+  //   de acesso em caso de senha esquecida (via botao 'Enviar link de
+  //   acesso' que dispara signInWithOtp).
   var DEVICE_ID_KEY = 'clube_device_id';
+  var ADMIN_AUTH_KEY = 'clube-admin-auth';
 
   try {
     // Ja esta na versao atual -> nao faz nada
@@ -19,15 +24,20 @@
     // 0) Preserva device_id ANTES do wipe (regressao do v10: wipe total
     //    quebrava device-binding de TODOS os clientes existentes).
     var preservedDeviceId = null;
+    var preservedAdminAuth = null;
     try { preservedDeviceId = localStorage.getItem(DEVICE_ID_KEY); } catch (e) {}
+    try { preservedAdminAuth = localStorage.getItem(ADMIN_AUTH_KEY); } catch (e) {}
 
     // 1) Wipe total de estado do cliente (localStorage + sessionStorage)
     try { localStorage.clear(); } catch (e) {}
     try { sessionStorage.clear(); } catch (e) {}
 
-    // 1b) Restaura device_id APOS o wipe (mantem vinculo com a conta).
+    // 1b) Restaura chaves preservadas APOS o wipe.
     try {
       if (preservedDeviceId) localStorage.setItem(DEVICE_ID_KEY, preservedDeviceId);
+    } catch (e) {}
+    try {
+      if (preservedAdminAuth) localStorage.setItem(ADMIN_AUTH_KEY, preservedAdminAuth);
     } catch (e) {}
 
     // 2) Marca versao DEPOIS da limpeza (evita loop)
