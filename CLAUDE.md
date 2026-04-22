@@ -6,7 +6,7 @@ PWA de fidelidade do Empório Família Rodrigues (Ribeirão Preto). Produção e
 
 - Frontend: HTML/CSS/JS vanilla, sem build. Service Worker + boot-purge pra forçar updates.
 - Auth cliente: **device-binding** (`clientes.device_id`). NÃO é OTP/PIN. Primeiro dispositivo fica vinculado; trocar exige admin rodar `liberar_dispositivo_cliente(id)`.
-- Auth admin: Supabase Auth magic link. Único admin: `natofamiliarodrigues@gmail.com` (owner, cliente id=6, código `RR-6116`, telefone `16999916690`).
+- Auth admin: Supabase Auth **email + senha** (`signInWithPassword`, `admin.js:504`). Único admin: `natofamiliarodrigues@gmail.com` (owner, cliente id=6, código `RR-6116`, telefone `16999916690`). Magic link existe só como recuperação de acesso — ver seção "Acesso em outro dispositivo".
 - Bibliotecas: supabase-js v2, dompurify, html5-qrcode, OneSignal v16. Sem framework.
 
 ## Arquivos principais
@@ -45,15 +45,19 @@ Validação empírica em 2026-04-20: fetch anon em `/rest/v1/{clientes,pontos,tr
 
 ## Protocolo de deploy com cache (IMPORTANTE)
 
-GitHub Pages + Service Worker cache-first pra assets estáticos. Para garantir que mudança em JS chegue a todos os usuários:
+GitHub Pages + Service Worker cache-first pra assets estáticos. Dois tipos de bump, escolha pelo impacto desejado:
 
-1. Bump `APP_VERSION` em `boot-purge.js` (formato `vNN-YYYY-MM-DD`)
-2. Bump `CACHE_NAME` em `sw.js` para o mesmo número (`clube-prime-vNN`)
-3. Commit + push; GitHub Pages publica em 1-3 min
-4. Usuários abertos recebem `FORCE_PURGE` do SW ao ativar; novos carregamentos disparam `boot-purge` → `localStorage.clear()` → `location.reload()`
-5. **`boot-purge` preserva `clube_device_id`**. Se wipar essa chave, todos os clientes existentes batem em "comparecer à loja" porque `getDeviceId()` gera UUID novo e `obter_cliente_seguro` rejeita por mismatch. Regressão já ocorrida em v10, fix em v11 (commit `d00c96f`).
+**Bump só `CACHE_NAME` (`sw.js`)** — força refetch de JS/CSS **sem** apagar `localStorage`. Use para mudanças aditivas (features novas, correções JS) que não exigem wipe de estado. Clientes abertos recebem `FORCE_PURGE` (handler em `app.js` apenas — admin ignora), novos carregamentos pegam o bundle novo do network.
 
-Versão atual (2026-04-20): `v12-2026-04-20` / `clube-prime-v12` (commit `fc983f6`).
+**Bump `APP_VERSION` (`boot-purge.js`) + `CACHE_NAME` juntos** — wipe global de `localStorage`/`sessionStorage` + reload. Use quando uma mudança de lógica invalida estado local (ex: nova derivação de chave em `secure-storage.js`).
+
+Chaves preservadas pelo `boot-purge` no wipe global:
+- `clube_device_id` — device-binding do cliente. Apagar manda TODOS pra "comparecer à loja" (regressão v10, fix `d00c96f`).
+- `clube-admin-auth` — storageKey do Supabase Auth no admin. Apagar desloga o celular do dono, que é o **ponto único de recuperação de acesso** via botão "📨 Enviar link de acesso" (commit `d157349`).
+
+Commit + push publica no GitHub Pages em 1-3 min.
+
+Versão atual (2026-04-22): `APP_VERSION = v12-2026-04-20` / `CACHE_NAME = clube-prime-v14` (commits `0143693`, `d157349`).
 
 ## Convenções de código
 
@@ -62,6 +66,12 @@ Versão atual (2026-04-20): `v12-2026-04-20` / `clube-prime-v12` (commit `fc983f
 - Ao ler chaves `clube_cliente_*` / `clube_ultimo_pedido` / `clube_favoritos`: sempre `await SecureStorage.get(key)`, nunca `localStorage.getItem` direto (o `migrateAll` move pra `cs_*` e apaga a versão plain).
 - Nenhuma nova tabela/RPC sensível sem device-binding check (padrão das 14 RPCs existentes) ou role check (`auth.uid() IS NOT NULL`).
 - Admin tem aba **🐛 Suporte** (commit `5a2958c`) com captura global de `window.onerror` + `unhandledrejection` em buffer circular. Gera prompt markdown estruturado e copia pro clipboard. Use quando reportar bug.
+
+## Acesso em outro dispositivo (recuperação sem reset de senha)
+
+Na aba **⚙️ Admin** tem card **"🔗 Acesso em Outro Dispositivo"** (commit `0143693`). Admin logado clica **📨 Enviar link de acesso** → `enviarMagicLinkAcesso()` chama `supabase.auth.signInWithOtp({email, options:{emailRedirectTo: '/admin.html', shouldCreateUser:false}})`. Email com link único chega em `natofamiliarodrigues@gmail.com`; abrir no outro aparelho (notebook, tablet) cai logado em `/admin.html` com **sessão independente**. O aparelho que enviou o link **não é deslogado** — sessões do Supabase Auth não compartilham localStorage entre dispositivos.
+
+**Restrição durável:** o celular do dono, logado no admin, NUNCA pode ser deslogado. É o único ponto de recuperação se a senha for perdida. Por isso `clube-admin-auth` está na whitelist do `boot-purge` (ver Protocolo de deploy). Evite também: `supabaseClient.auth.signOut()` programático, troca de JWT secret no dashboard, e mudanças que invalidem sessões do Auth em massa.
 
 ## Pendências de segurança abertas
 
@@ -84,7 +94,7 @@ WHERE proname = 'executar_resgate_cliente' AND pronamespace='public'::regnamespa
 
 `secure-storage.js:16-25`: `deriveKey` usa apenas `userAgent + language + screen + timezone`. Dois clientes no mesmo aparelho (A usa, admin libera device, B assume) geram a MESMA chave AES → B pode decriptar `cs_clube_cliente_*` deixado pelo A.
 
-Mitigação pendente: incluir telefone do cliente na derivação da chave. Quebra `cs_*` existente (força re-fetch no próximo login) e exige bump `APP_VERSION` → `v13`.
+Mitigação pendente: incluir telefone do cliente na derivação da chave. Quebra `cs_*` existente (força re-fetch no próximo login) e exige bump `APP_VERSION` → `v13-<data>` (próxima versão de APP_VERSION; CACHE_NAME já está em v14).
 
 ### 3. Clientes wipados pelo v10 bug
 
@@ -105,5 +115,5 @@ SELECT liberar_dispositivo_cliente(id) FROM clientes WHERE telefone IN ('551699.
 - Antes de propor mudança em RPC, `pg_get_functiondef(oid)` pra ter o source literal. Já teve mojibake (`prÃ³prio` em policy) passar em DROP por nome literal — use `LIKE` + `EXECUTE format('DROP POLICY %I...')` quando desconfiar.
 - `RAISE NOTICE` não aparece no SQL Editor do Supabase. Use `SELECT` pra confirmar estado.
 - Monaco do Supabase tem autocomplete agressivo que troca `cmd` por `comment_directive`. Use alias (`pol.cmd AS policy_cmd`) ou cole em vez de digitar.
-- **Nunca `UPDATE auth.users SET encrypted_password`**. Extensão do Supabase no navegador bloqueia corretamente; é anti-pattern de account takeover. Para reset de admin, usar o dashboard (Authentication → Users → Send magic link / Send password recovery).
-- Commits históricos importantes: `113948b` `f5c7454` `4cc0dce` `80e289a` `d00c96f` `fc983f6` `5a2958c`. `git log --oneline -20` dá o fio da meada.
+- **Nunca `UPDATE auth.users SET encrypted_password`**. Extensão do Supabase no navegador bloqueia corretamente; é anti-pattern de account takeover. Para recuperar acesso do admin: prefira o botão "📨 Enviar link de acesso" do celular logado (não requer reset). Só use dashboard (Authentication → Users → Send magic link / Send password recovery) se perder o celular também.
+- Commits históricos importantes: `113948b` `f5c7454` `4cc0dce` `80e289a` `d00c96f` `fc983f6` `5a2958c` `0143693` `d157349`. `git log --oneline -20` dá o fio da meada.
