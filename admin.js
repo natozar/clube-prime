@@ -546,6 +546,48 @@ async function fazerLogout() {
   document.getElementById('inp-senha').value = '';
 }
 
+async function enviarMagicLinkAcesso() {
+  const btn = document.getElementById('btn-magic-link');
+  const status = document.getElementById('magic-link-status');
+  if (!btn || !status) return;
+  try {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user?.email) {
+      status.textContent = 'Sessao invalida. Faca login novamente.';
+      status.style.color = 'var(--red)';
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = 'Enviando...';
+    status.textContent = '';
+    const { error } = await supabaseClient.auth.signInWithOtp({
+      email: user.email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/admin.html`,
+        shouldCreateUser: false
+      }
+    });
+    if (error) {
+      status.textContent = 'Erro: ' + error.message;
+      status.style.color = 'var(--red)';
+      btn.disabled = false;
+      btn.textContent = '📨 Enviar link de acesso';
+      return;
+    }
+    status.innerHTML = `<strong style="color:#27ae60">✓ Link enviado para ${sanitize(user.email)}</strong><br>Abra o email no outro aparelho e clique. Esta sessao continua ativa.`;
+    btn.textContent = '✓ Enviado';
+    setTimeout(() => {
+      btn.disabled = false;
+      btn.textContent = '📨 Enviar link de acesso';
+    }, 30000);
+  } catch (e) {
+    status.textContent = 'Erro: ' + (e?.message || e);
+    status.style.color = 'var(--red)';
+    btn.disabled = false;
+    btn.textContent = '📨 Enviar link de acesso';
+  }
+}
+
 // Verificar sessão existente ao carregar (mantém admin logado entre recarregamentos)
 async function verificarSessaoExistente() {
   try {
