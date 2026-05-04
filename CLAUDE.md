@@ -57,7 +57,7 @@ Chaves preservadas pelo `boot-purge` no wipe global:
 
 Commit + push publica no GitHub Pages em 1-3 min.
 
-Versão atual (2026-04-22): `APP_VERSION = v12-2026-04-20` / `CACHE_NAME = clube-prime-v14` (commits `0143693`, `d157349`).
+Versão atual (2026-05-04): `APP_VERSION = v13-2026-05-04` / `CACHE_NAME = clube-prime-v16`. Bump motivado por loop de reload no iPhone (FORCE_PURGE apagava `clube_app_version`, induzindo re-purga eterna). Fix: handler em `app.js:701` agora preserva mesma whitelist do boot-purge + guard de 60s.
 
 ## Convenções de código
 
