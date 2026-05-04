@@ -694,17 +694,39 @@ if('serviceWorker' in navigator) {
     }).catch(()=>{});
   });
 
-  // SW envia FORCE_PURGE na ativacao de nova versao -> wipe local imediato + reload
+  // SW envia FORCE_PURGE na ativacao de nova versao -> wipe local imediato + reload.
+  // Preserva mesma whitelist do boot-purge.js (clube_device_id, clube_app_version,
+  // clube-admin-auth). Sem isso, FORCE_PURGE apaga clube_app_version, boot-purge
+  // re-purga no proximo reload, desregistra SW, SW re-instala, activate posta
+  // FORCE_PURGE de novo -> loop infinito (sintoma observado: iPhone PWA fica em
+  // ciclo de carregamento sem deixar o cliente fazer login).
   navigator.serviceWorker.addEventListener('message', (evt) => {
     const msg = evt && evt.data;
     if (!msg) return;
     if (msg.type === 'FORCE_PURGE') {
+      // Guard anti-loop: se ja processou FORCE_PURGE ha menos de 60s, ignora.
+      let lastForcePurge = 0;
+      try { lastForcePurge = parseInt(sessionStorage.getItem('__force_purge_at') || '0', 10); } catch(e) {}
+      if (Date.now() - lastForcePurge < 60000) return;
+
+      let preservedDeviceId = null;
+      let preservedAppVersion = null;
+      let preservedAdminAuth = null;
+      try { preservedDeviceId = localStorage.getItem('clube_device_id'); } catch(e) {}
+      try { preservedAppVersion = localStorage.getItem('clube_app_version'); } catch(e) {}
+      try { preservedAdminAuth = localStorage.getItem('clube-admin-auth'); } catch(e) {}
+
       try { localStorage.clear(); } catch(e) {}
       try { sessionStorage.clear(); } catch(e) {}
+
+      try { if (preservedDeviceId) localStorage.setItem('clube_device_id', preservedDeviceId); } catch(e) {}
+      try { if (preservedAppVersion) localStorage.setItem('clube_app_version', preservedAppVersion); } catch(e) {}
+      try { if (preservedAdminAuth) localStorage.setItem('clube-admin-auth', preservedAdminAuth); } catch(e) {}
+      try { sessionStorage.setItem('__force_purge_at', String(Date.now())); } catch(e) {}
+
       if (typeof caches !== 'undefined') {
         caches.keys().then(ks => ks.forEach(k => caches.delete(k))).catch(()=>{});
       }
-      // Pequeno delay para garantir flush de async clears
       setTimeout(() => { try { location.reload(); } catch(e) {} }, 100);
     }
   });
