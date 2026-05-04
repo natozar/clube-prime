@@ -309,7 +309,7 @@ async function goApp() {
     const auth = await autorizarDispositivo(tel);
 
     if (!auth.ok && auth.acao === 'bloqueado') {
-      alert(auth.erro || 'Este cartão está vinculado a outro dispositivo. Venha à loja para liberar o acesso.');
+      mostrarDialogoDispositivoBloqueado(tel, auth.erro);
       return;
     }
     if (!auth.ok) {
@@ -418,7 +418,7 @@ window.addEventListener('load', async () => {
           document.getElementById('screen-cad').classList.add('active');
           const bnav = document.getElementById('bnav'); if (bnav) bnav.style.display = 'none';
           trocarModoLogin();
-          alert(auth.erro || 'Este dispositivo não está autorizado. Venha à loja para liberar o acesso.');
+          mostrarDialogoDispositivoBloqueado(telSessao, auth.erro);
         } else if (clienteLocal) {
           console.log('Usando dados locais — banco indisponível');
         }
@@ -460,6 +460,26 @@ function trocarModoCadastro() {
 
 // Alias mantido por compatibilidade — apenas alterna o modo para login
 function acessarCartao() { trocarModoLogin(); }
+
+// Dialogo amigavel quando autorizar_dispositivo retorna 'bloqueado'.
+// Substitui alert() puro: oferece caminho direto pro WhatsApp da loja para
+// que o dono libere o vinculo (RPC liberar_dispositivo_cliente). Alguns
+// clientes perderam clube_device_id por bug antigo de FORCE_PURGE; sem
+// esse caminho, eles abandonam o app.
+function mostrarDialogoDispositivoBloqueado(telefone, erroServidor) {
+  var msg = (erroServidor || 'Este telefone esta vinculado a outro dispositivo.') +
+    '\n\nQuer que a loja libere seu acesso agora pelo WhatsApp?';
+  var ok = window.confirm(msg);
+  if (!ok) return;
+  var telLimpo = String(telefone || '').replace(/\D/g, '');
+  var ultimos4 = telLimpo.slice(-4);
+  var texto = encodeURIComponent(
+    'Ola! Nao consigo acessar o Clube Prime no meu celular. ' +
+    'Pode liberar meu acesso? WhatsApp final ' + ultimos4 + '.'
+  );
+  // 16999916690 = WhatsApp do dono (CLAUDE.md). DDI 55 prefixado.
+  window.open('https://wa.me/5516999916690?text=' + texto, '_blank');
+}
 
 function S(n,btn){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));

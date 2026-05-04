@@ -17,6 +17,20 @@
   var DEVICE_ID_KEY = 'clube_device_id';
   var ADMIN_AUTH_KEY = 'clube-admin-auth';
 
+  // iOS Safari Modo Privado tem quota=0 -> localStorage.setItem throws.
+  // Sem este guard, VERSION_KEY nunca persiste e boot-purge entra em loop
+  // de reload infinito a cada abertura do app.
+  function storageWorks() {
+    try {
+      var k = '__bp_test__';
+      localStorage.setItem(k, '1');
+      var ok = localStorage.getItem(k) === '1';
+      localStorage.removeItem(k);
+      return ok;
+    } catch (e) { return false; }
+  }
+  if (!storageWorks()) return;
+
   try {
     // Ja esta na versao atual -> nao faz nada
     if (localStorage.getItem(VERSION_KEY) === APP_VERSION) return;
