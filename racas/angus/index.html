@@ -12,21 +12,21 @@
     <!-- Open Graph (WhatsApp, Facebook, etc) -->
     <meta property="og:title" content="Angus: A Raça que Revolucionou a Pecuária de Corte no Brasil">
     <meta property="og:description" content="Angus: marmoreio, precocidade e a melhor carne do pasto ao prato. Descubra por que é a raça mais valorizada.">
-    <meta property="og:image" content="/seo/assets/images/photo-1681767254572-ff6b6ebac7c8.jpg">
+    <meta property="og:image" content="https://carnesrodrigues.com.br/seo/assets/images/racas-angus-hero.jpg">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:type" content="article">
     <meta property="og:url" content="https://carnesrodrigues.com.br/racas/angus">
     <meta property="og:locale" content="pt_BR">
     <meta property="og:site_name" content="Clube Prime — Empório Família Rodrigues">
-    <meta property="article:published_time" content="2026-04-14T13:16:40.149Z">
+    <meta property="article:published_time" content="2026-05-12T14:10:30.087Z">
     <meta property="article:section" content="raca">
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Angus: A Raça que Revolucionou a Pecuária de Corte no Brasil">
     <meta name="twitter:description" content="Angus: marmoreio, precocidade e a melhor carne do pasto ao prato. Descubra por que é a raça mais valorizada.">
-    <meta name="twitter:image" content="/seo/assets/images/photo-1681767254572-ff6b6ebac7c8.jpg">
+    <meta name="twitter:image" content="https://carnesrodrigues.com.br/seo/assets/images/racas-angus-hero.jpg">
 
     <!-- Favicon & PWA -->
     <link rel="icon" href="/icon-96.png" type="image/png">
@@ -46,9 +46,9 @@
         "@type": "Article",
         "headline": "Angus: A Raça que Revolucionou a Pecuária de Corte no Brasil",
         "description": "Conheça a raça Angus: origem, características de carcaça, marmoreio excepcional e por que o Angus se adaptou tão bem ao clima brasileiro.",
-        "image": "/seo/assets/images/photo-1681767254572-ff6b6ebac7c8.jpg",
-        "datePublished": "2026-04-14T13:16:40.149Z",
-        "dateModified": "2026-04-14T13:16:40.149Z",
+        "image": "https://carnesrodrigues.com.br/seo/assets/images/racas-angus-hero.jpg",
+        "datePublished": "2026-05-12T14:10:30.087Z",
+        "dateModified": "2026-05-12T14:10:30.087Z",
         "author": {
             "@type": "Organization",
             "name": "Empório de Carnes Família Rodrigues",
@@ -166,14 +166,14 @@
         }
         .site-nav a:hover { color: var(--gold); }
 
-                /* ── COTAÇÕES TICKER (carrossel de indicadores no topo) ── */
+        /* ── COTAÇÕES TICKER (carrossel de indicadores — sticky logo abaixo do header) ── */
         .cotacoes-ticker {
             background: linear-gradient(180deg, #0E0E0E 0%, #1A1A1A 100%);
             border-bottom: 1px solid var(--dark-border);
             overflow: hidden;
             position: sticky;
-            top: 60px;
-            z-index: 99;
+            top: 60px; /* altura do .site-header (padding 14+14 + logo line-height ~32 + border 1) */
+            z-index: 99; /* abaixo do site-header (z-index 100) para que fique "grudado" logo abaixo */
             height: 44px;
             display: flex;
             align-items: center;
@@ -239,7 +239,7 @@
             .cotacoes-ticker-track { animation: none; }
         }
 
-/* ── BREADCRUMB ── */
+        /* ── BREADCRUMB ── */
         .breadcrumb {
             max-width: var(--max-width);
             margin: 20px auto 0;
@@ -823,6 +823,7 @@
             </nav>
         </div>
     </header>
+
     <!-- Carrossel de cotações (atualizado do Supabase em tempo real) -->
     <div class="cotacoes-ticker" id="cotacoes-ticker" aria-label="Cotações de mercado atualizadas">
         <div class="cotacoes-ticker-track" id="cotacoes-ticker-track">
@@ -859,6 +860,7 @@
         if(present.length===0){track.parentElement.style.display='none';return;}
         var items=present.map(itemHtml).join('');
         var link='<a href="/mercado" class="cotacoes-ticker-link">Ver painel completo →</a>';
+        // Duplicar a sequência para scroll contínuo sem salto
         track.innerHTML=items+link+items+link;
       }
 
@@ -872,7 +874,6 @@
       });
     })();
     </script>
-
 
     <!-- Breadcrumb -->
     <nav class="breadcrumb" role="navigation" aria-label="Breadcrumb">
@@ -889,14 +890,14 @@
 
         <div class="article-meta">
             <span class="tag">Raças</span>
-            <time datetime="2026-04-14T13:16:40.149Z">14 de abril de 2026</time>
+            <time datetime="2026-05-12T14:10:30.087Z">12 de maio de 2026</time>
             <span>8 min de leitura</span>
         </div>
 
         <img
             class="hero-image"
-            src="/seo/assets/images/photo-1681767254572-ff6b6ebac7c8.jpg"
-            alt="Gado Angus preto em pastagem — raça de marmoreio premium — Clube Prime, Empório Família Rodrigues"
+            src="/seo/assets/images/racas-angus-hero.jpg"
+            alt="a group of cows in a fenced in pasture — Clube Prime, Empório Família Rodrigues"
             width="1200"
             height="630"
             loading="eager"
@@ -1028,21 +1029,21 @@
             <div class="related-grid">
                 
                 <a href="/cruzamentos/angus-x-nelore" class="related-card">
-                    <img src="/seo/assets/images/photo-1572982205939-6ea96504ee4a.jpg" alt="Anerê: O Melhor do Angus com Nelore" width="400" height="225" loading="lazy">
+                    <img src="https://carnesrodrigues.com.br/seo/assets/images/racas-angus-hero.jpg" alt="Anerê: O Melhor do Angus com Nelore" width="400" height="225" loading="lazy">
                     <div class="related-card-body">
                         <h4>Anerê: O Melhor do Angus com Nelore</h4>
                         <span>Cruzamentos</span>
                     </div>
                 </a>
                 <a href="/cortes/picanha" class="related-card">
-                    <img src="/seo/assets/images/photo-1690983325563-fe4412c4c347.jpg" alt="Picanha: Guia Completo do Corte Mais Brasileiro" width="400" height="225" loading="lazy">
+                    <img src="https://carnesrodrigues.com.br/seo/assets/images/churrasco-receita-costela-fogo-de-chao-hero.jpg" alt="Picanha: Guia Completo do Corte Mais Brasileiro" width="400" height="225" loading="lazy">
                     <div class="related-card-body">
                         <h4>Picanha: Guia Completo do Corte Mais Brasileiro</h4>
                         <span>Cortes</span>
                     </div>
                 </a>
                 <a href="/cotacao-arroba-boi-gordo-hoje" class="related-card">
-                    <img src="/seo/assets/images/premium_photo-1667860234741-0e500d0e5ba5.jpg" alt="Cotação da Arroba do Boi Gordo Hoje" width="400" height="225" loading="lazy">
+                    <img src="https://carnesrodrigues.com.br/seo/assets/images/cotacao-arroba-boi-gordo-hoje-hero.jpg" alt="Cotação da Arroba do Boi Gordo Hoje" width="400" height="225" loading="lazy">
                     <div class="related-card-body">
                         <h4>Cotação da Arroba do Boi Gordo Hoje</h4>
                         <span>Cotação da Arroba</span>
