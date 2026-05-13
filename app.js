@@ -411,16 +411,12 @@ window.addEventListener('load', async () => {
           SecureStorage.set('clube_cliente_dados', JSON.stringify(cliente));
           SecureStorage.set('clube_cliente_saldo', String(saldo));
           preencherTela(cliente, saldo);
-        } else if (!auth.ok && auth.acao === 'bloqueado') {
-          // Dispositivo foi desvinculado ou é outro — deslogar
-          limparSessaoCliente();
-          document.getElementById('screen-cartao').classList.remove('active');
-          document.getElementById('screen-cad').classList.add('active');
-          const bnav = document.getElementById('bnav'); if (bnav) bnav.style.display = 'none';
-          trocarModoLogin();
-          mostrarDialogoDispositivoBloqueado(telSessao, auth.erro);
         } else if (clienteLocal) {
-          console.log('Usando dados locais — banco indisponível');
+          // Sessao valida + RPC retornou 'bloqueado' ou erro: NAO deslogar.
+          // Cliente ja provou posse do device no primeiro login; mismatch
+          // posterior (clube_device_id resetado, dessincronia transitoria)
+          // nao deve interromper a UX. Mantem dados locais.
+          console.log('Usando dados locais — validacao de device pulada');
         }
       } catch(e) {
         console.log('Offline — usando dados locais');
