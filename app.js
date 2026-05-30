@@ -309,7 +309,25 @@ async function goApp() {
     const auth = await autorizarDispositivo(tel);
 
     if (!auth.ok && auth.acao === 'bloqueado') {
-      mostrarDialogoDispositivoBloqueado(tel, auth.erro);
+      // Reclaim self-service: o cliente prova posse confirmando a data de
+      // nascimento do cadastro -> re-vincula este aparelho e entra na hora,
+      // sem ida à loja. Se errar/cancelar, cai no caminho da loja (WhatsApp).
+      const recl = await tentarRevinculoPorNascimento(tel);
+      if (recl.ok) {
+        const auth2 = await autorizarDispositivo(tel);
+        if (auth2.ok && auth2.cliente && (auth2.acao === 'entrar' || auth2.acao === 'vinculado')) {
+          const cliente = auth2.cliente;
+          const saldo = await buscarSaldoSeguro(cliente.id);
+          await preencherTela(cliente, saldo);
+          SecureStorage.set('clube_cliente_id', cliente.id);
+          SecureStorage.set('clube_cliente_tel', tel);
+          salvarSessaoCliente(cliente);
+          try { localStorage.setItem('clube_ja_logou', '1'); } catch(e) {}
+          return;
+        }
+      }
+      if (recl.cancelado) return;            // usuário fechou o diálogo
+      mostrarDialogoDispositivoBloqueado(tel, recl.erro || auth.erro);
       return;
     }
     if (!auth.ok) {
@@ -479,6 +497,63 @@ function mostrarDialogoDispositivoBloqueado(telefone, erroServidor) {
   );
   // 16999916690 = WhatsApp do dono (CLAUDE.md). DDI 55 prefixado.
   window.open('https://wa.me/5516999916690?text=' + texto, '_blank');
+}
+
+// Reclaim self-service por data de nascimento (decisão do dono 2026-05-30).
+// Cliente que perdeu o device_id (storage limpo, troca de aparelho) re-vincula
+// sozinho provando a data de nascimento do cadastro — sem ida à loja. A
+// verificação acontece server-side em revincular_dispositivo (RPC, com
+// anti-força-bruta). Retorna { ok, erro?, cancelado? }.
+function tentarRevinculoPorNascimento(telefone) {
+  return new Promise(function(resolve){
+    var ov = document.createElement('div');
+    ov.setAttribute('style', 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:20px');
+    ov.innerHTML =
+      '<div style="background:#1a1a1a;border:1px solid rgba(201,168,76,.3);border-radius:16px;max-width:340px;width:100%;padding:24px;color:#fff;font-family:inherit;box-sizing:border-box">' +
+        '<div style="font-size:18px;font-weight:700;color:#C9A84C;margin-bottom:8px">Confirmar seu acesso</div>' +
+        '<div style="font-size:13px;line-height:1.5;color:#ccc;margin-bottom:16px">Detectamos um aparelho novo. Para liberar seu acesso na hora, confirme a <b>data de nascimento</b> do seu cadastro.</div>' +
+        '<input id="recl-nasc" type="date" style="width:100%;padding:12px;border-radius:10px;border:1px solid rgba(201,168,76,.3);background:#111;color:#fff;font-size:16px;box-sizing:border-box">' +
+        '<div id="recl-erro" style="color:#EF5350;font-size:12px;min-height:16px;margin:8px 0 12px"></div>' +
+        '<button id="recl-ok" type="button" style="width:100%;padding:13px;border:none;border-radius:10px;background:#C9A84C;color:#111;font-weight:700;font-size:15px;cursor:pointer">Liberar acesso</button>' +
+        '<button id="recl-loja" type="button" style="width:100%;padding:11px;border:none;border-radius:10px;background:transparent;color:#999;font-size:13px;margin-top:8px;cursor:pointer">Não lembro — falar com a loja</button>' +
+      '</div>';
+    document.body.appendChild(ov);
+    var inp = ov.querySelector('#recl-nasc');
+    var erro = ov.querySelector('#recl-erro');
+    var btnOk = ov.querySelector('#recl-ok');
+    var btnLoja = ov.querySelector('#recl-loja');
+    setTimeout(function(){ try { inp.focus(); } catch(e) {} }, 100);
+    function fechar(res){ try { document.body.removeChild(ov); } catch(e) {} resolve(res); }
+    btnLoja.addEventListener('click', function(){ fechar({ ok:false, cancelado:false }); });
+    ov.addEventListener('click', function(e){ if (e.target === ov) fechar({ ok:false, cancelado:true }); });
+    btnOk.addEventListener('click', async function(){
+      var d = (inp.value || '').trim();
+      if (!d) { erro.textContent = 'Selecione sua data de nascimento.'; return; }
+      btnOk.disabled = true; btnOk.textContent = 'Verificando...';
+      var r = await revincularDispositivo(telefone, d);
+      if (r && r.ok) { fechar({ ok:true }); return; }
+      btnOk.disabled = false; btnOk.textContent = 'Liberar acesso';
+      erro.textContent = (r && r.erro) || 'Data não confere com o cadastro.';
+    });
+  });
+}
+
+// Chama a RPC de revínculo (pré-auth, anon Bearer via SH). Vincula este
+// device_id ao cliente se a data de nascimento conferir.
+async function revincularDispositivo(telefone, nascimento) {
+  try {
+    const r = await fetch(`${SUPA_URL}/rest/v1/rpc/revincular_dispositivo`, {
+      method: 'POST', headers: SH,
+      body: JSON.stringify({ p_telefone: telefone, p_device_id: getDeviceId(), p_nascimento: nascimento })
+    });
+    if (!r.ok) {
+      const err = await r.json().catch(() => null);
+      return { ok: false, erro: (err && err.message) || 'Não foi possível liberar agora.' };
+    }
+    return await r.json();
+  } catch(e) {
+    return { ok: false, erro: 'Erro de conexão.' };
+  }
 }
 
 function S(n,btn){
