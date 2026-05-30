@@ -386,6 +386,10 @@ async function migrarSessaoLegacy() {
 // Auto-login seguro — verifica token de sessão antes de restaurar
 window.addEventListener('load', async () => {
   await migrarSessaoLegacy();
+  // Garante que o device_id foi recuperado do IndexedDB ANTES de validar o
+  // dispositivo (evita corrida que cunharia id novo -> "compareça à loja").
+  // Race com timeout: IDB lento/travado nunca pode bloquear o login.
+  try { await Promise.race([hidratarDeviceId(), new Promise(r => setTimeout(r, 600))]); } catch(e) {}
   const sessao = validarSessaoCliente();
   const tel = await SecureStorage.get('clube_cliente_tel');
   const clienteLocal = await SecureStorage.get('clube_cliente_dados');
@@ -1274,14 +1278,96 @@ async function buscarTransacoes(clienteId) {
 // ── DEVICE BINDING ───────────────────────────────────────
 // Cada cliente é vinculado ao dispositivo (UUID em localStorage) no primeiro acesso.
 // Se tentar logar de outro aparelho → bloqueado até admin liberar na loja.
+// ── Device ID durável (device-binding) ──────────────────────────────────
+// CAUSA-RAIZ do "sistema insiste em pedir liberação": o device_id (que casa
+// com clientes.device_id no DB) vivia SÓ em localStorage. iOS Safari/PWA
+// descarta localStorage (eviction ITP de 7 dias, "Limpar dados do site",
+// troca Safari<->PWA na home, pouca memória) — perdido o id, getDeviceId()
+// cunhava um UUID NOVO -> mismatch eterno -> "compareça à loja".
+// Correção: persistimos em 3 backends e auto-curamos. Lê do primeiro
+// disponível (localStorage -> cookie -> IndexedDB) e re-propaga para todos a
+// cada chamada. Só cunha id novo quando os TRÊS estão vazios.
+//  - cookie: sobrevive até ao wipe do boot-purge (que só limpa local/session
+//    Storage). Re-gravado a cada visita reinicia o relógio de eviction.
+//  - IndexedDB: backend mais resiliente a eviction; hidratado no boot.
+var DEVICE_ID_KEY = 'clube_device_id';
+var _deviceIdIdbCache = null;   // valor lido do IndexedDB (assíncrono, no boot)
+var _deviceIdReady = null;      // promise de hidratação do IndexedDB
+
+function _lerCookie(nome) {
+  try {
+    var m = document.cookie.match(new RegExp('(?:^|; )' + nome + '=([^;]*)'));
+    return m ? decodeURIComponent(m[1]) : null;
+  } catch(e) { return null; }
+}
+function _gravarCookie(nome, valor) {
+  try {
+    // 400 dias (limite Chrome). iOS limita cookie de script a 7d, mas é só um
+    // dos 3 backends e é re-gravado a cada visita (reinicia o relógio).
+    var maxAge = 400 * 24 * 60 * 60;
+    document.cookie = nome + '=' + encodeURIComponent(valor) +
+      ';path=/;max-age=' + maxAge + ';SameSite=Lax';
+  } catch(e) {}
+}
+function _idbDeviceId(acao, valor) {
+  // get/set best-effort em IndexedDB. Nunca rejeita; resolve(null) em erro.
+  return new Promise(function(resolve) {
+    try {
+      if (typeof indexedDB === 'undefined' || !indexedDB) return resolve(null);
+      var req = indexedDB.open('clube_device', 1);
+      req.onupgradeneeded = function() { try { req.result.createObjectStore('kv'); } catch(e) {} };
+      req.onerror = function() { resolve(null); };
+      req.onsuccess = function() {
+        try {
+          var db = req.result;
+          var tx = db.transaction('kv', acao === 'set' ? 'readwrite' : 'readonly');
+          var st = tx.objectStore('kv');
+          if (acao === 'set') {
+            st.put(valor, DEVICE_ID_KEY);
+            tx.oncomplete = function(){ resolve(true); };
+            tx.onerror = function(){ resolve(null); };
+          } else {
+            var g = st.get(DEVICE_ID_KEY);
+            g.onsuccess = function(){ resolve(g.result || null); };
+            g.onerror = function(){ resolve(null); };
+          }
+        } catch(e) { resolve(null); }
+      };
+    } catch(e) { resolve(null); }
+  });
+}
+function _propagarDeviceId(id) {
+  try { localStorage.setItem(DEVICE_ID_KEY, id); } catch(e) {}
+  _gravarCookie(DEVICE_ID_KEY, id);
+  if (_deviceIdIdbCache !== id) { _deviceIdIdbCache = id; _idbDeviceId('set', id); }
+}
+// Hidrata o cache do IndexedDB no boot. Idempotente. Se local/cookie já
+// perderam o id mas o IDB ainda tem, recupera ANTES do auto-login (evita
+// lockout). Deve ser aguardada no início do handler de load.
+function hidratarDeviceId() {
+  if (_deviceIdReady) return _deviceIdReady;
+  _deviceIdReady = _idbDeviceId('get').then(function(idbId) {
+    if (idbId) {
+      _deviceIdIdbCache = idbId;
+      var ls = null; try { ls = localStorage.getItem(DEVICE_ID_KEY); } catch(e) {}
+      if (!ls && !_lerCookie(DEVICE_ID_KEY)) _propagarDeviceId(idbId);
+    }
+  }).catch(function(){});
+  return _deviceIdReady;
+}
+hidratarDeviceId(); // dispara no parse para estar pronto o quanto antes
+
 function getDeviceId() {
-  let id = localStorage.getItem('clube_device_id');
+  var id = null;
+  try { id = localStorage.getItem(DEVICE_ID_KEY); } catch(e) {}
+  if (!id) id = _lerCookie(DEVICE_ID_KEY);
+  if (!id) id = _deviceIdIdbCache;
   if (!id) {
-    id = (crypto && crypto.randomUUID)
+    id = (window.crypto && crypto.randomUUID)
       ? crypto.randomUUID()
       : 'dev-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 12) + Math.random().toString(36).slice(2, 12);
-    localStorage.setItem('clube_device_id', id);
   }
+  _propagarDeviceId(id);
   return id;
 }
 
