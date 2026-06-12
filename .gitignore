@@ -1,0 +1,7 @@
+# Artefatos locais — NÃO publicar (repo é servido público via GitHub Pages).
+# Os PROMPT-* abaixo são prompts internos de trabalho que descrevem detalhes
+# de segurança; os reels-* são mídia de marketing (~1MB) sem lugar no site.
+PROMPT-CORRECOES-CRITICAS.md
+PROMPT-FIX-PUSH-DEFINITIVO.md
+reels-clube-prime.html
+reels-clube-prime.mp4
