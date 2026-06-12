@@ -17,7 +17,7 @@ PWA de fidelidade do Empório Família Rodrigues (Ribeirão Preto). Produção e
 | `admin.html` + `admin.js` + `admin.css` | PWA do admin (caixa, painel, cardápio, blog, admin, suporte) |
 | `boot-purge.js` | Executa ANTES de qualquer script; wipe condicional por `APP_VERSION` |
 | `sw.js` | Service worker; `CACHE_NAME` precisa mover junto com `APP_VERSION` |
-| `secure-storage.js` | AES-GCM em localStorage (prefixo `cs_`). **Bug conhecido:** chave AES deriva só do fingerprint, não inclui user → dois clientes no mesmo device com keys iguais (ver Pendências) |
+| `secure-storage.js` | AES-GCM em localStorage (prefixo `cs_`). Chave deriva de fingerprint + telefone da sessão (`clube_sessao`, plain por design) — FIX 5 fechado em 2026-06-12. Decrypt com scope errado remove a entrada e devolve null (app re-busca) |
 | `seo/` | Blog SEO pré-renderizado, gerador em `seo/scripts/` |
 | `sql-*.sql` | SQL histórico. `sql-device-binding.sql`, `sql-fix-rls-profile-leak.sql` e `sql-revincular-dispositivo.sql` são os mais importantes |
 
@@ -57,7 +57,7 @@ Chaves preservadas pelo `boot-purge` no wipe global:
 
 Commit + push publica no GitHub Pages em 1-3 min.
 
-Versão atual (2026-06-12): `APP_VERSION = v13-2026-05-04` / `CACHE_NAME = clube-prime-v21`. O v13 foi motivado por loop de reload no iPhone (FORCE_PURGE apagava `clube_app_version`, induzindo re-purga eterna); fix: handler em `app.js:801` preserva a mesma whitelist do boot-purge + guard de 60s. v17–v20: device_id durável e reclaim por nascimento (`ae7120b`, `397d109`). v21 (`bee353f`): adicionou `https://viacep.com.br` ao `connect-src` das CSPs — a busca de CEP estava sendo bloqueada pelo navegador e travava cadastro/pedidos.
+Versão atual (2026-06-12): `APP_VERSION = v14-2026-06-12` / `CACHE_NAME = clube-prime-v22`. O bump v14 acompanha o FIX 5 (nova derivação de chave no `secure-storage.js` invalida todo `cs_*` existente — wipe global força re-login limpo; `clube_device_id` e `clube-admin-auth` preservados pela whitelist). Histórico: v13 fechou loop de reload no iPhone (handler FORCE_PURGE em `app.js:~805` preserva whitelist do boot-purge + guard 60s); v17–v20 de CACHE_NAME: device_id durável e reclaim (`ae7120b`, `397d109`); v21 (`bee353f`): `https://viacep.com.br` no `connect-src` das CSPs — busca de CEP estava bloqueada e travava cadastro/pedidos.
 
 ## Convenções de código
 
@@ -79,11 +79,9 @@ Na aba **⚙️ Admin** tem card **"🔗 Acesso em Outro Dispositivo"** (commit 
 
 A versão 4-args (sem `device_id`, insegura) foi dropada via migration `drop_executar_resgate_cliente_4args_legada` (MCP Supabase). Antes do DROP, a 5-args foi validada em produção com transação descartada (DO block + RAISE EXCEPTION = rollback total): `ok:true`, débito de pontos e cupom corretos para cliente real com device vinculado — nada persistiu. Contra-provas pós-DROP: `pg_proc` retorna 1 linha só (args com `p_device_id text`); REST anon na assinatura 4-args responde `PGRST202` (function not found); 5-args segue negando device fake. Advisors de segurança pós-DDL: 63 WARNs, zero ERROR — todos esperados (padrão SECURITY DEFINER do projeto, `search_path` mutável, policies `USING true` por design). Contexto que facilitou: tabelas `resgate` e `recompensas` estavam vazias — nenhum resgate jamais ocorreu em produção.
 
-### 2. SecureStorage com chave derivada só de fingerprint (FIX 5 pendente)
+### 2. SecureStorage com chave derivada só de fingerprint (FIX 5 — FECHADA em 2026-06-12)
 
-`secure-storage.js:16-25`: `deriveKey` usa apenas `userAgent + language + screen + timezone`. Dois clientes no mesmo aparelho (A usa, admin libera device, B assume) geram a MESMA chave AES → B pode decriptar `cs_clube_cliente_*` deixado pelo A.
-
-Mitigação pendente: incluir telefone do cliente na derivação da chave. Quebra `cs_*` existente (força re-fetch no próximo login) e exige bump `APP_VERSION` → `v14-<data>` + `CACHE_NAME` juntos.
+`deriveKey` agora inclui `getUserScope()` (telefone lido de `clube_sessao` plain) no material da chave, com cache invalidado por troca de scope. Dois clientes no mesmo aparelho derivam chaves diferentes; decrypt com scope errado remove a entrada e devolve null (auto-cura via re-fetch). **Detalhe de implementação que importa:** o scope é lido sincronamente no início de cada `set()`/`get()` — por isso `preencherTela` (app.js) salva a sessão ANTES dos `SecureStorage.set` (reordenado neste fix; não regredir). Validado com harness Node + WebCrypto: 6 cenários incluindo troca A→B→A no mesmo device, zero vazamento. Deploy: bump conjunto `APP_VERSION v14-2026-06-12` + `CACHE_NAME v22` (wipe global; whitelist preservou device-binding e sessão admin).
 
 ### 3. Clientes wipados pelo v10 bug (MITIGADA)
 

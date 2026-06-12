@@ -211,16 +211,19 @@ async function preencherTela(cliente, saldo) {
   clienteId = cliente.id;
   clienteCodigo = cliente.codigo;
   clienteNome = cliente.nome.split(' ')[0];
-  // Salvar dados localmente + sessão segura
-  SecureStorage.set('clube_cliente_dados', JSON.stringify(cliente));
-  SecureStorage.set('clube_cliente_saldo', String(saldo));
-  SecureStorage.set('clube_cliente_tel', cliente.telefone);
-  // Criar/renovar sessão segura — sempre nova se trocou de cliente
+  // Criar/renovar sessão ANTES de gravar cs_* — a chave AES do SecureStorage
+  // deriva do telefone de clube_sessao (FIX 5) e o scope é lido sincronamente
+  // no início de cada set(); gravar antes da sessão usaria scope vazio e os
+  // dados ficariam ilegíveis logo após o login.
   if (trocouCliente || !validarSessaoCliente()) {
     salvarSessaoCliente(cliente);
   } else {
     renovarSessaoSeNecessario();
   }
+  // Salvar dados localmente
+  SecureStorage.set('clube_cliente_dados', JSON.stringify(cliente));
+  SecureStorage.set('clube_cliente_saldo', String(saldo));
+  SecureStorage.set('clube_cliente_tel', cliente.telefone);
 
   // OneSignal — vincula este dispositivo ao ID do cliente para receber notificações
   if (window.OneSignalDeferred) {

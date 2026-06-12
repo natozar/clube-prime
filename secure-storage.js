@@ -9,6 +9,7 @@ var SecureStorage = (function() {
 
   var SALT = 'clube-prime-2024-salt';
   var KEY_CACHE = null;
+  var KEY_CACHE_SCOPE = null;
   var CRYPTO_AVAILABLE = !!(window.crypto && window.crypto.subtle);
   var PREFIX = 'cs_'; // prefix for encrypted entries
 
@@ -24,20 +25,39 @@ var SecureStorage = (function() {
     return parts.join('|');
   }
 
+  // FIX 5: a chave inclui o telefone da sessão ativa, não só o fingerprint do
+  // aparelho. Sem isso, dois clientes no mesmo device (A usa, admin libera, B
+  // assume) derivavam a MESMA chave e B decriptava o cs_* deixado pelo A.
+  // O telefone vem de clube_sessao, que é plain por design (criptografá-lo
+  // criava dependência circular e logouts por mudança de user-agent/tela).
+  // Sem sessão o scope é '' — um cs_* gravado em scope errado falha o decrypt
+  // e o get() abaixo remove a entrada e devolve null (app re-busca do server).
+  function getUserScope() {
+    try {
+      var raw = localStorage.getItem('clube_sessao');
+      if (!raw) return '';
+      var tel = JSON.parse(raw).telefone;
+      return tel ? String(tel) : '';
+    } catch (e) { return ''; }
+  }
+
   async function deriveKey() {
-    if (KEY_CACHE) return KEY_CACHE;
+    var scope = getUserScope();
+    if (KEY_CACHE && KEY_CACHE_SCOPE === scope) return KEY_CACHE;
     var encoder = new TextEncoder();
     var material = await crypto.subtle.importKey(
-      'raw', encoder.encode(getFingerprint() + SALT),
+      'raw', encoder.encode(getFingerprint() + '|' + scope + '|' + SALT),
       { name: 'PBKDF2' }, false, ['deriveKey']
     );
-    KEY_CACHE = await crypto.subtle.deriveKey(
+    var key = await crypto.subtle.deriveKey(
       { name: 'PBKDF2', salt: encoder.encode(SALT), iterations: 100000, hash: 'SHA-256' },
       material,
       { name: 'AES-GCM', length: 256 },
       false, ['encrypt', 'decrypt']
     );
-    return KEY_CACHE;
+    KEY_CACHE = key;
+    KEY_CACHE_SCOPE = scope;
+    return key;
   }
 
   function arrayBufferToBase64(buffer) {
