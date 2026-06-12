@@ -75,20 +75,9 @@ Na aba **⚙️ Admin** tem card **"🔗 Acesso em Outro Dispositivo"** (commit 
 
 ## Pendências de segurança abertas
 
-### 1. PASSO 4 — dropar `executar_resgate_cliente` 4-args legada (URGENTE)
+### 1. PASSO 4 — dropar `executar_resgate_cliente` 4-args legada (FECHADA em 2026-06-12)
 
-Hoje existe versão 4-args (sem `device_id`, INSEGURA) e 5-args (com, SEGURA) coexistindo. Frontend v12 (deploy `fc983f6`) já chama a 5-args. **Auditoria 2026-06-12: sondagem anon confirmou que a 4-args AINDA EXISTE no banco** (respondeu "Recompensa não encontrada" em vez de function-not-found). `admin.js` não chama `executar_resgate_cliente` nenhuma — dropar não quebra nada no frontend. Quando o dono confirmar que resgate funciona no celular dele pós-v12, rodar:
-
-```sql
-DROP FUNCTION IF EXISTS public.executar_resgate_cliente(bigint, bigint, text, timestamptz);
-
-SELECT proname, pg_get_function_identity_arguments(oid) AS args
-FROM pg_proc
-WHERE proname = 'executar_resgate_cliente' AND pronamespace='public'::regnamespace;
--- esperado: 1 linha só, args com p_device_id text
-```
-
-**Risco residual enquanto não droppar:** atacante que descobrir `cliente_id` + recompensa_id pode gerar cupom indevido chamando a 4-args diretamente. Não vaza perfil. Fechar assim que possível.
+A versão 4-args (sem `device_id`, insegura) foi dropada via migration `drop_executar_resgate_cliente_4args_legada` (MCP Supabase). Antes do DROP, a 5-args foi validada em produção com transação descartada (DO block + RAISE EXCEPTION = rollback total): `ok:true`, débito de pontos e cupom corretos para cliente real com device vinculado — nada persistiu. Contra-provas pós-DROP: `pg_proc` retorna 1 linha só (args com `p_device_id text`); REST anon na assinatura 4-args responde `PGRST202` (function not found); 5-args segue negando device fake. Advisors de segurança pós-DDL: 63 WARNs, zero ERROR — todos esperados (padrão SECURITY DEFINER do projeto, `search_path` mutável, policies `USING true` por design). Contexto que facilitou: tabelas `resgate` e `recompensas` estavam vazias — nenhum resgate jamais ocorreu em produção.
 
 ### 2. SecureStorage com chave derivada só de fingerprint (FIX 5 pendente)
 
