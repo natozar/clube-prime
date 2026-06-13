@@ -117,8 +117,8 @@ Programa de resgate gamificado. **Feature-flag no banco: `jackpot_config.ativo`
   blindado (EXCEPTION → nunca quebra lançamento do caixa).
 - Pushes: `.github/workflows/jackpot-push.yml` 2×/dia → `seo/scripts/jackpot-push.js`
   (manutenção + escadas D0/7/23/27/29 e retirada + aviso ao admin), tudo logado em
-  `jackpot_push_log` (UNIQUE ciclo+tipo = idempotente). **Requer secret
-  `ONESIGNAL_REST_API_KEY`** (enquanto faltar, só a manutenção roda).
+  `jackpot_push_log` (UNIQUE ciclo+tipo = idempotente). Usa o secret existente
+  `ONESIGNAL_REST_KEY` (mesmo do push do SEO; já configurado desde 2026-04).
 - Validação 2026-06-12: máquina de estados completa testada em transação descartada
   (trigger, jogar idempotente, entrega com débito exato, expiração justa, piso zero).
 

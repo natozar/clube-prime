@@ -8,7 +8,7 @@
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 const ONESIGNAL_APP_ID = '204a1304-2cc4-44b8-af83-f35ceaabd504';
-const ONESIGNAL_KEY = process.env.ONESIGNAL_REST_API_KEY || '';
+const ONESIGNAL_KEY = process.env.ONESIGNAL_REST_KEY || '';
 const SITE = 'https://carnesrodrigues.com.br';
 
 if (!SUPABASE_URL || !SERVICE_KEY) { console.error('faltam secrets SUPABASE'); process.exit(1); }
@@ -42,7 +42,7 @@ const TIERS_CUPOM = [
 
 async function push(clienteId, titulo, msg, cicloId, tipo) {
   let status = 0, osid = null, erro = null;
-  if (!ONESIGNAL_KEY) { erro = 'sem ONESIGNAL_REST_API_KEY'; status = 0; }
+  if (!ONESIGNAL_KEY) { erro = 'sem ONESIGNAL_REST_KEY'; status = 0; }
   else {
     try {
       const r = await fetch('https://api.onesignal.com/notifications', {
