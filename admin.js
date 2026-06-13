@@ -1819,7 +1819,7 @@ function jkRenderPushlog(pushes) {
   el.innerHTML = '';
   if (!pushes.length) { el.appendChild(jkEl('div', 'color:#9a948a;padding:6px', 'nenhum push enviado ainda')); return; }
   pushes.forEach(p => {
-    const okp = p.http_status >= 200 && p.http_status < 300;
+    const okp = p.http_status >= 200 && p.http_status < 300 && !p.erro;
     el.appendChild(jkEl('div', 'padding:4px 2px;color:' + (okp ? '#9a948a' : '#e8826f'),
       `${okp ? '✓' : '✗'} ${p.tipo} · ciclo ${p.ciclo_id} · ${new Date(p.enviado_em).toLocaleString('pt-BR')}` +
       (p.erro ? ' · ' + p.erro : '')));

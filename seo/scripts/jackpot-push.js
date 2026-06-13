@@ -73,7 +73,8 @@ async function push(clienteId, titulo, msg, cicloId, tipo) {
       onesignal_id: osid, http_status: status, erro
     })
   });
-  return status >= 200 && status < 300;
+  // 200 com errors (ex.: invalid_aliases = ninguém inscrito naquele id) NÃO é entrega
+  return status >= 200 && status < 300 && !erro;
 }
 
 (async () => {
