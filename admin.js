@@ -1647,7 +1647,7 @@ window.jackpotRecarregar = async function() {
   try {
     const [cfgArr, cat, ciclos, pushes] = await Promise.all([
       jkFetch('jackpot_config?select=*&id=eq.1'),
-      jkFetch('jackpot_catalogo?select=*&order=faixa,valor_estimado'),
+      jkFetch('jackpot_catalogo?select=*&order=faixa,id'),
       jkFetch('jackpot_ciclos?select=*&status=in.(disponivel,ciente,jogado,cupom_emitido,pendente_balcao)&order=expira_em'),
       jkFetch('jackpot_push_log?select=*&order=id.desc&limit=15')
     ]);
@@ -1697,7 +1697,7 @@ function jkRenderCatalogo() {
     row.appendChild(jkEl('span', '', fx[i.faixa] || ''));
     const info = jkEl('div', 'flex:1;min-width:0');
     info.appendChild(jkEl('div', 'font-weight:700;color:#f5ecd7', i.titulo + (i.tipo === 'pacote' ? ' 📦' : '')));
-    info.appendChild(jkEl('div', 'color:#9a948a;font-size:10.5px', (i.descricao || '') + (i.valor_estimado ? ` · ~R$${i.valor_estimado}` : '')));
+    info.appendChild(jkEl('div', 'color:#9a948a;font-size:10.5px', i.descricao || ''));
     row.appendChild(info);
     const bt = jkEl('button', 'background:none;border:1px solid rgba(255,255,255,.15);color:#aaa;border-radius:8px;padding:4px 8px;font-size:10px;cursor:pointer', i.ativo ? 'desativar' : 'ativar');
     bt.addEventListener('click', async () => {
@@ -1713,12 +1713,11 @@ window.jackpotNovoItem = async function() {
   const titulo = prompt('Nome do prêmio (ex.: Ancho Raças 600g):'); if (!titulo) return;
   const tipo = confirm('É um PACOTE/kit? (OK = pacote · Cancelar = peça única)') ? 'pacote' : 'peca';
   const descricao = prompt('Descrição/itens (opcional):') || null;
-  const valor = parseFloat(prompt('Custo estimado em R$ (p/ controle):') || '0') || null;
   const fxIn = (prompt('Faixa: 1=entrada · 2=intermediário · 3=topo', '1') || '1').trim();
   const faixa = fxIn === '3' ? 'topo' : fxIn === '2' ? 'intermediario' : 'entrada';
   await fetch(`${SUPA_URL}/rest/v1/jackpot_catalogo`, {
     method: 'POST', headers: authHeaders(),
-    body: JSON.stringify({ titulo, tipo, descricao, valor_estimado: valor, faixa })
+    body: JSON.stringify({ titulo, tipo, descricao, faixa })
   });
   window.jackpotRecarregar();
 };
