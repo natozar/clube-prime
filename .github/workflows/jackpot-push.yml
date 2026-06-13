@@ -1,0 +1,21 @@
+name: jackpot-push
+on:
+  schedule:
+    - cron: '0 11 * * *'   # 08:00 BRT — manutenção + escada da manhã
+    - cron: '0 21 * * *'   # 18:00 BRT — reforço do fim de tarde
+  workflow_dispatch: {}
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: manutenção + pushes auditados
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          ONESIGNAL_REST_API_KEY: ${{ secrets.ONESIGNAL_REST_API_KEY }}
+        run: node seo/scripts/jackpot-push.js

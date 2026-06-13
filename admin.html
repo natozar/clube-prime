@@ -153,6 +153,30 @@
         </div>
         <div id="cupom-resultado" aria-live="polite"></div>
       </div>
+      <!-- CAÇA-CARNE PRIME -->
+      <div class="sec-card">
+        <div class="sec-title">🎰 Caça-Carne Prime <button class="btn bg bsm" data-action="jackpotRecarregar">↻ atualizar</button></div>
+        <div id="jk-status" style="font-size:12px;color:var(--gray);margin-bottom:10px;line-height:1.6">carregando…</div>
+        <button class="btn bo bsm" data-action="jackpotToggleAtivo" id="jk-toggle" style="width:100%;margin-bottom:14px">…</button>
+
+        <div style="font-size:12px;font-weight:700;color:var(--gold);letter-spacing:1px;margin-bottom:6px">🥩 BALCÃO — VALIDAR CUPOM</div>
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <input class="fi" id="jk-codigo" placeholder="PRIME-XXXX" style="flex:1;text-transform:uppercase;letter-spacing:2px">
+          <button class="btn bg" data-action="jackpotPreview" style="white-space:nowrap">Buscar</button>
+        </div>
+        <div id="jk-preview" aria-live="polite" style="margin-bottom:16px"></div>
+
+        <div style="font-size:12px;font-weight:700;color:var(--gold);letter-spacing:1px;margin-bottom:6px">🎁 CATÁLOGO DE PRÊMIOS
+          <button class="btn bg bsm" data-action="jackpotNovoItem" style="float:right">+ item</button></div>
+        <div id="jk-catalogo" style="margin-bottom:16px;font-size:12px"></div>
+
+        <div style="font-size:12px;font-weight:700;color:var(--gold);letter-spacing:1px;margin-bottom:6px">⏳ AGUARDANDO PRÊMIO</div>
+        <div id="jk-aguardando" style="margin-bottom:16px;font-size:12px"></div>
+
+        <div style="font-size:12px;font-weight:700;color:var(--gold);letter-spacing:1px;margin-bottom:6px">📨 AUDITORIA DE PUSHES</div>
+        <div id="jk-pushlog" style="font-size:11px"></div>
+      </div>
+
       <div class="sec-card">
         <div class="sec-title">📋 Resgates Recentes</div>
         <div id="resgates-lista" aria-live="polite" style="text-align:center;padding:20px;color:var(--gray);font-size:12px">Carregando...</div>

@@ -57,7 +57,12 @@ Chaves preservadas pelo `boot-purge` no wipe global:
 
 Commit + push publica no GitHub Pages em 1-3 min.
 
-Versão atual (2026-06-12): `APP_VERSION = v14-2026-06-12` / `CACHE_NAME = clube-prime-v22`. O bump v14 acompanha o FIX 5 (nova derivação de chave no `secure-storage.js` invalida todo `cs_*` existente — wipe global força re-login limpo; `clube_device_id` e `clube-admin-auth` preservados pela whitelist). Histórico: v13 fechou loop de reload no iPhone (handler FORCE_PURGE em `app.js:~805` preserva whitelist do boot-purge + guard 60s); v17–v20 de CACHE_NAME: device_id durável e reclaim (`ae7120b`, `397d109`); v21 (`bee353f`): `https://viacep.com.br` no `connect-src` das CSPs — busca de CEP estava bloqueada e travava cadastro/pedidos.
+**`PURGE_ON_ACTIVATE` (`sw.js`)**: o broadcast de `FORCE_PURGE` no activate agora é
+condicional (default `false`). Deploy normal troca assets SEM tocar em localStorage —
+ninguém é deslogado. Só ligar em incidente de privacidade (e voltar pra false depois).
+
+Versão atual (2026-06-12): `APP_VERSION = v14-2026-06-12` / `CACHE_NAME = clube-prime-v23`.
+v23: Jackpot Prime/Caça-Carne (ver seção abaixo), deploy sem purge. O bump v14 acompanha o FIX 5 (nova derivação de chave no `secure-storage.js` invalida todo `cs_*` existente — wipe global força re-login limpo; `clube_device_id` e `clube-admin-auth` preservados pela whitelist). Histórico: v13 fechou loop de reload no iPhone (handler FORCE_PURGE em `app.js:~805` preserva whitelist do boot-purge + guard 60s); v17–v20 de CACHE_NAME: device_id durável e reclaim (`ae7120b`, `397d109`); v21 (`bee353f`): `https://viacep.com.br` no `connect-src` das CSPs — busca de CEP estava bloqueada e travava cadastro/pedidos.
 
 ## Convenções de código
 
@@ -90,6 +95,32 @@ Antes do fix `d00c96f` o v10 apagava `clube_device_id`. Desde `397d109` esses cl
 ```sql
 SELECT liberar_dispositivo_cliente(id) FROM clientes WHERE telefone IN ('551699...','551699...');
 ```
+
+## Jackpot Prime / Caça-Carne (resgate premiado)
+
+Programa de resgate gamificado. **Feature-flag no banco: `jackpot_config.ativo`
+(default FALSE — nada aparece pra clientes até o dono ligar no admin).**
+`piloto_clientes int[]` restringe a clientes específicos (piloto).
+
+- Cliente: card na home (`app.js: verificarJackpot`) → página isolada
+  `jackpot.html`+`jackpot.js` (três.js/qrcode via cdnjs). Fluxo: ciência registrada →
+  jogar (RPC resolve o prêmio ANTES da animação) → share → cupom com QR.
+  **Débito dos pontos só na entrega, no balcão.**
+- Admin: card "🎰 Caça-Carne Prime" na aba ⚙ (catálogo, atribuição por cliente com
+  sugestão por frequência, validação de cupom, kill-switch, auditoria de pushes).
+  Após entregar: registrar produto no caixa com 100% de desconto (fiscal).
+- Banco: tabelas `jackpot_*` (RLS deny-all anon), RPCs device-binding
+  (`jackpot_status_seguro`, `_registrar_ciencia`, `_jogar`, `_confirmar_share`,
+  `_opcao_5pct`) + admin (`_entregar_preview`, `_entregar`, `_reativar_cupom`,
+  `_atribuir_premio`) + job `jackpot_manutencao()` (só service role).
+  `jackpot_eventos` é INSERT-only (trilha de auditoria). Trigger em `pontos` é
+  blindado (EXCEPTION → nunca quebra lançamento do caixa).
+- Pushes: `.github/workflows/jackpot-push.yml` 2×/dia → `seo/scripts/jackpot-push.js`
+  (manutenção + escadas D0/7/23/27/29 e retirada + aviso ao admin), tudo logado em
+  `jackpot_push_log` (UNIQUE ciclo+tipo = idempotente). **Requer secret
+  `ONESIGNAL_REST_API_KEY`** (enquanto faltar, só a manutenção roda).
+- Validação 2026-06-12: máquina de estados completa testada em transação descartada
+  (trigger, jogar idempotente, entrega com débito exato, expiração justa, piso zero).
 
 ## Referência OneSignal
 

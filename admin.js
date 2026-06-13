@@ -1622,3 +1622,194 @@ function limparLogsSuporte() {
   var status = document.getElementById('sup-status');
   if (status) { status.textContent = '🗑️ Buffer de erros limpo.'; status.style.color = 'var(--gray)'; }
 }
+
+// ── CAÇA-CARNE PRIME · gestão (catálogo, atribuição, balcão, auditoria) ──
+// Acesso direto às tabelas jackpot_* via authHeaders (RLS auth_all) + RPCs admin.
+let jkConfig = null, jkCatalogo = [], jkFreq = {};
+function jkEl(tag, css, txt) {
+  const e = document.createElement(tag);
+  if (css) e.style.cssText = css;
+  if (txt !== undefined) e.textContent = txt;
+  return e;
+}
+async function jkFetch(path) {
+  const r = await fetch(`${SUPA_URL}/rest/v1/${path}`, { headers: authHeaders() });
+  if (!r.ok) throw new Error('jk fetch ' + r.status);
+  return r.json();
+}
+async function jkRpc(nome, body) {
+  const r = await fetch(`${SUPA_URL}/rest/v1/rpc/${nome}`, {
+    method: 'POST', headers: authHeaders(), body: JSON.stringify(body || {})
+  });
+  return r.ok ? r.json() : { ok: false, erro: 'http_' + r.status };
+}
+window.jackpotRecarregar = async function() {
+  try {
+    const [cfgArr, cat, ciclos, pushes] = await Promise.all([
+      jkFetch('jackpot_config?select=*&id=eq.1'),
+      jkFetch('jackpot_catalogo?select=*&order=faixa,valor_estimado'),
+      jkFetch('jackpot_ciclos?select=*&status=in.(disponivel,ciente,jogado,cupom_emitido,pendente_balcao)&order=expira_em'),
+      jkFetch('jackpot_push_log?select=*&order=id.desc&limit=15')
+    ]);
+    jkConfig = cfgArr[0]; jkCatalogo = cat;
+    jkFreq = {};
+    if (ciclos.length) {
+      const ids = [...new Set(ciclos.map(c => c.cliente_id))].join(',');
+      (await jkFetch(`jackpot_frequencia?select=*&cliente_id=in.(${ids})`))
+        .forEach(f => { jkFreq[f.cliente_id] = f; });
+    }
+    jkRenderStatus(ciclos); jkRenderCatalogo(); jkRenderAguardando(ciclos); jkRenderPushlog(pushes);
+  } catch (e) {
+    const el = document.getElementById('jk-status');
+    if (el) el.textContent = 'erro ao carregar: ' + e.message;
+  }
+};
+function jkRenderStatus(ciclos) {
+  const el = document.getElementById('jk-status'); if (!el || !jkConfig) return;
+  el.innerHTML = '';
+  const vivos = ciclos.length;
+  const emCupom = ciclos.filter(c => c.status === 'cupom_emitido' || c.status === 'pendente_balcao').length;
+  const piloto = (jkConfig.piloto_clientes || []).length;
+  el.appendChild(jkEl('div', '', (jkConfig.ativo ? '🟢 PROGRAMA LIGADO' : '🔴 PROGRAMA DESLIGADO') +
+    (piloto ? ` · piloto: ${piloto} cliente(s)` : ' · base toda')));
+  el.appendChild(jkEl('div', 'color:#9a948a', `${vivos} ciclo(s) vivo(s) · ${emCupom} cupom(ns) na rua · gatilho ${jkConfig.threshold} pts`));
+  const t = document.getElementById('jk-toggle');
+  if (t) t.textContent = jkConfig.ativo ? '⏻ DESLIGAR o Caça-Carne (kill-switch)' : '⏻ LIGAR o Caça-Carne';
+}
+window.jackpotToggleAtivo = async function() {
+  if (!jkConfig) return;
+  const novo = !jkConfig.ativo;
+  if (novo && !jkCatalogo.some(i => i.ativo)) { alert('Cadastre ao menos 1 prêmio ativo antes de ligar.'); return; }
+  if (!confirm(novo ? 'LIGAR o Caça-Carne agora?' : 'DESLIGAR o Caça-Carne? (ciclos existentes continuam válidos)')) return;
+  await fetch(`${SUPA_URL}/rest/v1/jackpot_config?id=eq.1`, {
+    method: 'PATCH', headers: authHeaders(),
+    body: JSON.stringify({ ativo: novo, atualizado_em: new Date().toISOString() })
+  });
+  window.jackpotRecarregar();
+};
+function jkRenderCatalogo() {
+  const el = document.getElementById('jk-catalogo'); if (!el) return;
+  el.innerHTML = '';
+  if (!jkCatalogo.length) { el.appendChild(jkEl('div', 'color:#9a948a;padding:8px', 'nenhum prêmio cadastrado ainda')); return; }
+  const fx = { entrada: '🥉', intermediario: '🥈', topo: '🥇' };
+  jkCatalogo.forEach(i => {
+    const row = jkEl('div', 'display:flex;align-items:center;gap:8px;padding:7px 4px;border-bottom:1px solid rgba(255,255,255,.05)' + (i.ativo ? '' : ';opacity:.4'));
+    row.appendChild(jkEl('span', '', fx[i.faixa] || ''));
+    const info = jkEl('div', 'flex:1;min-width:0');
+    info.appendChild(jkEl('div', 'font-weight:700;color:#f5ecd7', i.titulo + (i.tipo === 'pacote' ? ' 📦' : '')));
+    info.appendChild(jkEl('div', 'color:#9a948a;font-size:10.5px', (i.descricao || '') + (i.valor_estimado ? ` · ~R$${i.valor_estimado}` : '')));
+    row.appendChild(info);
+    const bt = jkEl('button', 'background:none;border:1px solid rgba(255,255,255,.15);color:#aaa;border-radius:8px;padding:4px 8px;font-size:10px;cursor:pointer', i.ativo ? 'desativar' : 'ativar');
+    bt.addEventListener('click', async () => {
+      await fetch(`${SUPA_URL}/rest/v1/jackpot_catalogo?id=eq.${i.id}`, {
+        method: 'PATCH', headers: authHeaders(), body: JSON.stringify({ ativo: !i.ativo }) });
+      window.jackpotRecarregar();
+    });
+    row.appendChild(bt);
+    el.appendChild(row);
+  });
+}
+window.jackpotNovoItem = async function() {
+  const titulo = prompt('Nome do prêmio (ex.: Ancho Raças 600g):'); if (!titulo) return;
+  const tipo = confirm('É um PACOTE/kit? (OK = pacote · Cancelar = peça única)') ? 'pacote' : 'peca';
+  const descricao = prompt('Descrição/itens (opcional):') || null;
+  const valor = parseFloat(prompt('Custo estimado em R$ (p/ controle):') || '0') || null;
+  const fxIn = (prompt('Faixa: 1=entrada · 2=intermediário · 3=topo', '1') || '1').trim();
+  const faixa = fxIn === '3' ? 'topo' : fxIn === '2' ? 'intermediario' : 'entrada';
+  await fetch(`${SUPA_URL}/rest/v1/jackpot_catalogo`, {
+    method: 'POST', headers: authHeaders(),
+    body: JSON.stringify({ titulo, tipo, descricao, valor_estimado: valor, faixa })
+  });
+  window.jackpotRecarregar();
+};
+function jkRenderAguardando(ciclos) {
+  const el = document.getElementById('jk-aguardando'); if (!el) return;
+  el.innerHTML = '';
+  const pend = ciclos.filter(c => c.status === 'disponivel' || c.status === 'ciente');
+  if (!pend.length) { el.appendChild(jkEl('div', 'color:#9a948a;padding:8px', 'ninguém aguardando prêmio agora')); return; }
+  const fx = { entrada: '🥉', intermediario: '🥈', topo: '🥇' };
+  pend.forEach(c => {
+    const f = jkFreq[c.cliente_id] || {};
+    const row = jkEl('div', 'padding:8px 4px;border-bottom:1px solid rgba(255,255,255,.05)');
+    const dias = Math.max(0, Math.ceil((new Date(c.expira_em) - Date.now()) / 86400000));
+    row.appendChild(jkEl('div', 'font-weight:700;color:#f5ecd7',
+      `${fx[f.faixa_sugerida] || ''} ${f.nome || ('cliente #' + c.cliente_id)} · ${dias}d restantes`));
+    row.appendChild(jkEl('div', 'color:#9a948a;font-size:10.5px',
+      `ciclos: ${f.ciclos_entregues || 0} entregues · ${f.ciclos_virtuais || 0} virtuais · sugestão: ${f.faixa_sugerida || 'entrada'}` +
+      (c.ciencia_em ? ' · ✅ ciente' : ' · ⚠ ainda não viu')));
+    const sel = document.createElement('select');
+    sel.style.cssText = 'margin-top:6px;width:100%;background:#1a1a20;color:#f5ecd7;border:1px solid rgba(212,175,55,.3);border-radius:8px;padding:6px;font-size:11px';
+    const o0 = document.createElement('option'); o0.value = ''; o0.textContent = '— prêmio automático (sugestão do sistema) —';
+    sel.appendChild(o0);
+    jkCatalogo.filter(i => i.ativo).forEach(i => {
+      const o = document.createElement('option'); o.value = i.id;
+      o.textContent = `${fx[i.faixa]} ${i.titulo}`;
+      if (c.premio_atribuido === i.id) o.selected = true;
+      sel.appendChild(o);
+    });
+    sel.addEventListener('change', async () => {
+      const r = await jkRpc('jackpot_atribuir_premio', { p_ciclo_id: c.id, p_catalogo_id: sel.value ? parseInt(sel.value, 10) : null });
+      if (!r.ok) alert('Não deu: ' + (r.erro || ''));
+    });
+    row.appendChild(sel);
+    el.appendChild(row);
+  });
+}
+window.jackpotPreview = async function() {
+  const cod = (document.getElementById('jk-codigo').value || '').trim().toUpperCase();
+  const out = document.getElementById('jk-preview'); out.innerHTML = '';
+  if (!cod) return;
+  const r = await jkRpc('jackpot_entregar_preview', { p_codigo: cod });
+  if (!r.ok) { out.appendChild(jkEl('div', 'color:#e8826f;padding:8px', 'cupom não encontrado (' + (r.erro || '') + ')')); return; }
+  const box = jkEl('div', 'border:1px solid rgba(212,175,55,.4);border-radius:12px;padding:12px;background:rgba(212,175,55,.05)');
+  box.appendChild(jkEl('div', 'font-weight:800;color:#f9e29c;font-size:14px', r.cliente_nome || '?'));
+  box.appendChild(jkEl('div', 'color:#f5ecd7;margin-top:2px', '🥩 ' + (r.premio_titulo || '')));
+  box.appendChild(jkEl('div', 'color:#9a948a;font-size:11px;margin-top:4px',
+    `debita ${r.debito} pts · saldo atual ${r.saldo}` +
+    (r.vencido ? ' · ⚠ VENCIDO' : '') + (r.usado_em ? ' · ❌ JÁ USADO' : '')));
+  if (r.usado_em) {
+    box.appendChild(jkEl('div', 'color:#e8826f;font-size:11px;margin-top:6px', 'entregue em ' + new Date(r.usado_em).toLocaleString('pt-BR')));
+  } else if (r.vencido || r.status === 'pendente_balcao') {
+    const bt = jkEl('button', 'margin-top:10px;width:100%;padding:10px;border:none;border-radius:10px;background:#d4af37;color:#1a1407;font-weight:800;cursor:pointer', '🔄 REATIVAR CUPOM (+7 dias)');
+    bt.addEventListener('click', async () => {
+      const x = await jkRpc('jackpot_reativar_cupom', { p_codigo: cod });
+      alert(x.ok ? 'Cupom reativado!' : 'Erro: ' + (x.erro || ''));
+      window.jackpotPreview();
+    });
+    box.appendChild(bt);
+  } else {
+    const bt = jkEl('button', 'margin-top:10px;width:100%;padding:12px;border:none;border-radius:10px;background:linear-gradient(180deg,#52e07e,#25b552);color:#06250f;font-weight:800;font-size:13px;cursor:pointer',
+      `✅ CONFIRMAR ENTREGA para ${r.cliente_nome || ''} (−${r.debito} pts)`);
+    bt.addEventListener('click', async () => {
+      if (r.saldo_insuficiente && !confirm(`Saldo do cliente é ${r.saldo} (< ${r.debito}). Entregar mesmo assim debitando o disponível?`)) return;
+      const x = await jkRpc('jackpot_entregar', { p_codigo: cod, p_forcar_saldo: !!r.saldo_insuficiente });
+      if (x.ok) {
+        alert(`Entregue! Debitado ${x.debito} pts · novo saldo ${x.novo_saldo}` +
+          (x.novo_ciclo ? '\nCliente JÁ desbloqueou novo jogo!' : '') +
+          '\n\nAgora registre o produto no caixa com 100% de desconto.');
+        document.getElementById('jk-codigo').value = '';
+        document.getElementById('jk-preview').innerHTML = '';
+        window.jackpotRecarregar();
+      } else { alert('Não entregue: ' + (x.erro || '')); }
+    });
+    box.appendChild(bt);
+  }
+  out.appendChild(box);
+};
+function jkRenderPushlog(pushes) {
+  const el = document.getElementById('jk-pushlog'); if (!el) return;
+  el.innerHTML = '';
+  if (!pushes.length) { el.appendChild(jkEl('div', 'color:#9a948a;padding:6px', 'nenhum push enviado ainda')); return; }
+  pushes.forEach(p => {
+    const okp = p.http_status >= 200 && p.http_status < 300;
+    el.appendChild(jkEl('div', 'padding:4px 2px;color:' + (okp ? '#9a948a' : '#e8826f'),
+      `${okp ? '✓' : '✗'} ${p.tipo} · ciclo ${p.ciclo_id} · ${new Date(p.enviado_em).toLocaleString('pt-BR')}` +
+      (p.erro ? ' · ' + p.erro : '')));
+  });
+}
+// carrega junto com o painel (nunca bloqueia o admin se falhar)
+try {
+  const jkBoot = () => setTimeout(() => { try { window.jackpotRecarregar(); } catch (e) {} }, 1500);
+  if (document.readyState !== 'loading') jkBoot();
+  else document.addEventListener('DOMContentLoaded', jkBoot);
+} catch (e) {}

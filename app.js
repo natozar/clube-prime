@@ -224,6 +224,8 @@ async function preencherTela(cliente, saldo) {
   SecureStorage.set('clube_cliente_dados', JSON.stringify(cliente));
   SecureStorage.set('clube_cliente_saldo', String(saldo));
   SecureStorage.set('clube_cliente_tel', cliente.telefone);
+  // Jackpot Prime: mostra o card se houver resgate desbloqueado (fire-and-forget)
+  verificarJackpot();
 
   // OneSignal — vincula este dispositivo ao ID do cliente para receber notificações
   if (window.OneSignalDeferred) {
@@ -1866,4 +1868,54 @@ async function buscaCep(){
     document.getElementById('inp-cidade').value=d.localidade||'';
     document.getElementById('inp-uf').value=d.uf||'';
   }catch(e){alert('Erro ao buscar CEP');}
+}
+
+// ── JACKPOT PRIME · Caça-Carne (card na home + deep-link) ──
+// Toda a experiência vive em /jackpot.html; aqui só o convite.
+function jackpotRestante(iso) {
+  let s = Math.max(0, (new Date(iso) - Date.now()) / 1000 | 0);
+  const d = s/86400 | 0; s -= d*86400; const h = s/3600 | 0; s -= h*3600; const m = s/60 | 0;
+  return d + 'd ' + h + 'h ' + m + 'm';
+}
+async function verificarJackpot() {
+  try {
+    if (!clienteId) return;
+    const r = await fetch(`${SUPA_URL}/rest/v1/rpc/jackpot_status_seguro`, {
+      method: 'POST', headers: SH,
+      body: JSON.stringify({ p_cliente_id: clienteId, p_device_id: getDeviceId() })
+    });
+    if (!r.ok) return;
+    const st = await r.json();
+    const card = document.getElementById('jackpot-card');
+    if (!card) return;
+    if (!st || st.ok === false || !st.ativo || !st.ciclo) { card.style.display = 'none'; return; }
+    const c = st.ciclo;
+    // deep-link do push: ?jackpot=1 abre direto a experiência
+    if (new URLSearchParams(location.search).get('jackpot') === '1') {
+      try { history.replaceState(null, '', location.pathname); } catch (e) {}
+      location.href = '/jackpot.html'; return;
+    }
+    let cta = '🎰 RESGATAR AGORA', sub = 'expira em ' + jackpotRestante(c.expira_em);
+    if (c.status === 'cupom_emitido' || c.status === 'pendente_balcao') {
+      cta = '🎟 VER MEU CUPOM'; sub = 'prêmio: ' + (c.premio_titulo || '');
+    } else if (c.status === 'jogado') {
+      cta = '🎬 CONCLUIR E PEGAR O CUPOM'; sub = 'prêmio reservado: ' + (c.premio_titulo || '');
+    }
+    card.innerHTML = '';
+    const box = document.createElement('div'); box.className = 'jackpot-banner';
+    const t1 = document.createElement('div'); t1.className = 'jb-title';
+    t1.textContent = '🎰 JACKPOT PRIME desbloqueado!';
+    const t2 = document.createElement('div'); t2.className = 'jb-sub'; t2.textContent = sub;
+    const bt = document.createElement('button'); bt.className = 'jb-btn'; bt.textContent = cta;
+    bt.addEventListener('click', () => { location.href = '/jackpot.html'; });
+    box.appendChild(t1); box.appendChild(t2); box.appendChild(bt);
+    card.appendChild(box);
+    card.style.display = 'block';
+    if (c.status === 'disponivel' || c.status === 'ciente') {
+      if (window.__jkTimer) clearInterval(window.__jkTimer);
+      window.__jkTimer = setInterval(() => {
+        try { t2.textContent = 'expira em ' + jackpotRestante(c.expira_em); } catch (e) {}
+      }, 30000);
+    }
+  } catch (e) {}
 }

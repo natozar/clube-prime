@@ -1,7 +1,11 @@
 // OneSignal SDK — DEVE ser a primeira linha do service worker
 importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
 
-const CACHE_NAME = 'clube-prime-v22';
+const CACHE_NAME = 'clube-prime-v23';
+// FORCE_PURGE no activate: SÓ ligar em incidente de privacidade. Com false, o
+// deploy troca os assets sem tocar no localStorage — NINGUÉM é deslogado
+// (clube_sessao preservada; cliente continua logado, admin idem).
+const PURGE_ON_ACTIVATE = false;
 const ASSETS = ['/manifest.json', '/icon-72.png', '/icon-96.png', '/icon-128.png', '/icon-144.png', '/icon-152.png', '/icon-192.png', '/icon-384.png', '/icon-512.png', '/app.css', '/app.js', '/admin.css', '/admin.js', '/secure-storage.js', '/boot-purge.js'];
 
 self.addEventListener('install', e => {
@@ -18,11 +22,13 @@ self.addEventListener('activate', e => {
     const keys = await caches.keys();
     await Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)));
     await self.clients.claim();
-    // Notifica todos os clientes abertos para que executem purge local e recarreguem
-    const clients = await self.clients.matchAll({ includeUncontrolled: true, type: 'window' });
-    clients.forEach(c => {
-      try { c.postMessage({ type: 'FORCE_PURGE', version: CACHE_NAME }); } catch (e) {}
-    });
+    // Notifica clientes abertos APENAS quando PURGE_ON_ACTIVATE (incidentes).
+    if (PURGE_ON_ACTIVATE) {
+      const clients = await self.clients.matchAll({ includeUncontrolled: true, type: 'window' });
+      clients.forEach(c => {
+        try { c.postMessage({ type: 'FORCE_PURGE', version: CACHE_NAME }); } catch (e) {}
+      });
+    }
   })());
 });
 

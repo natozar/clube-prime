@@ -201,3 +201,19 @@ body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
 .pp-step.done{background:var(--gold)}
 
 .skip-link{position:absolute;top:-100%;left:50%;transform:translateX(-50%);background:#C9A84C;color:#0A0A0A;padding:12px 24px;font-size:14px;font-weight:600;border-radius:0 0 8px 8px;z-index:9999;text-decoration:none;transition:top .2s}.skip-link:focus{top:0}
+
+/* ── Jackpot Prime · card na home ── */
+.jackpot-banner{border-radius:16px;padding:16px;text-align:center;position:relative;overflow:hidden;
+  background:linear-gradient(160deg,#231a06,#141008 60%,#1c0e10);
+  border:1.5px solid rgba(212,175,55,.65);
+  box-shadow:0 8px 30px rgba(212,175,55,.18), inset 0 0 30px rgba(212,175,55,.05);
+  animation:jbGlow 2.6s ease-in-out infinite}
+@keyframes jbGlow{0%,100%{box-shadow:0 8px 30px rgba(212,175,55,.18), inset 0 0 30px rgba(212,175,55,.05)}
+  50%{box-shadow:0 8px 42px rgba(212,175,55,.35), inset 0 0 40px rgba(212,175,55,.1)}}
+.jackpot-banner .jb-title{font-family:'Cormorant Garamond',serif;font-size:19px;font-weight:700;color:#f9e29c;letter-spacing:.04em}
+.jackpot-banner .jb-sub{font-size:12px;color:#e8826f;margin-top:4px;font-weight:600}
+.jackpot-banner .jb-btn{margin-top:12px;width:100%;border:none;cursor:pointer;font-weight:800;
+  font-size:14px;letter-spacing:.06em;color:#1a1407;padding:13px;border-radius:12px;
+  background:linear-gradient(180deg,#f9e29c,#d4af37 55%,#b08d24);
+  box-shadow:0 6px 20px rgba(212,175,55,.35)}
+.jackpot-banner .jb-btn:active{transform:scale(.97)}
