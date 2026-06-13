@@ -1727,18 +1727,25 @@ function jkRenderAguardando(ciclos) {
   const pend = ciclos.filter(c => c.status === 'disponivel' || c.status === 'ciente');
   if (!pend.length) { el.appendChild(jkEl('div', 'color:#9a948a;padding:8px', 'ninguém aguardando prêmio agora')); return; }
   const fx = { entrada: '🥉', intermediario: '🥈', topo: '🥇' };
+  // pendentes da SUA definição primeiro (não liberados), depois os já liberados
+  pend.sort((a, b) => (a.liberado_em ? 1 : 0) - (b.liberado_em ? 1 : 0));
   pend.forEach(c => {
     const f = jkFreq[c.cliente_id] || {};
-    const row = jkEl('div', 'padding:8px 4px;border-bottom:1px solid rgba(255,255,255,.05)');
-    const dias = Math.max(0, Math.ceil((new Date(c.expira_em) - Date.now()) / 86400000));
+    const pendente = !c.liberado_em;
+    const row = jkEl('div', 'padding:9px 8px;margin-bottom:6px;border-radius:10px;' +
+      (pendente ? 'background:rgba(232,130,111,.08);border:1px solid rgba(232,130,111,.35)'
+                : 'border-bottom:1px solid rgba(255,255,255,.05)'));
     row.appendChild(jkEl('div', 'font-weight:700;color:#f5ecd7',
-      `${fx[f.faixa_sugerida] || ''} ${f.nome || ('cliente #' + c.cliente_id)} · ${dias}d restantes`));
-    row.appendChild(jkEl('div', 'color:#9a948a;font-size:10.5px',
-      `ciclos: ${f.ciclos_entregues || 0} entregues · ${f.ciclos_virtuais || 0} virtuais · sugestão: ${f.faixa_sugerida || 'entrada'}` +
-      (c.ciencia_em ? ' · ✅ ciente' : ' · ⚠ ainda não viu')));
+      (pendente ? '⚠ ' : '✓ ') + `${fx[f.faixa_sugerida] || ''} ${f.nome || ('cliente #' + c.cliente_id)}`));
+    row.appendChild(jkEl('div', 'font-size:10.5px;margin-top:1px;' + (pendente ? 'color:#e8a99c;font-weight:600' : 'color:#9a948a'),
+      pendente ? 'DEFINA o prêmio abaixo pra LIBERAR o resgate (o cliente ainda não foi avisado)'
+               : 'liberado · ' + Math.max(0, Math.ceil((new Date(c.expira_em) - Date.now()) / 86400000)) + 'd restantes' + (c.ciencia_em ? ' · ✅ viu' : '')));
+    row.appendChild(jkEl('div', 'color:#9a948a;font-size:10px;margin-top:2px',
+      `${f.ciclos_entregues || 0} entregues · sugestão: ${f.faixa_sugerida || 'entrada'}`));
     const sel = document.createElement('select');
-    sel.style.cssText = 'margin-top:6px;width:100%;background:#1a1a20;color:#f5ecd7;border:1px solid rgba(212,175,55,.3);border-radius:8px;padding:6px;font-size:11px';
-    const o0 = document.createElement('option'); o0.value = ''; o0.textContent = '— prêmio automático (sugestão do sistema) —';
+    sel.style.cssText = 'margin-top:6px;width:100%;background:#1a1a20;color:#f5ecd7;border:1px solid rgba(212,175,55,.3);border-radius:8px;padding:7px;font-size:11px';
+    const o0 = document.createElement('option'); o0.value = '';
+    o0.textContent = pendente ? '— escolha o prêmio (ou deixe automático e libere) —' : '— prêmio automático (sugestão) —';
     sel.appendChild(o0);
     jkCatalogo.filter(i => i.ativo).forEach(i => {
       const o = document.createElement('option'); o.value = i.id;
@@ -1748,9 +1755,21 @@ function jkRenderAguardando(ciclos) {
     });
     sel.addEventListener('change', async () => {
       const r = await jkRpc('jackpot_atribuir_premio', { p_ciclo_id: c.id, p_catalogo_id: sel.value ? parseInt(sel.value, 10) : null });
-      if (!r.ok) alert('Não deu: ' + (r.erro || ''));
+      if (!r.ok) { alert('Não deu: ' + (r.erro || '')); return; }
+      if (r.liberado) alert('Prêmio definido e LIBERADO! O cliente vai ser avisado pra jogar. 🎰');
+      window.jackpotRecarregar();
     });
     row.appendChild(sel);
+    if (pendente) {
+      const btn = jkEl('button', 'margin-top:6px;width:100%;padding:9px;border:none;border-radius:9px;background:linear-gradient(180deg,#f9e29c,#d4af37);color:#1a1407;font-weight:800;font-size:12px;cursor:pointer', '✓ LIBERAR com prêmio automático');
+      btn.addEventListener('click', async () => {
+        const r = await jkRpc('jackpot_atribuir_premio', { p_ciclo_id: c.id, p_catalogo_id: null });
+        if (!r.ok) { alert('Não deu: ' + (r.erro || '')); return; }
+        alert('Liberado! O cliente vai ser avisado pra jogar. 🎰');
+        window.jackpotRecarregar();
+      });
+      row.appendChild(btn);
+    }
     el.appendChild(row);
   });
 }

@@ -229,7 +229,15 @@ function rotaVazio() {
     '⭐ ' + (((st && st.saldo) || 0).toLocaleString('pt-BR')) + ' pontos';
   show('vazio');
 }
+function mostrarPreparando() {
+  var h2 = document.querySelector('#vazio h2'); if (h2) h2.textContent = 'Recompensa a caminho!';
+  var p = document.querySelector('#vazio p');
+  if (p) p.innerHTML = 'Você bateu os <b style="color:var(--gold-hi)">5.000 pontos</b>! O Empório está preparando seu prêmio — <b style="color:var(--gold-hi)">a gente te avisa assim que liberar</b>. 🥩';
+  var s = document.getElementById('vazioSaldo'); if (s) s.style.display = 'none';
+  show('vazio');
+}
 function rotear(c) {
+  if (c.liberado === false) { mostrarPreparando(); return; }
   if (c.status === 'disponivel' || (c.status === 'ciente' && !c.premio_titulo)) {
     document.getElementById('cienciaData').textContent = fmtData(c.expira_em);
     ligaCountdown('cdIntro', c.expira_em);

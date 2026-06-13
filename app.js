@@ -1890,7 +1890,21 @@ async function verificarJackpot() {
     if (!card) return;
     if (!st || st.ok === false || !st.ativo || !st.ciclo) { card.style.display = 'none'; return; }
     const c = st.ciclo;
-    // deep-link do push: ?jackpot=1 abre direto a experiência
+    // PENDENTE: cliente bateu o gatilho mas o dono ainda não definiu o prêmio.
+    // Mostra anúncio de antecipação SEM botão (não pode jogar nem é levado pro jogo).
+    if (c.liberado === false) {
+      card.innerHTML = '';
+      const box = document.createElement('div'); box.className = 'jackpot-banner';
+      const t1 = document.createElement('div'); t1.className = 'jb-title';
+      t1.textContent = '🎁 Recompensa a caminho!';
+      const t2 = document.createElement('div'); t2.className = 'jb-sub';
+      t2.style.color = 'var(--gold-light, #E8C97A)';
+      t2.textContent = 'Você bateu 5.000 pontos! Seu prêmio está sendo preparado — avisamos quando liberar.';
+      box.appendChild(t1); box.appendChild(t2);
+      card.appendChild(box); card.style.display = 'block';
+      return;
+    }
+    // deep-link do push: ?jackpot=1 abre direto a experiência (só quando liberado)
     if (new URLSearchParams(location.search).get('jackpot') === '1') {
       try { history.replaceState(null, '', location.pathname); } catch (e) {}
       location.href = '/jackpot.html'; return;

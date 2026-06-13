@@ -89,20 +89,24 @@ async function push(clienteId, titulo, msg, cicloId, tipo) {
   const enviados = new Set((logsR.json || []).map(l => l.ciclo_id + ':' + l.tipo));
   let ok = 0, fail = 0;
 
-  // 2) escada do ciclo (disponivel/ciente) — 1 push (tier mais alto) por ciclo/run
+  // 2) ciclos vivos: PENDENTE (não liberado) avisa só o DONO; LIBERADO escala pro cliente
   const vivosR = await sb('jackpot_ciclos?select=*&status=in.(disponivel,ciente)');
   for (const c of (vivosR.json || [])) {
-    const idade = dias(c.desbloqueado_em);
-    const tier = TIERS_CICLO.find(t => idade >= t.min && !enviados.has(c.id + ':' + t.tipo));
-    if (tier) (await push(c.cliente_id, tier.titulo, tier.msg, c.id, tier.tipo)) ? ok++ : fail++;
-    // aviso ao ADM: cliente alcançou o gatilho (vai pro celular do dono)
-    if (!enviados.has(c.id + ':adm')) {
-      const nomeR = await sb(`clientes?select=nome&id=eq.${c.cliente_id}`);
-      const nome = (nomeR.json && nomeR.json[0] && nomeR.json[0].nome) || ('cliente #' + c.cliente_id);
-      (await push(cfg.admin_cliente_id,
-        '🎰 ' + nome + ' alcançou ' + cfg.threshold + ' pontos!',
-        'Entre no admin e escolha o prêmio (ou deixe a sugestão automática).',
-        c.id, 'adm')) ? ok++ : fail++;
+    if (!c.liberado_em) {
+      // cliente bateu o gatilho → avisa O DONO pra definir o prêmio. Cliente NÃO é notificado ainda.
+      if (!enviados.has(c.id + ':adm')) {
+        const nomeR = await sb(`clientes?select=nome&id=eq.${c.cliente_id}`);
+        const nome = (nomeR.json && nomeR.json[0] && nomeR.json[0].nome) || ('cliente #' + c.cliente_id);
+        (await push(cfg.admin_cliente_id,
+          '🎰 ' + nome + ' bateu ' + cfg.threshold + ' pontos!',
+          'Defina o prêmio no admin pra LIBERAR o resgate pra ele.',
+          c.id, 'adm')) ? ok++ : fail++;
+      }
+    } else {
+      // já liberado pelo dono → escada do cliente, relativa à data de LIBERAÇÃO
+      const idade = dias(c.liberado_em);
+      const tier = TIERS_CICLO.find(t => idade >= t.min && !enviados.has(c.id + ':' + t.tipo));
+      if (tier) (await push(c.cliente_id, tier.titulo, tier.msg, c.id, tier.tipo)) ? ok++ : fail++;
     }
   }
 
