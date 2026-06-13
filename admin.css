@@ -120,3 +120,71 @@ body{padding-bottom:calc(60px + env(safe-area-inset-bottom))}
 /* PAINEL DONO */
 .pw{max-width:600px;margin:0 auto;padding:0 0 16px}
 /* ADMIN CLIENTES */
+
+/* ═══════════════════════════════════════════════════════════════
+   DESIGN SYSTEM REFRESH · dark mode (Apple / Material 3 discipline)
+   Neutral elevation ramp + restrained gold accent. CSS-only re-skin:
+   classes/IDs intactos. Acento dourado só em ação primária, estado
+   ativo e nos números serifados (assinatura da marca).
+   ═══════════════════════════════════════════════════════════════ */
+:root{
+  --black:#0B0B0C; --dark:#141416; --dark2:#19191C; --dark3:#222227; --dark4:#2C2C32;
+  --white:#F3F0EA; --gray:#9A9AA3;
+  --gold:#CBAA52; --gold-light:#E8C97A; --gold-dark:#8B6914;
+  --green:#5FCB7E; --red:#E8736B; --blue:#6BA8E0;
+  --surface-1:#19191C; --surface-2:#212127; --surface-3:#2A2A31;
+  --hairline:rgba(255,255,255,.07); --hairline-strong:rgba(255,255,255,.11);
+  --elev:0 1px 2px rgba(0,0,0,.45), 0 10px 30px rgba(0,0,0,.32);
+  --elev-sm:0 1px 2px rgba(0,0,0,.4), 0 4px 12px rgba(0,0,0,.25);
+}
+html,body{background:var(--black)}
+
+/* superfícies: hairline neutro + elevação por sombra (sem borda dourada) */
+.sec-card{background:var(--surface-1);border:1px solid var(--hairline);border-radius:16px;box-shadow:var(--elev);padding:18px}
+.kpi{background:var(--surface-1);border:1px solid var(--hairline);border-radius:14px;box-shadow:var(--elev-sm);padding:15px 14px}
+.client-found,.scan-area,.value-display,.net-child,.rg-card,.tl-icon,.av.sm,.pin-key,.key{border-color:var(--hairline)}
+
+/* rótulos de seção: dourado legível (era --gold-dark muddy), tracking calmo */
+.sec-title{color:var(--gold);letter-spacing:1.8px;font-weight:600}
+.kpi-l,.flabel,.dzt{color:var(--gray);letter-spacing:1.4px}
+.tbl th{color:var(--gray);letter-spacing:1.4px;border-bottom-color:var(--hairline-strong)}
+.tbl td{border-bottom-color:var(--hairline)}
+
+/* inputs: superfície neutra, acento só no foco (ring estilo iOS/Material) */
+.fi,.si,.fsel{background:var(--surface-2);border:1px solid var(--hairline);border-radius:10px}
+.fi:focus,.si:focus,.fsel:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(203,170,82,.16)}
+
+/* botões: 1 primário cheio (gold top-light, estilo Apple); resto contido */
+.btn{border-radius:10px;letter-spacing:.8px;font-weight:600;transition:filter .15s,transform .05s}
+.btn:active{transform:scale(.975)}
+.bg{background:linear-gradient(180deg,var(--gold-light),var(--gold));color:#1A1407;box-shadow:0 1px 0 rgba(255,255,255,.18) inset, var(--elev-sm)}
+.bg:hover{filter:brightness(1.05)}
+.bo{background:rgba(203,170,82,.05);border:1px solid rgba(203,170,82,.32);color:var(--gold-light)}
+.bd{background:rgba(232,115,107,.12);border:1px solid rgba(232,115,107,.28);color:var(--red)}
+
+/* tab bar: vidro fosco (iOS) */
+.admin-nav{background:rgba(16,16,18,.82);-webkit-backdrop-filter:saturate(160%) blur(20px);backdrop-filter:saturate(160%) blur(20px);border-top:1px solid var(--hairline)}
+.an{font-weight:600;letter-spacing:.6px}
+.an.active .an-icon{filter:drop-shadow(0 0 8px rgba(203,170,82,.45))}
+
+/* header de página: hairline neutro */
+.ph{border-bottom:1px solid var(--hairline)}
+
+/* badges: leve subida de contraste, cantos coerentes */
+.b{border-radius:8px;font-weight:600}
+.bpts{background:rgba(203,170,82,.1);border:1px solid rgba(203,170,82,.22)}
+
+/* modal: superfície elevada + handle neutro */
+.md{background:var(--surface-1);border:1px solid var(--hairline);box-shadow:0 -20px 60px rgba(0,0,0,.6)}
+.md-title{color:var(--gold-light)}
+
+/* toggle: trilho neutro, on dourado sólido */
+.tog{background:var(--surface-3);border-color:var(--hairline-strong)}
+.tog.on{background:var(--gold);border-color:var(--gold-light)}
+.tog.on .tog-d{background:#1A1407}
+
+/* divisórias internas mais discretas */
+.toggle-row,.tl-item{border-bottom-color:var(--hairline)}
+
+/* sub-rótulos inline (color:var(--gold-dark)) → dourado legível, sem tocar HTML */
+[style*="color:var(--gold-dark)"]{color:#B99A4A !important}
