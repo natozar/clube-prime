@@ -1,7 +1,7 @@
 // OneSignal SDK — DEVE ser a primeira linha do service worker
 importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
 
-const CACHE_NAME = 'clube-prime-v24';
+const CACHE_NAME = 'clube-prime-v25';
 // FORCE_PURGE no activate: SÓ ligar em incidente de privacidade. Com false, o
 // deploy troca os assets sem tocar no localStorage — NINGUÉM é deslogado
 // (clube_sessao preservada; cliente continua logado, admin idem).

@@ -246,7 +246,7 @@ function rotear(c) {
 // intro → ciência → escolha
 document.getElementById('btnEntrar').addEventListener('click', () => {
   audio();
-  if (st.ciclo.ciencia) { show('choice'); return; }
+  if (st.ciclo.ciencia) { show('game'); return; }
   document.getElementById('cienciaModal').classList.add('on');
 });
 document.getElementById('btnCiencia').addEventListener('click', async () => {
@@ -257,7 +257,7 @@ document.getElementById('btnCiencia').addEventListener('click', async () => {
   if (r && r.ok) {
     document.getElementById('cienciaModal').classList.remove('on');
     st.ciclo.ciencia = true; st.ciclo.status = 'ciente';
-    show('choice');
+    show('game');
   } else { alert('Erro de conexão — tente de novo.'); }
 });
 document.getElementById('cardJogar').addEventListener('click', () => { audio(); show('game'); });
@@ -467,8 +467,8 @@ function mostrarVitoria(comFesta) {
   show('win');
   if (comFesta) { burstConfetti(); setTimeout(burstConfetti, 700); }
   videoFile = null; videoReady = null;
-  document.getElementById('shareBtn').textContent = SHARE_LABEL;
-  setTimeout(preRenderVideo, 900);
+  document.getElementById('shareBtn').textContent = '🎟  PEGAR MEU CUPOM';
+  setTimeout(preRenderVideo, 900); // pré-grava o vídeo p/ compartilhamento OPCIONAL no cupom
 }
 
 const VW = 720, VH = 1280, VDUR = 6.4;
@@ -598,44 +598,50 @@ function preRenderVideo() {
   if (videoReady) return videoReady;
   videoReady = recordVideo(true).then(fv => {
     videoFile = fv;
-    if (fv) document.getElementById('shareBtn').textContent = '📲 Vídeo pronto — compartilhar e liberar o cupom';
     return fv;
   }).catch(() => null);
   return videoReady;
 }
-async function liberarCupomViaShare() {
+// emite o cupom direto ao ganhar — SEM pedágio de compartilhamento
+async function emitirCupom() {
   const r = await rpcCliente('jackpot_confirmar_share');
   if (r && r.ok) {
     st.ciclo.status = 'cupom_emitido'; st.ciclo.cupom_codigo = r.cupom;
     st.ciclo.cupom_validade = r.validade; st.ciclo.premio_titulo = premio.titulo;
     coinDrop(); burstConfetti();
     mostrarCupom(st.ciclo);
-  } else { alert('O compartilhamento foi feito, mas houve erro de conexão. Abra de novo — seu prêmio está guardado.'); }
-}
-async function doShare() {
-  if (videoFile && navigator.canShare && navigator.canShare({ files: [videoFile] })) {
-    await navigator.share({ files: [videoFile], title: 'Jackpot Prime', text: SHARE_TXT() });
-    await liberarCupomViaShare(); return;
-  }
-  // fallback sem Web Share de arquivo: texto via WhatsApp conta como share
-  window.open('https://wa.me/?text=' + encodeURIComponent(SHARE_TXT()), '_blank');
-  if (videoFile) {
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(videoFile); a.download = videoFile.name; a.click();
-  }
-  await liberarCupomViaShare();
+  } else { alert('Erro de conexão — seu prêmio está guardado. Abra de novo.'); }
 }
 document.getElementById('shareBtn').addEventListener('click', async () => {
   const btn = document.getElementById('shareBtn');
-  if (videoFile) { try { await doShare(); } catch (e) { /* cancelou — cupom não libera */ } return; }
   btn.disabled = true;
-  document.getElementById('recOverlay').classList.add('on');
-  await preRenderVideo();
-  document.getElementById('recOverlay').classList.remove('on');
+  await emitirCupom();
   btn.disabled = false;
-  if (videoFile) { btn.textContent = '📲 Vídeo pronto — toque para enviar'; buzz(30); }
-  else { try { await doShare(); } catch (e) {} } // sem MediaRecorder: share de texto
 });
+// compartilhamento OPCIONAL (na tela do cupom) — bônus de marketing, não trava nada
+async function compartilharOpcional() {
+  const btn = document.getElementById('shareOpcBtn');
+  if (btn) btn.disabled = true;
+  try {
+    if (!videoFile) {
+      document.getElementById('recOverlay').classList.add('on');
+      await preRenderVideo();
+      document.getElementById('recOverlay').classList.remove('on');
+    }
+    if (videoFile && navigator.canShare && navigator.canShare({ files: [videoFile] })) {
+      await navigator.share({ files: [videoFile], title: 'Jackpot Prime', text: SHARE_TXT() });
+    } else {
+      if (videoFile) {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(videoFile); a.download = videoFile.name; a.click();
+      }
+      window.open('https://wa.me/?text=' + encodeURIComponent(SHARE_TXT()), '_blank');
+    }
+  } catch (e) { document.getElementById('recOverlay').classList.remove('on'); }
+  if (btn) btn.disabled = false;
+}
+var _shareOpc = document.getElementById('shareOpcBtn');
+if (_shareOpc) _shareOpc.addEventListener('click', compartilharOpcional);
 
 // ── cupom + QR ──
 function mostrarCupom(c) {
