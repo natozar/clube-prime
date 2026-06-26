@@ -18,6 +18,7 @@ import { publicar, getDiaSemana, getDataFormatada } from './publicar.js';
 import { getCotacaoHoje, getHistorico } from './cotacao-scraper.js';
 import { getResumoMercado } from './mercado-scraper.js';
 import { gerarPainelMercado } from './gerar-artigo.js';
+import { LOCAL_COMERCIAL } from './artigos-locais.js';
 
 // --- Banco de conteúdo rotativo ---
 
@@ -904,12 +905,14 @@ function gerarArtigoCotacao(tipo, cotacaoHoje, historico) {
 
 // --- Seletor de conteúdo por dia da semana ---
 
-function calcularIndiceRotativo(items) {
-  // Calcula qual item do array usar baseado na semana do ano
+function calcularIndiceRotativo(items, offset = 0) {
+  // Calcula qual item do array usar baseado na semana do ano.
+  // offset permite que dois dias da mesma semana (ex: segunda e sexta) caiam
+  // em itens diferentes do mesmo array, evitando publicar o mesmo na semana.
   const now = new Date();
   const start = new Date(now.getFullYear(), 0, 1);
   const weekNumber = Math.floor((now - start) / (7 * 24 * 60 * 60 * 1000));
-  return weekNumber % items.length;
+  return (weekNumber + offset) % items.length;
 }
 
 async function selecionarConteudo() {
@@ -919,8 +922,9 @@ async function selecionarConteudo() {
   let cotacaoHoje = null;
   let historico = [];
 
-  // Para dias de cotação, buscar dados
-  if (['segunda', 'quarta', 'sexta'].includes(dia)) {
+  // Para dias de cotação, buscar dados. Agora só quarta gera artigo de cotação
+  // nacional (segunda e sexta passaram a publicar conteúdo local-comercial).
+  if (['quarta'].includes(dia)) {
     try {
       cotacaoHoje = await getCotacaoHoje();
       historico = await getHistorico(30);
@@ -931,7 +935,8 @@ async function selecionarConteudo() {
 
   switch (dia) {
     case 'segunda':
-      return gerarArtigoCotacao('analise', cotacaoHoje, historico);
+      // Página comercial local (Ribeirão Preto) — intenção de compra
+      return LOCAL_COMERCIAL[calcularIndiceRotativo(LOCAL_COMERCIAL)];
 
     case 'terca': {
       const idx = calcularIndiceRotativo(RACAS);
@@ -1099,7 +1104,8 @@ async function selecionarConteudo() {
     }
 
     case 'sexta':
-      return gerarArtigoCotacao('resumo', cotacaoHoje, historico);
+      // Segunda página comercial local da semana (offset 2 → item diferente do de segunda)
+      return LOCAL_COMERCIAL[calcularIndiceRotativo(LOCAL_COMERCIAL, 2)];
 
     case 'sabado': {
       const idx = calcularIndiceRotativo(CHURRASCO);
@@ -1181,8 +1187,10 @@ async function selecionarConteudoComPainel() {
 
   const dados = await selecionarConteudo();
   const dia = process.env.DIA_OVERRIDE || getDiaSemana();
-  const diaCotacao = ['segunda', 'quarta', 'sexta', 'quinta'].includes(dia);
-  dados.painelMercado = gerarPainelMercado(resumoMercado, diaCotacao);
+  const diaCotacao = ['quarta', 'quinta'].includes(dia);
+  // Páginas comerciais locais não mostram o painel agro (dólar/petróleo/soja) —
+  // é irrelevante para quem busca onde comprar carne.
+  dados.painelMercado = dados.categoria === 'local' ? '' : gerarPainelMercado(resumoMercado, diaCotacao);
   return dados;
 }
 

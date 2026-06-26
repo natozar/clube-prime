@@ -104,10 +104,52 @@ async function buscarFoto(keyword, slug, categoria = 'cotacao') {
   return result;
 }
 
+// ── Relevância: garantir que a foto é DO TEMA (carne/gado/churrasco) ──
+// Sem isto, "livestock market cattle auction" trazia "crowd of people" e
+// "premium beef steak" caía em fallback que devolvia "blue truck on a field".
+const POS_TOKENS = [
+  'cattle','cow','cows','calf','bull','ox','herd','livestock','beef','veal',
+  'steak','meat','butcher','butchery','sirloin','tenderloin','ribeye','brisket',
+  'rib','ribs','roast','picanha','wagyu','angus','hereford','nelore','zebu',
+  'bbq','barbecue','barbeque','grill','grilled','grilling','churrasco','charcoal',
+  'farm','farmland','ranch','pasture','grazing','grassland','cattle ranch',
+  'fire','smoke','skewer','meatcut','meat market'
+];
+const NEG_TOKENS = [
+  'crowd','audience','concert','protest','office','laptop','computer','keyboard',
+  'smartphone','phone','screen','car','truck','vehicle','road','highway','traffic',
+  'building','skyscraper','cityscape','airport','train','stadium','stock market',
+  'graph','chart','coins','banknote','currency','wedding','fashion','makeup'
+];
+
+// Semente diária: roda a escolha entre as fotos relevantes pra não repetir a
+// mesma imagem semana após semana (problema dos artigos de mercado/resumo).
+function getDaySeed() {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), 0, 0);
+  return Math.floor((now - start) / 86400000);
+}
+
+function pontuarRelevancia(foto, query) {
+  const partes = [
+    foto.alt_description || '',
+    foto.description || '',
+    ...((foto.tags || []).map(t => (t && t.title) || ''))
+  ];
+  const hay = ' ' + partes.join(' ').toLowerCase() + ' ';
+  // Tokens vindos da própria query (ex.: "angus", "ribs") contam como positivos
+  const queryTokens = query.toLowerCase().split(/[^a-z]+/).filter(w => w.length >= 3);
+  const positivos = new Set([...POS_TOKENS, ...queryTokens]);
+  let score = 0;
+  for (const t of positivos) if (hay.includes(t)) score += 1;
+  for (const t of NEG_TOKENS) if (hay.includes(t)) score -= 2;
+  return score;
+}
+
 async function buscarNoUnsplash(query) {
   const url = new URL('https://api.unsplash.com/search/photos');
   url.searchParams.set('query', query);
-  url.searchParams.set('per_page', '5');
+  url.searchParams.set('per_page', '12');
   url.searchParams.set('orientation', 'landscape');
   url.searchParams.set('content_filter', 'high');
 
@@ -126,11 +168,26 @@ async function buscarNoUnsplash(query) {
   }
 
   const data = await response.json();
-
   if (!data.results || data.results.length === 0) return null;
 
-  // Preferir foto com alt_description (melhor SEO)
-  return data.results.find(r => r.alt_description) || data.results[0];
+  // Pontuar por relevância e exigir tema mínimo (>= 1). Foto fora do tema é
+  // rejeitada — buscarFoto tenta o próximo fallback, ou cai em placeholder.
+  const candidatos = data.results
+    .map(r => ({ foto: r, score: pontuarRelevancia(r, query) }))
+    .filter(c => c.score >= 1)
+    .sort((a, b) => b.score - a.score);
+
+  if (candidatos.length === 0) {
+    console.warn(`  ⚠ Nenhuma foto relevante p/ "${query}" (todas fora do tema) — descartando.`);
+    return null;
+  }
+
+  // Rotação: entre as mais relevantes (até as 6 melhores), escolher por semente
+  // diária pra variar a imagem entre execuções sem perder relevância.
+  const tier = candidatos.slice(0, 6);
+  const escolhido = tier[getDaySeed() % tier.length];
+  console.log(`  ✓ Foto relevante (score ${escolhido.score}) entre ${candidatos.length} candidatas`);
+  return escolhido.foto;
 }
 
 export { buscarFoto, FALLBACK_KEYWORDS };

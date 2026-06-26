@@ -27,7 +27,8 @@ const CATEGORIA_LABELS = {
   regiao: 'Regiões Produtoras',
   guia: 'Guia da Carne',
   churrasco: 'Churrasco',
-  familia: 'Família'
+  familia: 'Família',
+  local: 'Em Ribeirão Preto'
 };
 
 const CATEGORIA_URLS = {
@@ -38,7 +39,8 @@ const CATEGORIA_URLS = {
   regiao: 'regioes/alta-mogiana',
   guia: 'guia/marmoreio-o-que-e',
   churrasco: 'churrasco/receita-costela-fogo-de-chao',
-  familia: 'churrasco/receita-costela-fogo-de-chao'
+  familia: 'churrasco/receita-costela-fogo-de-chao',
+  local: 'acougue-ribeirao-preto'
 };
 
 // Imagens temáticas por categoria para related cards (fallback quando slug não tem foto própria)
@@ -50,7 +52,8 @@ const CATEGORIA_THUMBS = {
   regiao: 'https://carnesrodrigues.com.br/seo/assets/images/regioes-alta-mogiana-hero.jpg',
   guia: 'https://carnesrodrigues.com.br/seo/assets/images/cotacao-arroba-boi-gordo-hoje-hero.jpg',
   churrasco: 'https://carnesrodrigues.com.br/seo/assets/images/churrasco-receita-costela-fogo-de-chao-hero.jpg',
-  familia: 'https://carnesrodrigues.com.br/seo/assets/images/churrasco-tradicao-churrasco-familia-hero.jpg'
+  familia: 'https://carnesrodrigues.com.br/seo/assets/images/churrasco-tradicao-churrasco-familia-hero.jpg',
+  local: 'https://carnesrodrigues.com.br/seo/assets/images/churrasco-picanha-perfeita-hero.jpg'
 };
 
 /**
@@ -177,7 +180,7 @@ const MINI_BANNERS = [
       </div>
       <div class="mini-banner-arrow">›</div>
     </a>`,
-    categorias: ['raca', 'cruzamento', 'corte', 'guia']
+    categorias: ['raca', 'cruzamento', 'corte', 'guia', 'local']
   },
   // Clube Prime — fidelidade
   {
@@ -189,7 +192,7 @@ const MINI_BANNERS = [
       </div>
       <div class="mini-banner-arrow">›</div>
     </a>`,
-    categorias: ['raca', 'cruzamento', 'corte', 'guia', 'regiao', 'churrasco', 'familia']
+    categorias: ['raca', 'cruzamento', 'corte', 'guia', 'regiao', 'churrasco', 'familia', 'local']
   },
   // Cotação — informação
   {
@@ -226,6 +229,18 @@ const MINI_BANNERS = [
       <div class="mini-banner-arrow">›</div>
     </a>`,
     categorias: ['churrasco', 'corte', 'familia']
+  },
+  // Página comercial local (pilar) — reforça link interno para a página que converte
+  {
+    html: `<a href="/acougue-ribeirao-preto" class="mini-banner mini-banner--gold" data-track="cta_local_inline">
+      <div class="mini-banner-icon">📍</div>
+      <div class="mini-banner-text">
+        <div class="mini-banner-title">Onde comprar carne premium em Ribeirão Preto</div>
+        <div class="mini-banner-desc">Cortes Angus da Alta Mogiana, com procedência. Peça pelo WhatsApp.</div>
+      </div>
+      <div class="mini-banner-arrow">›</div>
+    </a>`,
+    categorias: ['raca', 'cruzamento', 'corte', 'guia', 'regiao', 'cotacao', 'churrasco']
   },
   // Afiliados
   {
