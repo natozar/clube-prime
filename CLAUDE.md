@@ -61,7 +61,10 @@ Commit + push publica no GitHub Pages em 1-3 min.
 condicional (default `false`). Deploy normal troca assets SEM tocar em localStorage —
 ninguém é deslogado. Só ligar em incidente de privacidade (e voltar pra false depois).
 
-Versão atual (2026-07-04): `APP_VERSION = v14-2026-06-12` / `CACHE_NAME = clube-prime-v29`.
+Versão atual (2026-07-04): `APP_VERSION = v14-2026-06-12` / `CACHE_NAME = clube-prime-v30`.
+v30: religada a tela de escolha do jackpot (`#choice`: 🎰 Caça-Carne vs 5% garantido) —
+após a ciência do prazo o cliente escolhe; antes ia direto pra máquina e a RPC
+`jackpot_opcao_5pct` era inalcançável pela UI.
 v29: reforma visual do Caça-Carne — 9 símbolos visíveis (3×3), rolos com 18 símbolos
 incluindo perigos TEATRAIS (💀 PERDEU TUDO, 🪓 PERDE METADE — o prêmio real continua
 100% decidido pelo servidor/admin; a falsa parada crava o 💀 na payline e cede pro

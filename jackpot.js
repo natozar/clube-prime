@@ -260,7 +260,7 @@ function rotear(c) {
 // intro → ciência → escolha
 document.getElementById('btnEntrar').addEventListener('click', () => {
   audio();
-  if (st.ciclo.ciencia) { show('game'); return; }
+  if (st.ciclo.ciencia) { show('choice'); return; }
   document.getElementById('cienciaModal').classList.add('on');
 });
 document.getElementById('btnCiencia').addEventListener('click', async () => {
@@ -271,7 +271,7 @@ document.getElementById('btnCiencia').addEventListener('click', async () => {
   if (r && r.ok) {
     document.getElementById('cienciaModal').classList.remove('on');
     st.ciclo.ciencia = true; st.ciclo.status = 'ciente';
-    show('game');
+    show('choice');
   } else { alert('Erro de conexão — tente de novo.'); }
 });
 document.getElementById('cardJogar').addEventListener('click', () => { audio(); show('game'); });
