@@ -61,7 +61,14 @@ Commit + push publica no GitHub Pages em 1-3 min.
 condicional (default `false`). Deploy normal troca assets SEM tocar em localStorage —
 ninguém é deslogado. Só ligar em incidente de privacidade (e voltar pra false depois).
 
-Versão atual (2026-07-04): `APP_VERSION = v14-2026-06-12` / `CACHE_NAME = clube-prime-v30`.
+Versão atual (2026-07-05): `APP_VERSION = v14-2026-06-12` / `CACHE_NAME = clube-prime-v31`.
+v31: correções da revisão do Caça-Carne — (1) `doomOff()` agora roda também no branch
+final de `pull()` (rAF suspenso por tela travada/ligação pulava a janela NUDGE e o
+"PERDEU TUDO?!" vazava sobre a vitória/cupom); (2) offsets de repouso dos rolos
+(`REST_CELLS=[2,14,10]`) semeiam CORTE na payline em vez de 💀/🪓 (máquina em repouso
+não parece mais uma perda); (3) `doomToggle` com null-guard (skew de cache não estoura
+TypeError no rAF); (4) `jackpot.js` no precache do SW (bump de CACHE_NAME agora o
+atualiza de fato); (5) guard `escolhendo` trava duplo-toque na tela de escolha. Sem purge.
 v30: religada a tela de escolha do jackpot (`#choice`: 🎰 Caça-Carne vs 5% garantido) —
 após a ciência do prazo o cliente escolhe; antes ia direto pra máquina e a RPC
 `jackpot_opcao_5pct` era inalcançável pela UI.

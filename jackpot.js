@@ -274,10 +274,19 @@ document.getElementById('btnCiencia').addEventListener('click', async () => {
     show('choice');
   } else { alert('Erro de conexão — tente de novo.'); }
 });
-document.getElementById('cardJogar').addEventListener('click', () => { audio(); show('game'); });
+// escolha em andamento trava os dois cards: evita duplo-toque no 5% (que emitiria
+// cupom e depois mostraria alerta falso) e entrar na máquina com ciclo já resolvido.
+let escolhendo = false;
+document.getElementById('cardJogar').addEventListener('click', () => {
+  if (escolhendo) return;
+  audio(); show('game');
+});
 document.getElementById('card5pct').addEventListener('click', async () => {
+  if (escolhendo) return;
   if (!confirm('Trocar seus 5.000 pontos por 5% de desconto?\n(o Caça-Carne premia com um corte premium…)')) return;
+  escolhendo = true;
   const r = await rpcCliente('jackpot_opcao_5pct');
+  if (!(r && r.ok)) escolhendo = false;
   if (r && r.ok) {
     st.ciclo.status = 'cupom_emitido'; st.ciclo.cupom_codigo = r.cupom;
     st.ciclo.cupom_validade = r.validade; st.ciclo.premio_titulo = '5% de desconto na próxima compra';
@@ -312,10 +321,13 @@ const TARGET_IDX = 2; // o 💀 mora em TARGET_IDX-1: a falsa parada exibe ele n
 const CELL = 96, NSYM = DECOR.length, LOOP = CELL*NSYM, REPEATS = 8;
 const esc = s => String(s).replace(/[&<>"']/g, ch =>
   ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[ch]));
+// offsets de repouso: a payline (linha do meio = índice offset+1) mostra CORTE,
+// nunca um perigo. 2→TOMAHAWK, 14→MAMINHA, 10→KIT (perigos só aparecem no giro).
+const REST_CELLS = [2, 14, 10];
 const reels = [0,1,2].map(i => ({
   el: document.getElementById('r' + i),
   strip: document.querySelector('#r' + i + ' .strip'),
-  p: i*CELL*3, lastCell: -1
+  p: REST_CELLS[i]*CELL, lastCell: -1
 }));
 function nomePremioCurto(t) {
   const palavras = String(t || '').split(' ');
@@ -434,16 +446,16 @@ async function iniciarJogada(force) {
 // na payline (pânico encenado: tela vermelha + coração + vibração) e então
 // cede uma casa e entrega o prêmio real. O 💀 fica na linha de cima como
 // prova do "escapou por um".
-function doomOn() {
-  document.getElementById('payline').classList.add('doom');
-  document.getElementById('vinheta').classList.add('doom');
-  document.getElementById('doomLabel').classList.add('on');
+// null-guard: se o jackpot.html estiver defasado (skew de cache pós-deploy) e não
+// tiver #doomLabel, ignora em vez de estourar TypeError no meio do rAF.
+function doomToggle(on) {
+  ['payline', 'vinheta', 'doomLabel'].forEach((id, i) => {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle(i === 2 ? 'on' : 'doom', on);
+  });
 }
-function doomOff() {
-  document.getElementById('payline').classList.remove('doom');
-  document.getElementById('vinheta').classList.remove('doom');
-  document.getElementById('doomLabel').classList.remove('on');
-}
+function doomOn() { doomToggle(true); }
+function doomOff() { doomToggle(false); }
 function pull(targetIdx, force, done) {
   const t0 = performance.now();
   const offTarget = ((targetIdx - 1 + NSYM) % NSYM) * CELL;
@@ -506,6 +518,9 @@ function pull(targetIdx, force, done) {
       pl.r.p = pl.start + pl.dist + CELL; render(pl.r);
       reels[0].el.classList.remove('dim'); reels[1].el.classList.remove('dim');
       thunk(); buzz(40);
+      // doomOff() idempotente: cobre o caso de rAF suspenso (tela travou/ligação)
+      // pular a janela NUDGE — sem isso o "PERDEU TUDO?!" vaza sobre a vitória.
+      doomOff();
       document.getElementById('vinheta').classList.remove('on');
       document.getElementById('payline').classList.add('hit');
       status.textContent = 'ESCAPOU POR UM! 🏆';

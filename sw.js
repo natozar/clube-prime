@@ -1,12 +1,15 @@
 // OneSignal SDK — DEVE ser a primeira linha do service worker
 importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
 
-const CACHE_NAME = 'clube-prime-v30';
+const CACHE_NAME = 'clube-prime-v31';
 // FORCE_PURGE no activate: SÓ ligar em incidente de privacidade. Com false, o
 // deploy troca os assets sem tocar no localStorage — NINGUÉM é deslogado
 // (clube_sessao preservada; cliente continua logado, admin idem).
 const PURGE_ON_ACTIVATE = false;
-const ASSETS = ['/manifest.json', '/icon-72.png', '/icon-96.png', '/icon-128.png', '/icon-144.png', '/icon-152.png', '/icon-192.png', '/icon-384.png', '/icon-512.png', '/app.css', '/app.js', '/admin.css', '/admin.js', '/secure-storage.js', '/boot-purge.js'];
+// jackpot.js incluído no precache pra que o bump de CACHE_NAME de fato o atualize
+// (antes ele caía no branch static sem cache.put e só o HTTP-cache do browser o
+// controlava — deploy do jackpot chegava atrasado). jackpot.html segue network-first.
+const ASSETS = ['/manifest.json', '/icon-72.png', '/icon-96.png', '/icon-128.png', '/icon-144.png', '/icon-152.png', '/icon-192.png', '/icon-384.png', '/icon-512.png', '/app.css', '/app.js', '/admin.css', '/admin.js', '/secure-storage.js', '/boot-purge.js', '/jackpot.js'];
 
 self.addEventListener('install', e => {
   console.log('[SW] Instalando', CACHE_NAME);
