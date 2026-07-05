@@ -92,6 +92,10 @@ function fanfare() {
   for (let i = 0; i < 10; i++) env('sine', 1300 + Math.random()*900, c.currentTime + .5 + i*.05, .12, .04);
 }
 const coinDrop = () => { const c = audio(); if (c) for (let i = 0; i < 10; i++) env('square', 2300 - i*150, c.currentTime + i*.06, .09, .05); };
+// acorde dissonante do 💀 — segunda menor + sub-grave (pânico encenado)
+const doomSting = () => { const c = audio(); if (!c) return;
+  env('sawtooth', 110, c.currentTime, .7, .16); env('sawtooth', 116.5, c.currentTime, .7, .16);
+  env('square', 55, c.currentTime, .95, .22); };
 const buzz = ms => { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) {} };
 
 // ── moeda 3D (logo real) ──
@@ -158,10 +162,12 @@ let dust = [], confetti = [];
 function sizeFx() { fx.width = innerWidth*devicePixelRatio; fx.height = innerHeight*devicePixelRatio;
   fctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0); }
 addEventListener('resize', sizeFx); sizeFx();
-for (let i = 0; i < 50; i++) dust.push({ x: Math.random()*innerWidth, y: Math.random()*innerHeight,
-  r: Math.random()*1.6 + .4, s: Math.random()*.25 + .06, o: Math.random()*.5 + .15, p: Math.random()*6.28 });
+const DUST_COLS = ['#d4af37','#d4af37','#d4af37','#ff5c8a','#41e8ff'];
+for (let i = 0; i < 70; i++) dust.push({ x: Math.random()*innerWidth, y: Math.random()*innerHeight,
+  r: Math.random()*1.6 + .4, s: Math.random()*.25 + .06, o: Math.random()*.5 + .15, p: Math.random()*6.28,
+  col: DUST_COLS[i % DUST_COLS.length] });
 function burst(cx, cy, n) {
-  const cols = ['#d4af37','#f9e29c','#c0392b','#f5ecd7','#8a6d1d'];
+  const cols = ['#d4af37','#f9e29c','#c0392b','#f5ecd7','#8a6d1d','#ff5c8a','#41e8ff'];
   for (let i = 0; i < n; i++) {
     const a = Math.random()*6.28, v = Math.random()*9 + 4;
     confetti.push({ x: cx, y: cy, vx: Math.cos(a)*v, vy: Math.sin(a)*v - 7,
@@ -180,7 +186,7 @@ function fxLoop() {
     d.y -= d.s; d.p += .01;
     if (d.y < -4) { d.y = innerHeight + 4; d.x = Math.random()*innerWidth; }
     fctx.globalAlpha = d.o * (0.6 + 0.4*Math.sin(d.p));
-    fctx.fillStyle = '#d4af37';
+    fctx.fillStyle = d.col;
     fctx.beginPath(); fctx.arc(d.x + Math.sin(d.p)*8, d.y, d.r, 0, 6.28); fctx.fill();
   }
   confetti = confetti.filter(c => c.life > 0);
@@ -280,36 +286,55 @@ document.getElementById('card5pct').addEventListener('click', async () => {
 });
 
 // ── rolos ──
+// 9 símbolos visíveis (3 rolos × 3 linhas). Os símbolos de perigo (💀/🪓/😱)
+// são PURO TEATRO: o prêmio real chega decidido do servidor antes da encenação.
 const DECOR = [
-  ['PICANHA','Nelore'],['ANCHO','Raças'],['CHORIZO','Raças Prime'],['TOMAHAWK','Black Angus'],
-  ['DENVER','Steak'],['T-BONE','Especial'],['MAMINHA','Angus'],['COSTELA','Premium'],
-  ['FRALDINHA','Raças Prime'],['PICANHA','Angus'],['LINGUIÇA','Artesanal'],['KIT','Churrasco']
+  { nm:'PICANHA',      sb:'Angus',            ic:'🥩', cls:'' },
+  { nm:'PERDEU TUDO',  sb:'−5.000 pts',       ic:'💀', cls:'doom' }, // vizinho do alvo: estrela da falsa parada
+  { nm:'JACKPOT',      sb:'seu prêmio',       ic:'🏆', cls:'' },     // TARGET_IDX — vira o prêmio real
+  { nm:'TOMAHAWK',     sb:'Black Angus',      ic:'🍖', cls:'' },
+  { nm:'WAGYU',        sb:'importado',        ic:'✨', cls:'' },
+  { nm:'SÓ 5%',        sb:'desconto…',        ic:'🙃', cls:'meh' },
+  { nm:'ANCHO',        sb:'Raças Prime',      ic:'🥩', cls:'' },
+  { nm:'PERDE METADE', sb:'−2.500 pts',       ic:'🪓', cls:'doom' },
+  { nm:'COSTELA',      sb:'Premium',          ic:'🍖', cls:'' },
+  { nm:'PERDEU TUDO',  sb:'−5.000 pts',       ic:'💀', cls:'doom' },
+  { nm:'T-BONE',       sb:'Especial',         ic:'🥩', cls:'' },
+  { nm:'KIT',          sb:'churrasco completo', ic:'🎁', cls:'' },
+  { nm:'FRALDINHA',    sb:'Prime',            ic:'🔥', cls:'' },
+  { nm:'PASSA A VEZ',  sb:'zero prêmio',      ic:'😱', cls:'meh' },
+  { nm:'CHORIZO',      sb:'Raças Prime',      ic:'🥩', cls:'' },
+  { nm:'MAMINHA',      sb:'Angus',            ic:'🍖', cls:'' },
+  { nm:'LINGUIÇA',     sb:'Artesanal',        ic:'🌶️', cls:'' },
+  { nm:'DENVER',       sb:'Steak',            ic:'🥩', cls:'' }
 ];
-const ICONES = ['🥩','🏆','🥩','🍖','🥩','🍖','🥩','🍖','🥩','⭐','🔥','🎁'];
-const CELL = 96, NSYM = 12, LOOP = CELL*NSYM, REPEATS = 12;
-let TARGET_IDX = 1; // posição do prêmio real no strip (substitui o decorativo)
+const TARGET_IDX = 2; // o 💀 mora em TARGET_IDX-1: a falsa parada exibe ele na payline
+const CELL = 96, NSYM = DECOR.length, LOOP = CELL*NSYM, REPEATS = 8;
+const esc = s => String(s).replace(/[&<>"']/g, ch =>
+  ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[ch]));
 const reels = [0,1,2].map(i => ({
   el: document.getElementById('r' + i),
   strip: document.querySelector('#r' + i + ' .strip'),
-  p: i*CELL*2.3, lastCell: -1
+  p: i*CELL*3, lastCell: -1
 }));
 function nomePremioCurto(t) {
   const palavras = String(t || '').split(' ');
   return [palavras[0].toUpperCase(), palavras.slice(1).join(' ')];
 }
 function buildStrips(premioTitulo) {
-  const syms = DECOR.map((d, i) => ({ nm: d[0], sb: d[1], ic: ICONES[i], jack: false }));
+  const syms = DECOR.map(d => ({ nm: d.nm, sb: d.sb, ic: d.ic, cls: d.cls, jack: false }));
   if (premioTitulo) {
     const [nm, sb] = nomePremioCurto(premioTitulo);
-    syms[TARGET_IDX] = { nm: nm, sb: sb || 'seu prêmio', ic: '🏆', jack: true };
-  } else { syms[TARGET_IDX].jack = true; syms[TARGET_IDX].ic = '🏆'; }
+    syms[TARGET_IDX] = { nm: nm, sb: sb || 'seu prêmio', ic: '🏆', cls: '', jack: true };
+  } else { syms[TARGET_IDX].jack = true; }
   for (const r of reels) {
     let html = '';
     for (let k = 0; k < REPEATS; k++)
       for (let s = 0; s < NSYM; s++) {
         const o = syms[s];
-        html += '<div class="cell' + (o.jack ? ' jack' : '') + '"><span class="ic">' + o.ic +
-          '</span><span class="nm">' + o.nm + '</span><span class="sb">' + o.sb + '</span></div>';
+        html += '<div class="cell' + (o.jack ? ' jack' : '') + (o.cls ? ' ' + o.cls : '') +
+          '"><span class="ic">' + o.ic + '</span><span class="nm">' + esc(o.nm) +
+          '</span><span class="sb">' + esc(o.sb) + '</span></div>';
       }
     r.strip.innerHTML = html;
     render(r);
@@ -405,11 +430,24 @@ async function iniciarJogada(force) {
   });
 }
 
-// rolos 1-2 param no prêmio; o 3º faz a FALSA PARADA um símbolo antes e cede
+// rolos 1-2 param no prêmio; o 3º faz a FALSA PARADA cravando o 💀 PERDEU TUDO
+// na payline (pânico encenado: tela vermelha + coração + vibração) e então
+// cede uma casa e entrega o prêmio real. O 💀 fica na linha de cima como
+// prova do "escapou por um".
+function doomOn() {
+  document.getElementById('payline').classList.add('doom');
+  document.getElementById('vinheta').classList.add('doom');
+  document.getElementById('doomLabel').classList.add('on');
+}
+function doomOff() {
+  document.getElementById('payline').classList.remove('doom');
+  document.getElementById('vinheta').classList.remove('doom');
+  document.getElementById('doomLabel').classList.remove('on');
+}
 function pull(targetIdx, force, done) {
   const t0 = performance.now();
   const offTarget = ((targetIdx - 1 + NSYM) % NSYM) * CELL;
-  const offBefore = (offTarget - CELL + LOOP) % LOOP;
+  const offBefore = (offTarget - CELL + LOOP) % LOOP; // 💀 (TARGET_IDX-1) na payline
   const speed = .55 + force*1.05;
   const plans = reels.map((r, i) => {
     const off0 = ((r.p % LOOP) + LOOP) % LOOP;
@@ -419,7 +457,8 @@ function pull(targetIdx, force, done) {
     return { r, start: r.p, dist, T: (1700 + i*950 + (i === 2 ? 600 : 0)) * speed, stopped: false };
   });
   const ease = k => k < .62 ? k*1.18 : .7316 + (1 - Math.pow(1 - (k - .62)/.38, 3))*.2684;
-  const T3 = plans[2].T, HOLD = 780, NUDGE = 480;
+  const T3 = plans[2].T, HOLD = 1650, NUDGE = 560;
+  const status = document.getElementById('status');
   let riser1 = false, heartNext = .5, holdThumps = 0, nudgeTick = false;
   function tickCell(r, k) {
     const cell = Math.floor(r.p / CELL);
@@ -437,7 +476,8 @@ function pull(targetIdx, force, done) {
       pl.r.p = pl.start + pl.dist*Math.min(1, ease(k));
       pl.r.el.classList.toggle('blur', k < .8 && k > .02);
       tickCell(pl.r, k); render(pl.r);
-      if (k >= 1 && !pl.stopped) { pl.stopped = true; stopFx(pl.r); }
+      if (k >= 1 && !pl.stopped) { pl.stopped = true; stopFx(pl.r);
+        status.textContent = i === 0 ? 'UM! 👀 vai… vai…' : 'DOIS! 😱 falta um… FALTA UM!'; }
     }
     const pl = plans[2];
     if (t < T3) {
@@ -448,11 +488,18 @@ function pull(targetIdx, force, done) {
       if (k > .55 && k > heartNext) { thump(); buzz(12); heartNext += Math.max(.04, .12*(1 - k)); }
       if (k > .55 && !riser1) { riser1 = true; riser((T3*.45)/1000); }
     } else if (t < T3 + HOLD) {
-      if (!pl.stopped) { pl.stopped = true; stopFx(pl.r);
-        reels[0].el.classList.add('dim'); reels[1].el.classList.add('dim'); }
-      if ((t - T3)/HOLD > holdThumps/3) { holdThumps++; thump(); buzz(22); }
+      if (!pl.stopped) {
+        pl.stopped = true; stopFx(pl.r);
+        reels[0].el.classList.add('dim'); reels[1].el.classList.add('dim');
+        doomOn(); doomSting(); buzz([90, 60, 90, 60, 220]);
+        status.textContent = '💀 não… NÃO PODE SER…';
+        document.body.classList.add('shake');
+        setTimeout(() => document.body.classList.remove('shake'), 520);
+      }
+      if ((t - T3)/HOLD > holdThumps/6) { holdThumps++; thump(); buzz(16 + holdThumps*5); }
     } else if (t < T3 + HOLD + NUDGE) {
-      if (!nudgeTick) { nudgeTick = true; tickSound(700); buzz(15); }
+      if (!nudgeTick) { nudgeTick = true; doomOff(); tickSound(700); buzz(15); riser(NUDGE/1000);
+        status.textContent = 'espera… TÁ MEXENDO?!'; }
       const nk = (t - T3 - HOLD)/NUDGE, ne = 1 - Math.pow(1 - nk, 3);
       pl.r.p = pl.start + pl.dist + CELL*ne; render(pl.r);
     } else {
@@ -461,6 +508,7 @@ function pull(targetIdx, force, done) {
       thunk(); buzz(40);
       document.getElementById('vinheta').classList.remove('on');
       document.getElementById('payline').classList.add('hit');
+      status.textContent = 'ESCAPOU POR UM! 🏆';
       done(); return;
     }
     requestAnimationFrame(frame);
@@ -471,6 +519,8 @@ function pull(targetIdx, force, done) {
 // ── vitória + vídeo + share obrigatório ──
 function mostrarVitoria(comFesta) {
   document.getElementById('prizeName').textContent = (premio.titulo || '').toUpperCase();
+  if (comFesta) document.getElementById('prizeSub').textContent =
+    'o 💀 passou raspando! · Jackpot Prime · Empório Família Rodrigues';
   document.getElementById('rays').classList.add('on');
   show('win');
   if (comFesta) { burstConfetti(); setTimeout(burstConfetti, 700); }

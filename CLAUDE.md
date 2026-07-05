@@ -61,7 +61,11 @@ Commit + push publica no GitHub Pages em 1-3 min.
 condicional (default `false`). Deploy normal troca assets SEM tocar em localStorage —
 ninguém é deslogado. Só ligar em incidente de privacidade (e voltar pra false depois).
 
-Versão atual (2026-06-12): `APP_VERSION = v14-2026-06-12` / `CACHE_NAME = clube-prime-v23`.
+Versão atual (2026-07-04): `APP_VERSION = v14-2026-06-12` / `CACHE_NAME = clube-prime-v29`.
+v29: reforma visual do Caça-Carne — 9 símbolos visíveis (3×3), rolos com 18 símbolos
+incluindo perigos TEATRAIS (💀 PERDEU TUDO, 🪓 PERDE METADE — o prêmio real continua
+100% decidido pelo servidor/admin; a falsa parada crava o 💀 na payline e cede pro
+prêmio), neon multicolor no gabinete. Deploy sem purge.
 v23: Jackpot Prime/Caça-Carne (ver seção abaixo), deploy sem purge. O bump v14 acompanha o FIX 5 (nova derivação de chave no `secure-storage.js` invalida todo `cs_*` existente — wipe global força re-login limpo; `clube_device_id` e `clube-admin-auth` preservados pela whitelist). Histórico: v13 fechou loop de reload no iPhone (handler FORCE_PURGE em `app.js:~805` preserva whitelist do boot-purge + guard 60s); v17–v20 de CACHE_NAME: device_id durável e reclaim (`ae7120b`, `397d109`); v21 (`bee353f`): `https://viacep.com.br` no `connect-src` das CSPs — busca de CEP estava bloqueada e travava cadastro/pedidos.
 
 ## Convenções de código
