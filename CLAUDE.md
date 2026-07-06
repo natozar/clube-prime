@@ -61,7 +61,12 @@ Commit + push publica no GitHub Pages em 1-3 min.
 condicional (default `false`). Deploy normal troca assets SEM tocar em localStorage —
 ninguém é deslogado. Só ligar em incidente de privacidade (e voltar pra false depois).
 
-Versão atual (2026-07-05): `APP_VERSION = v14-2026-06-12` / `CACHE_NAME = clube-prime-v31`.
+Versão atual (2026-07-05): `APP_VERSION = v14-2026-06-12` / `CACHE_NAME = clube-prime-v32`.
+v32: hardening de edge — `rpc()` (jackpot.js) agora tem timeout de 15s via
+AbortController. Em rede móvel instável o fetch podia pendurar sem erro e travar o
+giro pra sempre (`playing`/`freeSpin` presos, só reload resolvia); agora toda jogada
+resolve e o caminho de erro reabilita a alavanca. Provado com harness Node (fetch
+pendurado aborta e vira `{ok:false,erro:'conexao'}`). Sem purge.
 v31: correções da revisão do Caça-Carne — (1) `doomOff()` agora roda também no branch
 final de `pull()` (rAF suspenso por tela travada/ligação pulava a janela NUDGE e o
 "PERDEU TUDO?!" vazava sobre a vitória/cupom); (2) offsets de repouso dos rolos

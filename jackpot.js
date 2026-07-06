@@ -34,13 +34,19 @@ const deviceId = getDeviceId();
 if (!sessao || !deviceId) { location.replace('/'); }
 
 async function rpc(nome, body) {
+  // timeout de 15s: em rede móvel instável o fetch pode pendurar sem erro e
+  // travar o giro pra sempre (playing/freeSpin presos). AbortController garante
+  // que a jogada sempre resolve — o caminho de erro reabilita a alavanca.
+  const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+  const to = ctrl ? setTimeout(() => ctrl.abort(), 15000) : null;
   try {
-    const r = await fetch(SUPA_URL + '/rest/v1/rpc/' + nome, {
-      method: 'POST', headers: SH, body: JSON.stringify(body)
-    });
+    const opt = { method: 'POST', headers: SH, body: JSON.stringify(body) };
+    if (ctrl) opt.signal = ctrl.signal;
+    const r = await fetch(SUPA_URL + '/rest/v1/rpc/' + nome, opt);
     if (!r.ok) return { ok: false, erro: 'http_' + r.status };
     return await r.json();
   } catch (e) { return { ok: false, erro: 'conexao' }; }
+  finally { if (to) clearTimeout(to); }
 }
 const rpcCliente = (nome, extra) => rpc(nome, Object.assign({
   p_cliente_id: sessao ? sessao.clienteId : 0, p_device_id: deviceId || ''
