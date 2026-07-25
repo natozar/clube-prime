@@ -78,6 +78,12 @@ const limpar = row => {
   const plR = await sb('jackpot_push_log?select=id,ciclo_id,tipo,http_status,erro,enviado_em&order=id.desc&limit=10');
   console.log('PUSH_LOG:', JSON.stringify(plR.json || []));
 
+  // 8) fluxo legado de recompensas: se tiver linha ativa aqui, um cliente com
+  //    cupom do jackpot emitido (5.000 ainda NAO debitados) pode gastar os mesmos
+  //    pontos num resgate legado antes de ir ao balcao. É a lacuna §9.8-3 do plano.
+  const recR = await sb('recompensas?select=id,pontos_necessarios,ativo');
+  console.log('RECOMPENSAS_LEGADO:', JSON.stringify(recR.json || recR.txt));
+
   // ── veredito ──
   const comCicloVivo = new Set(ciclos
     .filter(c => !['entregue', 'expirado_metade', 'expirado_sem_aviso'].includes(c.status))
