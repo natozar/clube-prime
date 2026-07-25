@@ -1,8 +1,14 @@
 name: jackpot-push
 on:
   schedule:
-    - cron: '0 11 * * *'   # 08:00 BRT — manutenção + escada da manhã
-    - cron: '0 21 * * *'   # 18:00 BRT — reforço do fim de tarde
+    # A cada 15 min das 08h às 20h BRT. O dono libera o prêmio no admin (que só
+    # grava liberado_em) e o aviso ao cliente sai no próximo tick — antes eram
+    # 2x/dia, então liberar 08:10 significava o cliente saber só às 18:00.
+    # Restrito ao horário comercial de propósito: rodar de madrugada mandaria
+    # push às 3h pra quem vencesse um degrau da escada à meia-noite.
+    - cron: '*/15 11-23 * * *'   # 08:00–20:59 BRT
+    # Rodar frequente é seguro: UNIQUE(ciclo_id, tipo) no push_log torna cada
+    # degrau idempotente — nenhum cliente recebe o mesmo aviso duas vezes.
   workflow_dispatch: {}
 
 jobs:

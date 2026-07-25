@@ -61,7 +61,13 @@ Commit + push publica no GitHub Pages em 1-3 min.
 condicional (default `false`). Deploy normal troca assets SEM tocar em localStorage —
 ninguém é deslogado. Só ligar em incidente de privacidade (e voltar pra false depois).
 
-Versão atual (2026-07-05): `APP_VERSION = v14-2026-06-12` / `CACHE_NAME = clube-prime-v32`.
+Versão atual (2026-07-25): `APP_VERSION = v14-2026-06-12` / `CACHE_NAME = clube-prime-v33`.
+v33: latência do aviso de liberação do jackpot. Definir o prêmio no admin só grava
+`liberado_em`; quem envia o push é o job, que rodava 2×/dia — liberar 08:10 deixava o
+cliente sem saber até 18:00, enquanto o admin dizia "o cliente vai ser avisado". Cron
+agora é `*/15 11-23 * * *` (08h–21h BRT; madrugada de fora pra não acordar ninguém) e
+o texto do alert diz a latência real. Seguro rodar frequente: `UNIQUE(ciclo_id, tipo)`
+no `push_log` torna cada degrau idempotente. Sem purge.
 v32: hardening de edge — `rpc()` (jackpot.js) agora tem timeout de 15s via
 AbortController. Em rede móvel instável o fetch podia pendurar sem erro e travar o
 giro pra sempre (`playing`/`freeSpin` presos, só reload resolvia); agora toda jogada

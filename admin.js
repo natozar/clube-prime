@@ -1756,7 +1756,7 @@ function jkRenderAguardando(ciclos) {
     sel.addEventListener('change', async () => {
       const r = await jkRpc('jackpot_atribuir_premio', { p_ciclo_id: c.id, p_catalogo_id: sel.value ? parseInt(sel.value, 10) : null });
       if (!r.ok) { alert('Não deu: ' + (r.erro || '')); return; }
-      if (r.liberado) alert('Prêmio definido e LIBERADO! O cliente vai ser avisado pra jogar. 🎰');
+      if (r.liberado) alert('Prêmio definido e LIBERADO! 🎰\n\nO push avisando o cliente sai em até 15 min (o job roda de 08h às 21h).');
       window.jackpotRecarregar();
     });
     row.appendChild(sel);
@@ -1765,7 +1765,7 @@ function jkRenderAguardando(ciclos) {
       btn.addEventListener('click', async () => {
         const r = await jkRpc('jackpot_atribuir_premio', { p_ciclo_id: c.id, p_catalogo_id: null });
         if (!r.ok) { alert('Não deu: ' + (r.erro || '')); return; }
-        alert('Liberado! O cliente vai ser avisado pra jogar. 🎰');
+        alert('Liberado! 🎰\n\nO push avisando o cliente sai em até 15 min (o job roda de 08h às 21h).');
         window.jackpotRecarregar();
       });
       row.appendChild(btn);
