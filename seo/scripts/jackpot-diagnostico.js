@@ -75,7 +75,7 @@ const limpar = row => {
   // 7) push log — confirma se algum aviso já saiu algum dia
   // inclui `erro`: push que volta 200 COM errors (ex.: invalid_aliases = ninguem
   // inscrito naquele external_id) nao e entrega, e so o campo erro revela isso.
-  const plR = await sb('jackpot_push_log?select=id,ciclo_id,tipo,http_status,erro,criado_em&order=id.desc&limit=10');
+  const plR = await sb('jackpot_push_log?select=id,ciclo_id,tipo,http_status,erro,enviado_em&order=id.desc&limit=10');
   console.log('PUSH_LOG:', JSON.stringify(plR.json || []));
 
   // ── veredito ──
