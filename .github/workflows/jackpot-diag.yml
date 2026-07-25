@@ -12,6 +12,10 @@ on:
         description: 'cliente_id alvo do fix'
         required: false
         default: ''
+      piloto_add:
+        description: 'cliente_id a incluir em piloto_clientes'
+        required: false
+        default: ''
 
 jobs:
   diag:
@@ -27,4 +31,5 @@ jobs:
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           FIX: ${{ inputs.fix }}
           ALVO: ${{ inputs.alvo }}
+          PILOTO_ADD: ${{ inputs.piloto_add }}
         run: node seo/scripts/jackpot-diagnostico.js

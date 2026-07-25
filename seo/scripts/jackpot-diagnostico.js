@@ -8,6 +8,7 @@ const SUPABASE_URL = process.env.SUPABASE_URL;
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 const FIX = process.env.FIX === '1';
 const ALVO = parseInt(process.env.ALVO || '0', 10);
+const PILOTO_ADD = parseInt(process.env.PILOTO_ADD || '0', 10);
 
 if (!SUPABASE_URL || !SERVICE_KEY) { console.error('faltam secrets SUPABASE'); process.exit(1); }
 
@@ -83,6 +84,24 @@ const limpar = row => {
   console.log('VEREDITO: orfaos (>= gatilho, sem ciclo vivo) =', JSON.stringify(orfaos.map(o => o.cliente_id)));
 
   if (!FIX) { console.log('modo read-only. Para corrigir: FIX=1 e ALVO=<cliente_id>.'); return; }
+
+  // libera o cliente no piloto ANTES de criar o ciclo — sem isso a RPC do app
+  // continua tratando ele como fora do programa.
+  if (PILOTO_ADD) {
+    const atual = Array.isArray(cfg.piloto_clientes) ? cfg.piloto_clientes : [];
+    if (atual.includes(PILOTO_ADD)) {
+      console.log(`PILOTO: ${PILOTO_ADD} já estava na lista.`);
+    } else {
+      const nova = atual.concat([PILOTO_ADD]);
+      const up = await sb('jackpot_config?id=eq.1', {
+        method: 'PATCH',
+        headers: Object.assign({ Prefer: 'return=representation' }, SB),
+        body: JSON.stringify({ piloto_clientes: nova, atualizado_em: new Date().toISOString() })
+      });
+      console.log('PILOTO atualizado:', up.status, JSON.stringify((up.json || []).map(limpar)));
+    }
+  }
+
   if (!ALVO) { console.log('FIX pedido mas ALVO vazio — nada feito.'); return; }
   const alvo = orfaos.find(o => o.cliente_id === ALVO);
   if (!alvo) { console.log(`ALVO ${ALVO} não está órfão — nada feito (evita ciclo duplicado).`); return; }
