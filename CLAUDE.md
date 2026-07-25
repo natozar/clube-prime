@@ -61,7 +61,18 @@ Commit + push publica no GitHub Pages em 1-3 min.
 condicional (default `false`). Deploy normal troca assets SEM tocar em localStorage —
 ninguém é deslogado. Só ligar em incidente de privacidade (e voltar pra false depois).
 
-Versão atual (2026-07-25): `APP_VERSION = v14-2026-06-12` / `CACHE_NAME = clube-prime-v33`.
+Versão atual (2026-07-25): `APP_VERSION = v14-2026-06-12` / `CACHE_NAME = clube-prime-v34`.
+v34: o dono nunca recebia o aviso "Fulano bateu 5.000 pontos". Duas causas.
+(1) `admin.js` só fazia `OneSignal.User.addTag('role','admin')`, nunca `login()` —
+o dispositivo do admin não tinha `external_id`, então o push do job (que mira
+`external_id: [admin_cliente_id]`) voltava `invalid_aliases`. Agora
+`jkVincularPushAdmin()` chama `OneSignal.login(jkConfig.admin_cliente_id)` ao
+carregar o card do jackpot (usa a config, sem hardcode do id 6).
+(2) O job tratava QUALQUER linha do `push_log` como enviada, mas o OneSignal
+responde 200 com `errors` quando ninguém está inscrito — push falho nunca era
+retentado (perdeu os avisos de 13/06 e 25/07). Agora só entrega real bloqueia,
+falha reenvia a cada 60min (`RETRY_MIN`) e o upsert virou `merge-duplicates` pra
+a linha refletir a última tentativa. Vale pro D0 do cliente também. Sem purge.
 v33: latência do aviso de liberação do jackpot. Definir o prêmio no admin só grava
 `liberado_em`; quem envia o push é o job, que rodava 2×/dia — liberar 08:10 deixava o
 cliente sem saber até 18:00, enquanto o admin dizia "o cliente vai ser avisado". Cron

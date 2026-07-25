@@ -1626,6 +1626,26 @@ function limparLogsSuporte() {
 // ── CAÇA-CARNE PRIME · gestão (catálogo, atribuição, balcão, auditoria) ──
 // Acesso direto às tabelas jackpot_* via authHeaders (RLS auth_all) + RPCs admin.
 let jkConfig = null, jkCatalogo = [], jkFreq = {};
+
+// Vincula ESTE dispositivo ao external_id do dono. Sem isso o push 'adm' do
+// jackpot ("Fulano bateu 5.000 pontos") volta invalid_aliases e o dono nunca
+// fica sabendo: o admin só fazia addTag('role','admin'), nunca login(), então
+// nenhum external_id existia. Falhou assim em 13/06 e 25/07 de 2026.
+// Usa admin_cliente_id da config em vez de hardcode.
+let jkPushVinculado = false;
+function jkVincularPushAdmin(id) {
+  if (jkPushVinculado || !id || !window.OneSignalDeferred) return;
+  jkPushVinculado = true;
+  OneSignalDeferred.push(async function(OneSignal) {
+    try {
+      await OneSignal.login(String(id));
+      console.log('[Push] dispositivo admin vinculado ao external_id', id);
+    } catch (e) {
+      jkPushVinculado = false;
+      console.warn('[Push] login do admin falhou:', e);
+    }
+  });
+}
 function jkEl(tag, css, txt) {
   const e = document.createElement(tag);
   if (css) e.style.cssText = css;
@@ -1652,6 +1672,7 @@ window.jackpotRecarregar = async function() {
       jkFetch('jackpot_push_log?select=*&order=id.desc&limit=15')
     ]);
     jkConfig = cfgArr[0]; jkCatalogo = cat;
+    jkVincularPushAdmin(jkConfig && jkConfig.admin_cliente_id);
     jkFreq = {};
     if (ciclos.length) {
       const ids = [...new Set(ciclos.map(c => c.cliente_id))].join(',');

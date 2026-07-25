@@ -1,6 +1,7 @@
 // ── JACKPOT PRIME · job de manutenção + pushes auditados ──
-// Roda 2x/dia via GitHub Actions. Idempotente: UNIQUE(ciclo_id, tipo) no
-// jackpot_push_log garante que nenhum push duplica, mesmo com cron repetido.
+// Roda a cada 15 min (08h-21h BRT) via GitHub Actions. Idempotente:
+// UNIQUE(ciclo_id, tipo) no jackpot_push_log garante que nenhum push ENTREGUE
+// duplica, mesmo com cron frequente — falha é retentada (ver RETRY_MIN).
 // Regra anti-spam: no máximo 1 push de ciclo por cliente por execução (o tier
 // mais avançado aplicável).
 'use strict';
@@ -63,10 +64,12 @@ async function push(clienteId, titulo, msg, cicloId, tipo) {
       if (j && j.errors) erro = JSON.stringify(j.errors).slice(0, 180);
     } catch (e) { erro = String(e).slice(0, 180); status = 0; }
   }
-  // log SEMPRE (auditoria) — on_conflict ignora duplicata
+  // log SEMPRE (auditoria). merge-duplicates (e não ignore): numa retentativa a
+  // linha existente é ATUALIZADA com o resultado da nova tentativa, senão o
+  // registro ficaria congelado no primeiro fracasso.
   await sb('jackpot_push_log?on_conflict=ciclo_id,tipo', {
     method: 'POST',
-    headers: Object.assign({ Prefer: 'resolution=ignore-duplicates' }, SB),
+    headers: Object.assign({ Prefer: 'resolution=merge-duplicates' }, SB),
     body: JSON.stringify({
       ciclo_id: cicloId, cliente_id: clienteId, tipo,
       agendado_para: new Date().toISOString().slice(0, 10),
@@ -86,8 +89,25 @@ async function push(clienteId, titulo, msg, cicloId, tipo) {
   const cfg = cfgR.json && cfgR.json[0];
   if (!cfg || !cfg.ativo) { console.log('programa desligado — só manutenção.'); return; }
 
-  const logsR = await sb('jackpot_push_log?select=ciclo_id,tipo');
-  const enviados = new Set((logsR.json || []).map(l => l.ciclo_id + ':' + l.tipo));
+  // Uma linha no push_log NÃO significa entrega: o OneSignal responde 200 com
+  // `errors` quando ninguém está inscrito naquele external_id (invalid_aliases).
+  // Tratar toda linha como "enviado" fazia um push falho nunca mais ser tentado —
+  // foi assim que dois avisos ao dono se perderam em silêncio (13/06 e 25/07/2026).
+  // Agora só entrega de fato bloqueia; falha é reenviada, com no mínimo RETRY_MIN
+  // entre tentativas pra não martelar o OneSignal a cada tick do cron.
+  const RETRY_MIN = 60;
+  const logsR = await sb('jackpot_push_log?select=ciclo_id,tipo,erro,http_status,enviado_em');
+  const entregues = new Set(), ultimaTentativa = new Map();
+  for (const l of (logsR.json || [])) {
+    const k = l.ciclo_id + ':' + l.tipo;
+    if (l.http_status >= 200 && l.http_status < 300 && !l.erro) entregues.add(k);
+    else if (l.enviado_em) ultimaTentativa.set(k, new Date(l.enviado_em).getTime());
+  }
+  const podeEnviar = k => {
+    if (entregues.has(k)) return false;
+    const t = ultimaTentativa.get(k);
+    return !t || (Date.now() - t) / 60000 >= RETRY_MIN;
+  };
   let ok = 0, fail = 0;
 
   // 2) ciclos vivos: PENDENTE (não liberado) avisa só o DONO; LIBERADO escala pro cliente
@@ -95,7 +115,7 @@ async function push(clienteId, titulo, msg, cicloId, tipo) {
   for (const c of (vivosR.json || [])) {
     if (!c.liberado_em) {
       // cliente bateu o gatilho → avisa O DONO pra definir o prêmio. Cliente NÃO é notificado ainda.
-      if (!enviados.has(c.id + ':adm')) {
+      if (podeEnviar(c.id + ':adm')) {
         const nomeR = await sb(`clientes?select=nome&id=eq.${c.cliente_id}`);
         const nome = (nomeR.json && nomeR.json[0] && nomeR.json[0].nome) || ('cliente #' + c.cliente_id);
         (await push(cfg.admin_cliente_id,
@@ -106,7 +126,7 @@ async function push(clienteId, titulo, msg, cicloId, tipo) {
     } else {
       // já liberado pelo dono → escada do cliente, relativa à data de LIBERAÇÃO
       const idade = dias(c.liberado_em);
-      const tier = TIERS_CICLO.find(t => idade >= t.min && !enviados.has(c.id + ':' + t.tipo));
+      const tier = TIERS_CICLO.find(t => idade >= t.min && podeEnviar(c.id + ':' + t.tipo));
       if (tier) (await push(c.cliente_id, tier.titulo, tier.msg, c.id, tier.tipo)) ? ok++ : fail++;
     }
   }
@@ -117,7 +137,7 @@ async function push(clienteId, titulo, msg, cicloId, tipo) {
     const base = c.compartilhado_em || c.cupom_validade;
     const idade = c.compartilhado_em ? dias(c.compartilhado_em)
       : Math.max(0, (cfg.validade_cupom_dias || 15) - Math.ceil((new Date(c.cupom_validade) - Date.now()) / 86400000));
-    const tier = TIERS_CUPOM.find(t => idade >= t.min && !enviados.has(c.id + ':' + t.tipo));
+    const tier = TIERS_CUPOM.find(t => idade >= t.min && podeEnviar(c.id + ':' + t.tipo));
     if (tier) (await push(c.cliente_id, tier.titulo, tier.msg, c.id, tier.tipo)) ? ok++ : fail++;
   }
 
@@ -125,7 +145,7 @@ async function push(clienteId, titulo, msg, cicloId, tipo) {
   const hoje = new Date(Date.now() - 86400000).toISOString();
   const entR = await sb(`jackpot_ciclos?select=*&status=eq.entregue&cupom_usado_em=gte.${hoje}`);
   for (const c of (entR.json || [])) {
-    if (!enviados.has(c.id + ':pos')) {
+    if (podeEnviar(c.id + ':pos')) {
       (await push(c.cliente_id, '🥩 Bom apetite!',
         'Prêmio entregue! Obrigado por fazer parte do Clube Prime — continue acumulando.',
         c.id, 'pos')) ? ok++ : fail++;
@@ -133,7 +153,7 @@ async function push(clienteId, titulo, msg, cicloId, tipo) {
   }
   const expR = await sb(`jackpot_ciclos?select=*&status=eq.expirado_metade&criado_em=gte.${hoje}`);
   for (const c of (expR.json || [])) {
-    if (!enviados.has(c.id + ':exp')) {
+    if (podeEnviar(c.id + ':exp')) {
       (await push(c.cliente_id, '😔 Seu prêmio expirou — mas calma',
         'Preservamos metade dos seus pontos. Continue comprando que o Jackpot volta rapidinho!',
         c.id, 'exp')) ? ok++ : fail++;
