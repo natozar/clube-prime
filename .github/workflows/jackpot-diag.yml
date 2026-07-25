@@ -1,0 +1,30 @@
+name: jackpot-diag
+
+# Só manual. O repo é público (log público) — o script já higieniza a saída.
+on:
+  workflow_dispatch:
+    inputs:
+      fix:
+        description: 'Criar o ciclo faltante? (1 = sim, vazio = só diagnóstico)'
+        required: false
+        default: ''
+      alvo:
+        description: 'cliente_id alvo do fix'
+        required: false
+        default: ''
+
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: diagnóstico jackpot
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          FIX: ${{ inputs.fix }}
+          ALVO: ${{ inputs.alvo }}
+        run: node seo/scripts/jackpot-diagnostico.js
